@@ -228,6 +228,12 @@ const Index = () => {
         onSignOut={signOut}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        googleAds={{
+          customerId,
+          onSave: saveCustomerId,
+          loading: !!adsData && !adsData.summary,
+          error: null,
+        }}
       />
 
       {/* Toggle chat visibility */}
