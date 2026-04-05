@@ -107,8 +107,7 @@ async function fetchGoogleAdsMetrics(customerId: string): Promise<string | null>
         metrics.conversions,
         metrics.cost_micros
       FROM campaign
-      WHERE campaign.status != 'REMOVED'
-        AND segments.date DURING LAST_30_DAYS
+      WHERE segments.date DURING LAST_30_DAYS
       ORDER BY metrics.impressions DESC
       LIMIT 20
     `;
