@@ -239,12 +239,17 @@ const Index = () => {
       </button>
 
       {/* Chat messages - left side, never overlapping orb */}
-      {showChat && (messages.length > 0 || showMetricsInChat) && (
+      {showChat && (
         <div
           ref={chatRef}
-          className="fixed left-4 top-4 bottom-24 w-[45%] max-w-lg overflow-y-auto flex flex-col gap-4 px-2 z-10"
+          className="fixed left-4 top-16 bottom-24 w-[42%] max-w-lg overflow-y-auto flex flex-col gap-3 px-2 z-10"
           style={{ scrollbarWidth: "none" }}
         >
+          {messages.length === 0 && !showMetricsInChat && (
+            <p className="text-muted-foreground text-xs text-center mt-8">
+              Envie uma mensagem para iniciar a conversa
+            </p>
+          )}
           {messages.map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
