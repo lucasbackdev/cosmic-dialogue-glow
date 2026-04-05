@@ -310,7 +310,27 @@ const Index = () => {
           {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
-          {showMetricsInChat && (
+          {showMetricsInChat && adsData?.campaigns && adsData.campaigns.length > 0 && (
+            <CampaignSelector
+              campaigns={adsData.campaigns as Campaign[]}
+              selectedIndex={selectedCampaignIndex}
+              onSelect={(i) => setSelectedCampaignIndex(i)}
+            />
+          )}
+          {showMetricsInChat && selectedCampaignIndex !== null && adsData?.campaigns?.[selectedCampaignIndex] && (
+            <CampaignMetricsInline
+              summary={{
+                impressions: (adsData.campaigns[selectedCampaignIndex] as any).impressions,
+                clicks: (adsData.campaigns[selectedCampaignIndex] as any).clicks,
+                ctr: (adsData.campaigns[selectedCampaignIndex] as any).ctr * 100,
+                averageCpc: (adsData.campaigns[selectedCampaignIndex] as any).averageCpc,
+                conversions: (adsData.campaigns[selectedCampaignIndex] as any).conversions,
+                totalCost: (adsData.campaigns[selectedCampaignIndex] as any).cost,
+              }}
+              connected={!!customerId}
+            />
+          )}
+          {showMetricsInChat && (selectedCampaignIndex === null || !adsData?.campaigns?.length) && !adsData?.campaigns?.length && (
             <CampaignMetricsInline
               summary={adsData?.summary || {
                 impressions: 0,
