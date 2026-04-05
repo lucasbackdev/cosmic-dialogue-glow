@@ -222,7 +222,7 @@ const Index = () => {
       <ConversationsSidebar
         conversations={conversations}
         currentId={currentConversationId}
-        onSelect={setCurrentConversationId}
+        onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
         onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
         onDelete={deleteConversation}
         onSignOut={signOut}
