@@ -170,7 +170,22 @@ const Index = () => {
 
       if (assistantSoFar && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(assistantSoFar);
+        // Strip markdown formatting so TTS reads clean text
+        const cleanText = assistantSoFar
+          .replace(/#{1,6}\s?/g, "")
+          .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
+          .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
+          .replace(/~~([^~]+)~~/g, "$1")
+          .replace(/`{1,3}[^`]*`{1,3}/g, "")
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+          .replace(/^[-*+]\s/gm, "")
+          .replace(/^\d+\.\s/gm, "")
+          .replace(/^>\s?/gm, "")
+          .replace(/---+/g, "")
+          .replace(/\n{2,}/g, ". ")
+          .replace(/\n/g, " ")
+          .trim();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = "pt-BR";
         utterance.rate = 1.3;
         utterance.pitch = 1.1;
