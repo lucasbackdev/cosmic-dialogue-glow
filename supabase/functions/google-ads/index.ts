@@ -102,14 +102,12 @@ async function sendLinkInvitation(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        operations: [
-          {
-            create: {
-              clientCustomer: `customers/${cleanClientId}`,
-              status: "PENDING",
-            },
+        operation: {
+          create: {
+            clientCustomer: `customers/${cleanClientId}`,
+            status: "PENDING",
           },
-        ],
+        },
       }),
     }
   );
