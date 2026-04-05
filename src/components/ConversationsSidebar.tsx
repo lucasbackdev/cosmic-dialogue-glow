@@ -29,6 +29,7 @@ const ConversationsSidebar = ({
   onSignOut,
   open,
   onToggle,
+  googleAds,
 }: ConversationsSidebarProps) => {
   return (
     <>
