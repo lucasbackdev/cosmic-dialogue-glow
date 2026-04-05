@@ -8,33 +8,39 @@ interface StarOrbProps {
   onClick: () => void;
 }
 
+const ORB_SIZE = 320; // px
+const CENTER = ORB_SIZE / 2;
+
 const StarOrb = ({ state, onClick }: StarOrbProps) => {
   const stars = useMemo(() => {
-    return Array.from({ length: 120 }, (_, i) => {
-      const angle = (i / 120) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
-      const baseRadius = 55 + (Math.random() - 0.5) * 25;
-      const size = Math.random() * 2.5 + 1;
-      const delay = Math.random() * 1.5;
-      const expandAmount = 8 + Math.random() * 16; // how far each star expands
+    return Array.from({ length: 150 }, (_, i) => {
+      const angle = (i / 150) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+      const baseRadius = 90 + (Math.random() - 0.5) * 40;
+      const size = Math.random() * 2.8 + 1;
+      const delay = Math.random() * 4;
+      const expandAmount = 10 + Math.random() * 20;
+      // idle drift: small gentle movement
+      const idleDrift = 3 + Math.random() * 5;
 
-      return { id: i, angle, baseRadius, size, delay, expandAmount };
+      return { id: i, angle, baseRadius, size, delay, expandAmount, idleDrift };
     });
   }, []);
 
   return (
     <button
       onClick={onClick}
-      className="relative w-48 h-48 cursor-pointer focus:outline-none"
+      className="relative cursor-pointer focus:outline-none"
+      style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
       aria-label="Ativar assistente de voz"
     >
       {stars.map((star) => {
-        const cx = 96; // center of 192px (w-48)
-        const cy = 96;
-        const x = cx + Math.cos(star.angle) * star.baseRadius;
-        const y = cy + Math.sin(star.angle) * star.baseRadius;
-        // expand direction
-        const ex = Math.cos(star.angle) * star.expandAmount;
-        const ey = Math.sin(star.angle) * star.expandAmount;
+        const x = CENTER + Math.cos(star.angle) * star.baseRadius;
+        const y = CENTER + Math.sin(star.angle) * star.baseRadius;
+
+        const animName = state === "speaking"
+          ? `star-expand-${star.id}`
+          : `star-idle-${star.id}`;
+        const animDuration = state === "speaking" ? "0.9s" : "4s";
 
         return (
           <div
@@ -49,29 +55,29 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
               left: `${x}px`,
               top: `${y}px`,
               boxShadow: `0 0 ${star.size * 2}px hsl(var(--orb-glow) / ${state === "speaking" ? 0.7 : 0.3})`,
-              transition: state !== "speaking" ? "transform 0.6s ease, box-shadow 0.4s ease, background-color 0.3s ease" : undefined,
-              transform: state === "speaking" ? undefined : "translate(0, 0)",
-              animation: state === "speaking"
-                ? `star-expand-${star.id} 0.9s ease-in-out ${star.delay}s infinite alternate`
-                : undefined,
+              animation: `${animName} ${animDuration} ease-in-out ${star.delay}s infinite alternate`,
             }}
           />
         );
       })}
 
-      {/* Inject per-star keyframes for speaking */}
-      {state === "speaking" && (
-        <style>
-          {stars.map(
-            (star) => `
-              @keyframes star-expand-${star.id} {
-                0% { transform: translate(0, 0); }
-                100% { transform: translate(${Math.cos(star.angle) * star.expandAmount}px, ${Math.sin(star.angle) * star.expandAmount}px); }
-              }
-            `
-          ).join("")}
-        </style>
-      )}
+      {/* Keyframes for all states */}
+      <style>
+        {stars.map((star) => {
+          const dx = Math.cos(star.angle);
+          const dy = Math.sin(star.angle);
+          return `
+            @keyframes star-idle-${star.id} {
+              0% { transform: translate(0, 0); }
+              100% { transform: translate(${dx * star.idleDrift}px, ${dy * star.idleDrift}px); }
+            }
+            @keyframes star-expand-${star.id} {
+              0% { transform: translate(0, 0); }
+              100% { transform: translate(${dx * star.expandAmount}px, ${dy * star.expandAmount}px); }
+            }
+          `;
+        }).join("")}
+      </style>
 
       {/* Label */}
       <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
