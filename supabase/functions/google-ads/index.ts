@@ -195,6 +195,9 @@ async function fetchCampaignMetrics(
     throw new Error(data.error?.message || `Google Ads API error: ${resp.status}`);
   }
 
+  console.log("Google Ads API response status:", resp.status, "data length:", JSON.stringify(data).length);
+  console.log("Raw response preview:", JSON.stringify(data).slice(0, 500));
+
   return data;
 }
 
