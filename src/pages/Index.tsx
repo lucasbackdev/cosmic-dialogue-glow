@@ -34,7 +34,7 @@ const Index = () => {
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
