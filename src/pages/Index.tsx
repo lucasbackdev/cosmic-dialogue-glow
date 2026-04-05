@@ -50,10 +50,10 @@ const Index = () => {
   const checkCRMTrigger = useCallback((text: string) => {
     const lower = text.toLowerCase();
     const triggered = CRM_KEYWORDS.some(kw => lower.includes(kw));
-    if (triggered && adsData?.summary) {
+    if (triggered) {
       setShowMetricsInChat(true);
     }
-  }, [adsData]);
+  }, []);
 
   const sendMessage = useCallback(async (text: string) => {
     setShowChat(true); // Always show chat when sending
