@@ -1,4 +1,4 @@
-import { TrendingUp, Eye, MousePointerClick, DollarSign, Target, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Eye, MousePointerClick, DollarSign, Target, Lightbulb, BarChart3, AlertCircle } from "lucide-react";
 
 interface MetricCardProps {
   label: string;
