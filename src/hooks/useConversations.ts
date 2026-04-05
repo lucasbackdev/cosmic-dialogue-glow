@@ -76,7 +76,8 @@ export function useConversations(userId: string | undefined) {
       .select()
       .single();
     if (data) {
-      setMessages((prev) => [...prev, data]);
+      const typed: DbMessage = { ...data, role: data.role as "user" | "assistant" };
+      setMessages((prev) => [...prev, typed]);
     }
     // Update conversation title from first user message
     if (role === "user") {
