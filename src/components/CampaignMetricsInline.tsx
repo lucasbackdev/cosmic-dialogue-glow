@@ -46,7 +46,7 @@ const fmt = (n: number) => {
 
 const cur = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 
-const CampaignMetricsInline = ({ summary }: CampaignMetricsInlineProps) => {
+const CampaignMetricsInline = ({ summary, connected = true }: CampaignMetricsInlineProps) => {
   const metrics: MetricCardProps[] = [
     {
       label: "Impressões",
