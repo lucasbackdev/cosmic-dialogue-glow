@@ -338,7 +338,7 @@ const Index = () => {
           <Input
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            placeholder={state === "listening" ? t("listening") || "Ouvindo..." : t("typeQuestion")}
+            placeholder={state === "listening" ? "Ouvindo..." : t("typeQuestion")}
             className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
             disabled={state === "speaking" || state === "listening"}
           />
