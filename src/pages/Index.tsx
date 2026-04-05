@@ -223,7 +223,7 @@ const Index = () => {
       />
 
       {/* CRM Panel */}
-      <CRMPanel visible={showCRM && !sidebarOpen} />
+      <CRMPanel visible={showCRM && !sidebarOpen} userId={user?.id} />
 
       {/* Chat messages above orb */}
       <div

@@ -38,6 +38,30 @@ export type Database = {
         }
         Relationships: []
       }
+      google_ads_accounts: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          label: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          label?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
