@@ -114,10 +114,10 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {t("saving")}
+                  {t("sendingRequest")}
                 </span>
               ) : (
-                t("saveAccount")
+                t("sendLinkRequest")
               )}
             </button>
 
