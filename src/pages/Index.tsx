@@ -39,6 +39,8 @@ const Index = () => {
   const [showChat, setShowChat] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -198,8 +200,22 @@ const Index = () => {
           || voices.find(v => v.lang === "pt-BR" && !v.localService)
           || voices.find(v => v.lang === "pt-BR");
         if (ptVoice) utterance.voice = ptVoice;
-        utterance.onend = () => setState("idle");
-        utterance.onerror = () => setState("idle");
+        utterance.onstart = () => {
+          // Simulate voice-reactive audio levels
+          audioLevelInterval.current = setInterval(() => {
+            setAudioLevel(0.3 + Math.random() * 0.7);
+          }, 80);
+        };
+        utterance.onend = () => {
+          if (audioLevelInterval.current) clearInterval(audioLevelInterval.current);
+          setAudioLevel(0);
+          setState("idle");
+        };
+        utterance.onerror = () => {
+          if (audioLevelInterval.current) clearInterval(audioLevelInterval.current);
+          setAudioLevel(0);
+          setState("idle");
+        };
         window.speechSynthesis.speak(utterance);
       } else {
         setState("idle");
@@ -314,7 +330,7 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <StarOrb state={state} onClick={handleOrbClick} />
+      <StarOrb state={state} onClick={handleOrbClick} audioLevel={audioLevel} />
 
       {/* Text input */}
       <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
