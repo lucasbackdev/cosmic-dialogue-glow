@@ -121,11 +121,6 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
               )}
             </button>
 
-            {!result?.success && (
-              <p className="text-muted-foreground text-[10px] mt-2 text-center">
-                {t("afterSending")}
-              </p>
-            )}
           </div>
         </div>
       )}
