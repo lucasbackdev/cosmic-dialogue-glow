@@ -95,12 +95,14 @@ async function sendLinkInvitation(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        operation: {
-          create: {
-            clientCustomer: `customers/${cleanClientId}`,
-            status: "PENDING",
+        operations: [
+          {
+            create: {
+              clientCustomer: `customers/${cleanClientId}`,
+              status: "PENDING",
+            },
           },
-        },
+        ],
       }),
     }
   );
@@ -117,6 +119,12 @@ async function sendLinkInvitation(
   if (!resp.ok) {
     console.error("Link invitation error:", JSON.stringify(data));
     const errorMsg = data.error?.message || `Google Ads API error: ${resp.status}`;
+    
+    // Check for permission/access level issues
+    if (resp.status === 403 || errorMsg.includes("PERMISSION_DENIED") || errorMsg.includes("DEVELOPER_TOKEN")) {
+      throw new Error("Seu developer token possui apenas acesso básico (leitura). Para enviar convites de vinculação, é necessário solicitar Standard Access no Google Ads API Center.");
+    }
+    
     throw new Error(errorMsg);
   }
 
