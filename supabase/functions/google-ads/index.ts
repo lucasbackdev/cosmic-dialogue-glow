@@ -162,16 +162,24 @@ async function fetchCampaignMetrics(
     LIMIT 20
   `;
 
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    "developer-token": developerToken,
+    "Content-Type": "application/json",
+  };
+
+  // Only set login-customer-id if MCC is different from the target customer
+  if (cleanMccId !== cleanId) {
+    headers["login-customer-id"] = cleanMccId;
+  }
+
+  console.log("Fetching metrics for customer:", cleanId, "login-customer-id:", headers["login-customer-id"] || "not set");
+
   const resp = await fetch(
     `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "developer-token": developerToken,
-        "login-customer-id": cleanMccId,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ query }),
     }
   );
