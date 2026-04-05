@@ -116,40 +116,27 @@ export function useSimulatedAI() {
         }
       }
 
-      // Speak the final response using ElevenLabs TTS
-      if (assistantSoFar) {
-        try {
-          const ttsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
-          const ttsResp = await fetch(ttsUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ text: assistantSoFar }),
-          });
+      // Speak using browser voice
+      if (assistantSoFar && "speechSynthesis" in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
 
-          if (ttsResp.ok) {
-            const audioBlob = await ttsResp.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.onended = () => {
-              URL.revokeObjectURL(audioUrl);
-              setState("idle");
-            };
-            audio.onerror = () => {
-              URL.revokeObjectURL(audioUrl);
-              setState("idle");
-            };
-            await audio.play();
-          } else {
-            console.error("TTS error:", ttsResp.status);
-            setState("idle");
-          }
-        } catch (ttsErr) {
-          console.error("TTS fetch error:", ttsErr);
-          setState("idle");
-        }
+        const utterance = new SpeechSynthesisUtterance(assistantSoFar);
+        utterance.lang = "pt-BR";
+        utterance.rate = 1.05;
+        utterance.pitch = 1.05;
+        utterance.volume = 1;
+
+        // Try to pick the best Portuguese voice available
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoice = voices.find(v => v.lang === "pt-BR" && v.name.toLowerCase().includes("google")) 
+          || voices.find(v => v.lang === "pt-BR" && !v.localService)
+          || voices.find(v => v.lang === "pt-BR");
+        if (ptVoice) utterance.voice = ptVoice;
+
+        utterance.onend = () => setState("idle");
+        utterance.onerror = () => setState("idle");
+        window.speechSynthesis.speak(utterance);
       } else {
         setState("idle");
       }
