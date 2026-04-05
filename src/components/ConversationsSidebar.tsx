@@ -14,7 +14,7 @@ interface ConversationsSidebarProps {
   onToggle: () => void;
   googleAds?: {
     customerId: string | null;
-    onSave: (id: string) => Promise<void>;
+    onSave: (id: string) => Promise<{ success: boolean; message: string } | undefined>;
     loading: boolean;
     error: string | null;
   };

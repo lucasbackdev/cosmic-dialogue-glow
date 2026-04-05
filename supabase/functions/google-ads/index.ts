@@ -1,21 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 
 const _corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Google Ads API v17
 const GOOGLE_ADS_API_VERSION = "v17";
 const GOOGLE_ADS_BASE = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
 
 async function getAccessToken(serviceAccountJson: string): Promise<string> {
   const sa = JSON.parse(serviceAccountJson);
-
-  // Create JWT header and claim set
   const header = { alg: "RS256", typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const claimSet = {
@@ -26,7 +22,6 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
     exp: now + 3600,
   };
 
-  // Base64url encode
   const enc = (obj: unknown) => {
     const json = JSON.stringify(obj);
     const b64 = btoa(json);
@@ -34,15 +29,12 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   };
 
   const unsignedToken = `${enc(header)}.${enc(claimSet)}`;
-
-  // Import private key and sign
   const pemContent = sa.private_key
     .replace(/-----BEGIN PRIVATE KEY-----/g, "")
     .replace(/-----END PRIVATE KEY-----/g, "")
     .replace(/\s/g, "");
 
   const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
-
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
     binaryKey,
@@ -64,7 +56,6 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
 
   const jwt = `${unsignedToken}.${sigB64}`;
 
-  // Exchange JWT for access token
   const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -83,13 +74,63 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   return tokenData.access_token;
 }
 
+// Send a link invitation from MCC to client account
+async function sendLinkInvitation(
+  accessToken: string,
+  developerToken: string,
+  mccId: string,
+  clientCustomerId: string
+) {
+  const cleanMccId = mccId.replace(/-/g, "");
+  const cleanClientId = clientCustomerId.replace(/-/g, "");
+
+  const resp = await fetch(
+    `${GOOGLE_ADS_BASE}/customers/${cleanMccId}/customerClientLinks:mutate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "developer-token": developerToken,
+        "login-customer-id": cleanMccId,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: {
+          create: {
+            clientCustomer: `customers/${cleanClientId}`,
+            status: "PENDING",
+          },
+        },
+      }),
+    }
+  );
+
+  const text = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("Non-JSON response from link API:", text.slice(0, 500));
+    throw new Error(`Google Ads API returned non-JSON response (status ${resp.status})`);
+  }
+
+  if (!resp.ok) {
+    console.error("Link invitation error:", JSON.stringify(data));
+    const errorMsg = data.error?.message || `Google Ads API error: ${resp.status}`;
+    throw new Error(errorMsg);
+  }
+
+  return data;
+}
+
 async function fetchCampaignMetrics(
   accessToken: string,
   developerToken: string,
+  mccId: string,
   customerId: string
 ) {
-  // Remove hyphens from customer ID
   const cleanId = customerId.replace(/-/g, "");
+  const cleanMccId = mccId.replace(/-/g, "");
 
   const query = `
     SELECT
@@ -115,19 +156,25 @@ async function fetchCampaignMetrics(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "developer-token": developerToken,
+        "login-customer-id": cleanMccId,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ query }),
     }
   );
 
-  const data = await resp.json();
+  const text = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("Non-JSON response from metrics API:", text.slice(0, 500));
+    throw new Error(`Google Ads API returned non-JSON response (status ${resp.status})`);
+  }
 
   if (!resp.ok) {
     console.error("Google Ads API error:", JSON.stringify(data));
-    throw new Error(
-      data.error?.message || `Google Ads API error: ${resp.status}`
-    );
+    throw new Error(data.error?.message || `Google Ads API error: ${resp.status}`);
   }
 
   return data;
@@ -139,7 +186,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -162,38 +208,41 @@ serve(async (req) => {
       });
     }
 
-    const { customerId } = await req.json();
+    const body = await req.json();
+    const { customerId, action } = body;
+
     if (!customerId) {
       return new Response(
         JSON.stringify({ error: "customerId is required" }),
-        {
-          status: 400,
-          headers: { ..._corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ..._corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_ADS_SERVICE_ACCOUNT_JSON");
     const developerToken = Deno.env.get("GOOGLE_ADS_DEVELOPER_TOKEN");
+    const mccId = Deno.env.get("GOOGLE_ADS_MCC_ID");
 
-    if (!serviceAccountJson || !developerToken) {
+    if (!serviceAccountJson || !developerToken || !mccId) {
       return new Response(
         JSON.stringify({ error: "Google Ads credentials not configured" }),
-        {
-          status: 500,
-          headers: { ..._corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 500, headers: { ..._corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const accessToken = await getAccessToken(serviceAccountJson);
-    const rawData = await fetchCampaignMetrics(
-      accessToken,
-      developerToken,
-      customerId
-    );
 
-    // Parse the response into a friendly format
+    // Action: send link invitation
+    if (action === "link") {
+      const result = await sendLinkInvitation(accessToken, developerToken, mccId, customerId);
+      return new Response(
+        JSON.stringify({ success: true, message: "Solicitação de vinculação enviada com sucesso!", data: result }),
+        { headers: { ..._corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Default: fetch metrics
+    const rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId);
+
     const campaigns: any[] = [];
     let totalImpressions = 0;
     let totalClicks = 0;
@@ -245,18 +294,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ summary, campaigns }),
-      {
-        headers: { ..._corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ..._corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
     console.error("google-ads function error:", err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal error" }),
-      {
-        status: 500,
-        headers: { ..._corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ..._corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

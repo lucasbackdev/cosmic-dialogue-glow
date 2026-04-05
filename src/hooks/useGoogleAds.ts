@@ -58,6 +58,31 @@ export function useGoogleAds(userId: string | undefined) {
       { user_id: userId, customer_id: cleanId },
       { onConflict: "user_id,customer_id" }
     );
+
+    // Send link invitation
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-ads`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ customerId: cleanId, action: "link" }),
+        }
+      );
+
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Erro ao enviar convite");
+      return { success: true, message: result.message };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, message: err.message };
+    }
   }, [userId]);
 
   // Fetch metrics

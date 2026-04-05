@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Settings, X, Loader2 } from "lucide-react";
+import { Settings, X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface GoogleAdsSettingsProps {
   customerId: string | null;
-  onSave: (id: string) => Promise<void>;
+  onSave: (id: string) => Promise<{ success: boolean; message: string } | undefined>;
   loading: boolean;
   error: string | null;
 }
@@ -14,18 +14,21 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(customerId || "");
   const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleSave = async () => {
     if (!inputValue.trim()) return;
     setSaving(true);
-    await onSave(inputValue.trim());
+    setResult(null);
+    const res = await onSave(inputValue.trim());
+    if (res) setResult(res);
     setSaving(false);
   };
 
   return (
     <>
       <button
-        onClick={() => { setOpen(true); setInputValue(customerId || ""); }}
+        onClick={() => { setOpen(true); setInputValue(customerId || ""); setResult(null); }}
         className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/50 text-sm transition-colors"
       >
         <Settings className="w-4 h-4" />
@@ -43,7 +46,7 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
             </div>
 
             <p className="text-muted-foreground text-xs mb-3">
-              Insira o ID da sua conta Google Ads (formato: 123-456-7890). Após salvar, uma solicitação de acesso será enviada para sua conta.
+              Insira o ID da conta Google Ads (formato: 123-456-7890). Uma solicitação de vinculação será enviada para o proprietário da conta aceitar.
             </p>
 
             <Input
@@ -53,13 +56,23 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
               className="mb-3 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground text-sm"
             />
 
-            {customerId && (
+            {customerId && !result && (
               <p className="text-xs text-muted-foreground mb-3">
                 Conta atual: <span className="text-foreground font-mono">{customerId}</span>
               </p>
             )}
 
-            {error && (
+            {result && (
+              <div className={cn(
+                "flex items-start gap-2 p-3 rounded-lg mb-3 text-xs",
+                result.success ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+              )}>
+                {result.success ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                <span>{result.message}</span>
+              </div>
+            )}
+
+            {error && !result && (
               <p className="text-xs text-destructive mb-3">{error}</p>
             )}
 
@@ -72,15 +85,21 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}
             >
-              {saving || loading ? (
+              {saving ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Conectando...
+                  Enviando solicitação...
                 </span>
               ) : (
-                "Salvar e conectar"
+                "Enviar solicitação de vinculação"
               )}
             </button>
+
+            {!result?.success && (
+              <p className="text-muted-foreground text-[10px] mt-2 text-center">
+                Após enviar, o proprietário da conta precisará aceitar o convite no Google Ads.
+              </p>
+            )}
           </div>
         </div>
       )}
