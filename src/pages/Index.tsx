@@ -50,10 +50,10 @@ const Index = () => {
   const checkCRMTrigger = useCallback((text: string) => {
     const lower = text.toLowerCase();
     const triggered = CRM_KEYWORDS.some(kw => lower.includes(kw));
-    if (triggered && adsData?.summary) {
+    if (triggered) {
       setShowMetricsInChat(true);
     }
-  }, [adsData]);
+  }, []);
 
   const sendMessage = useCallback(async (text: string) => {
     setShowChat(true); // Always show chat when sending
@@ -254,8 +254,18 @@ const Index = () => {
           {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
-          {showMetricsInChat && adsData?.summary && (
-            <CampaignMetricsInline summary={adsData.summary} />
+          {showMetricsInChat && (
+            <CampaignMetricsInline
+              summary={adsData?.summary || {
+                impressions: 0,
+                clicks: 0,
+                ctr: 0,
+                averageCpc: 0,
+                conversions: 0,
+                totalCost: 0,
+              }}
+              connected={!!customerId && !!adsData?.summary}
+            />
           )}
         </div>
       )}

@@ -1,4 +1,4 @@
-import { TrendingUp, Eye, MousePointerClick, DollarSign, Target, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Eye, MousePointerClick, DollarSign, Target, Lightbulb, BarChart3, AlertCircle } from "lucide-react";
 
 interface MetricCardProps {
   label: string;
@@ -35,6 +35,7 @@ interface CampaignSummary {
 
 interface CampaignMetricsInlineProps {
   summary: CampaignSummary;
+  connected?: boolean;
 }
 
 const fmt = (n: number) => {
@@ -45,7 +46,7 @@ const fmt = (n: number) => {
 
 const cur = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 
-const CampaignMetricsInline = ({ summary }: CampaignMetricsInlineProps) => {
+const CampaignMetricsInline = ({ summary, connected = true }: CampaignMetricsInlineProps) => {
   const metrics: MetricCardProps[] = [
     {
       label: "Impressões",
@@ -125,6 +126,14 @@ const CampaignMetricsInline = ({ summary }: CampaignMetricsInlineProps) => {
         <BarChart3 className="w-4 h-4 text-primary" />
         <span className="text-xs font-semibold text-foreground">Dashboard — Últimos 30 dias</span>
       </div>
+
+      {!connected && (
+        <div className="mb-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary flex items-start gap-2">
+          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>Conta Google Ads não conectada. Vá em <strong>Configurações</strong> na barra lateral e insira o ID da sua conta para ver dados reais.</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-1.5">
         {metrics.map((m) => (
           <MetricCard key={m.label} {...m} />
