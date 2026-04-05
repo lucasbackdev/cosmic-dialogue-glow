@@ -10,6 +10,7 @@ interface StarOrbProps {
 
 const ORB_SIZE = 320;
 const CENTER = ORB_SIZE / 2;
+const SPHERE_RADIUS = 110;
 
 const StarOrb = ({ state, onClick }: StarOrbProps) => {
   const containerRef = useRef<HTMLButtonElement>(null);
@@ -36,47 +37,28 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
       if (!isDragging.current) return;
       const dx = e.clientX - lastPos.current.x;
       const dy = e.clientY - lastPos.current.y;
-
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragStarted.current = true;
-
       const now = performance.now();
       const dt = Math.max(now - lastTime.current, 1);
-
-      // dx rotates around Y axis, dy rotates around X axis
-      velRef.current = {
-        x: (-dy / dt) * 1000 * 0.3,
-        y: (dx / dt) * 1000 * 0.3,
-      };
-
+      velRef.current = { x: (-dy / dt) * 300, y: (dx / dt) * 300 };
       rotRef.current.x += -dy * 0.3;
       rotRef.current.y += dx * 0.3;
       setRotX(rotRef.current.x);
       setRotY(rotRef.current.y);
-
       lastPos.current = { x: e.clientX, y: e.clientY };
       lastTime.current = now;
     };
-
-    const handleUp = () => {
-      isDragging.current = false;
-    };
-
+    const handleUp = () => { isDragging.current = false; };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
+    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
   }, []);
 
-  // Inertia
   useEffect(() => {
     const friction = 0.96;
     const tick = () => {
       if (!isDragging.current) {
-        const vx = velRef.current.x;
-        const vy = velRef.current.y;
-        if (Math.abs(vx) > 0.3 || Math.abs(vy) > 0.3) {
+        if (Math.abs(velRef.current.x) > 0.3 || Math.abs(velRef.current.y) > 0.3) {
           velRef.current.x *= friction;
           velRef.current.y *= friction;
           rotRef.current.x += velRef.current.x * (1 / 60);
@@ -92,44 +74,56 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
-    if (dragStarted.current) {
-      e.preventDefault();
-      return;
-    }
+    if (dragStarted.current) { e.preventDefault(); return; }
     onClick();
   }, [onClick]);
 
+  // Generate stars on a sphere using fibonacci distribution
   const stars = useMemo(() => {
-    const result: Array<{
-      id: number; angle: number; baseRadius: number; size: number;
-      delay: number; expandAmount: number; idleDrift: number;
-    }> = [];
-    let id = 0;
-
-    // Ring stars
-    for (let i = 0; i < 150; i++) {
-      const angle = (i / 150) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
-      const baseRadius = 90 + (Math.random() - 0.5) * 40;
-      const size = Math.random() * 2.8 + 1;
-      const delay = Math.random() * 4;
-      const expandAmount = 10 + Math.random() * 20;
-      const idleDrift = 3 + Math.random() * 5;
-      result.push({ id: id++, angle, baseRadius, size, delay, expandAmount, idleDrift });
-    }
-
-    // Center fill stars
-    for (let i = 0; i < 120; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const baseRadius = Math.random() * 70;
-      const size = Math.random() * 2.2 + 0.6;
-      const delay = Math.random() * 4;
-      const expandAmount = 5 + Math.random() * 10;
-      const idleDrift = 2 + Math.random() * 3;
-      result.push({ id: id++, angle, baseRadius, size, delay, expandAmount, idleDrift });
-    }
-
-    return result;
+    const count = 300;
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    return Array.from({ length: count }, (_, i) => {
+      const y = 1 - (i / (count - 1)) * 2; // -1 to 1
+      const radiusAtY = Math.sqrt(1 - y * y);
+      const theta = goldenAngle * i;
+      const px = Math.cos(theta) * radiusAtY * SPHERE_RADIUS;
+      const py = y * SPHERE_RADIUS;
+      const pz = Math.sin(theta) * radiusAtY * SPHERE_RADIUS;
+      const size = 1 + Math.random() * 2;
+      const twinkleDelay = Math.random() * 3;
+      const twinkleDuration = 2 + Math.random() * 3;
+      return { id: i, px, py, pz, size, twinkleDelay, twinkleDuration };
+    });
   }, []);
+
+  // Project 3D → 2D with rotation
+  const toRad = Math.PI / 180;
+  const cosX = Math.cos(rotX * toRad);
+  const sinX = Math.sin(rotX * toRad);
+  const cosY = Math.cos(rotY * toRad);
+  const sinY = Math.sin(rotY * toRad);
+
+  const projected = stars.map((star) => {
+    // Rotate around Y
+    let x1 = star.px * cosY + star.pz * sinY;
+    let z1 = -star.px * sinY + star.pz * cosY;
+    let y1 = star.py;
+    // Rotate around X
+    let y2 = y1 * cosX - z1 * sinX;
+    let z2 = y1 * sinX + z1 * cosX;
+    let x2 = x1;
+
+    const perspective = 600;
+    const scale = perspective / (perspective + z2);
+    const screenX = CENTER + x2 * scale;
+    const screenY = CENTER + y2 * scale;
+    const depth = (z2 + SPHERE_RADIUS) / (2 * SPHERE_RADIUS); // 0 (back) to 1 (front)
+
+    return { ...star, screenX, screenY, depth, scale, z2 };
+  });
+
+  // Sort by depth for proper layering
+  projected.sort((a, b) => a.z2 - b.z2);
 
   return (
     <button
@@ -137,30 +131,15 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
       onMouseDown={handlePointerDown}
       onClick={handleClick}
       className="relative cursor-grab active:cursor-grabbing focus:outline-none"
-      style={{
-        width: `${ORB_SIZE}px`,
-        height: `${ORB_SIZE}px`,
-        perspective: "800px",
-      }}
+      style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
       aria-label="Ativar assistente de voz"
     >
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
-          transformStyle: "preserve-3d",
-          position: "relative",
-        }}
-      >
-        {stars.map((star) => {
-          const x = CENTER + Math.cos(star.angle) * star.baseRadius;
-          const y = CENTER + Math.sin(star.angle) * star.baseRadius;
-
-          const animName = state === "speaking"
-            ? `star-expand-${star.id}`
-            : `star-idle-${star.id}`;
-          const animDuration = state === "speaking" ? "0.9s" : "4s";
+      <div className="relative w-full h-full">
+        {projected.map((star) => {
+          const opacity = 0.15 + star.depth * 0.85;
+          const sz = star.size * star.scale;
+          const glowIntensity = state === "speaking" ? 0.8 : 0.4;
+          const glowSize = sz * (state === "speaking" ? 3 : 2);
 
           return (
             <div
@@ -170,34 +149,26 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
                 state === "speaking" ? "bg-primary" : "bg-foreground"
               )}
               style={{
-                width: `${star.size}px`,
-                height: `${star.size}px`,
-                left: `${x}px`,
-                top: `${y}px`,
-                boxShadow: `0 0 ${star.size * 2}px hsl(var(--orb-glow) / ${state === "speaking" ? 0.7 : 0.3})`,
-                animation: `${animName} ${animDuration} ease-in-out ${star.delay}s infinite alternate`,
+                width: `${sz}px`,
+                height: `${sz}px`,
+                left: `${star.screenX}px`,
+                top: `${star.screenY}px`,
+                opacity,
+                boxShadow: `0 0 ${glowSize}px hsl(var(--orb-glow) / ${glowIntensity * opacity})`,
+                animation: `twinkle ${star.twinkleDuration}s ease-in-out ${star.twinkleDelay}s infinite alternate`,
+                transform: "translate(-50%, -50%)",
               }}
             />
           );
         })}
       </div>
 
-      <style>
-        {stars.map((star) => {
-          const dx = Math.cos(star.angle);
-          const dy = Math.sin(star.angle);
-          return `
-            @keyframes star-idle-${star.id} {
-              0% { transform: translate(0, 0); }
-              100% { transform: translate(${dx * star.idleDrift}px, ${dy * star.idleDrift}px); }
-            }
-            @keyframes star-expand-${star.id} {
-              0% { transform: translate(0, 0); }
-              100% { transform: translate(${dx * star.expandAmount}px, ${dy * star.expandAmount}px); }
-            }
-          `;
-        }).join("")}
-      </style>
+      <style>{`
+        @keyframes twinkle {
+          0% { opacity: var(--tw-opacity, 1); transform: translate(-50%, -50%) scale(1); }
+          100% { opacity: calc(var(--tw-opacity, 1) * 0.5); transform: translate(-50%, -50%) scale(0.7); }
+        }
+      `}</style>
 
       <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
         {state === "idle" && "Toque para falar"}
