@@ -8,7 +8,7 @@ import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
-import { Send, Eye, EyeOff } from "lucide-react";
+import { Send, Eye, EyeOff, Mic } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -56,6 +56,9 @@ const Index = () => {
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
   }, []);
+
+
+
 
   useEffect(() => {
     if (chatRef.current) {
@@ -255,6 +258,18 @@ const Index = () => {
     setState("listening");
   }, [state, sendMessage]);
 
+  // Spacebar to activate mic (only when not focused on input)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !e.repeat && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        if (state === "idle") handleOrbClick();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [state, handleOrbClick]);
+
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim() || state === "speaking") return;
@@ -334,20 +349,32 @@ const Index = () => {
 
       {/* Text input */}
       <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
-        <div className="relative">
+        <div className="relative flex items-center gap-2">
           <Input
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            placeholder={t("typeQuestion")}
+            placeholder={state === "listening" ? "Ouvindo..." : t("typeQuestion")}
             className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
-            disabled={state === "speaking"}
+            disabled={state === "speaking" || state === "listening"}
           />
           <button
             type="submit"
-            disabled={!textInput.trim() || state === "speaking"}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+            disabled={!textInput.trim() || state === "speaking" || state === "listening"}
+            className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
           >
             <Send className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); handleOrbClick(); }}
+            className={`shrink-0 p-2.5 rounded-full transition-all ${
+              state === "listening"
+                ? "bg-primary text-primary-foreground animate-pulse"
+                : "bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60"
+            }`}
+            title="Segurar espaço para falar"
+          >
+            <Mic className="w-5 h-5" />
           </button>
         </div>
       </form>
