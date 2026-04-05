@@ -44,7 +44,7 @@ export function useConversations(userId: string | undefined) {
       .select("*")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
-    if (data) setMessages(data);
+    if (data) setMessages(data.map(m => ({ ...m, role: m.role as "user" | "assistant" })));
   }, []);
 
   useEffect(() => {
