@@ -249,7 +249,17 @@ serve(async (req) => {
     }
 
     // Default: fetch metrics
-    const rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId);
+    let rawData;
+    try {
+      rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId);
+    } catch (metricsErr: any) {
+      console.warn("Metrics fetch failed (account may not be linked yet):", metricsErr.message);
+      const emptySummary = { impressions: 0, clicks: 0, ctr: 0, averageCpc: 0, conversions: 0, totalCost: 0 };
+      return new Response(
+        JSON.stringify({ summary: emptySummary, campaigns: [], notLinked: true }),
+        { headers: { ..._corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const campaigns: any[] = [];
     let totalImpressions = 0;
