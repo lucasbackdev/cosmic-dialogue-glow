@@ -330,7 +330,7 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <StarOrb state={state} onClick={handleOrbClick} />
+      <StarOrb state={state} onClick={handleOrbClick} audioLevel={audioLevel} />
 
       {/* Text input */}
       <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
