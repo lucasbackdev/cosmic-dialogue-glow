@@ -88,6 +88,16 @@ const ConversationsSidebar = ({
             )}
           </div>
 
+          {/* Settings */}
+          {googleAds && (
+            <GoogleAdsSettings
+              customerId={googleAds.customerId}
+              onSave={googleAds.onSave}
+              loading={googleAds.loading}
+              error={googleAds.error}
+            />
+          )}
+
           {/* Sign out */}
           <button
             onClick={onSignOut}
