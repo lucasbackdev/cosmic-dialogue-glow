@@ -35,6 +35,7 @@ interface CampaignSummary {
 
 interface CampaignMetricsInlineProps {
   summary: CampaignSummary;
+  connected?: boolean;
 }
 
 const fmt = (n: number) => {
