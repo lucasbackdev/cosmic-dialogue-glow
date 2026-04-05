@@ -1,16 +1,84 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useRef, useEffect, useCallback } from "react";
+import StarryBackground from "@/components/StarryBackground";
+import AIOrb from "@/components/AIOrb";
+import ChatBubble from "@/components/ChatBubble";
+import { useSimulatedAI } from "@/hooks/useSimulatedAI";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const SpeechRecognition =
+  (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+const Index = () => {
+  const { messages, state, setState, sendMessage } = useSimulatedAI();
+  const chatRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleOrbClick = useCallback(() => {
+    if (state === "speaking") return;
+
+    if (state === "listening") {
+      recognitionRef.current?.stop();
+      setState("idle");
+      return;
+    }
+
+    if (!SpeechRecognition) {
+      // Fallback: prompt
+      const text = prompt("Digite sua pergunta:");
+      if (text) sendMessage(text);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      sendMessage(transcript);
+    };
+
+    recognition.onerror = () => setState("idle");
+    recognition.onend = () => {
+      if (state === "listening") setState("idle");
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setState("listening");
+  }, [state, sendMessage, setState]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background">
+      <StarryBackground />
+
+      {/* Chat messages */}
+      <div
+        ref={chatRef}
+        className="absolute top-4 left-4 right-4 bottom-[55%] overflow-y-auto flex flex-col gap-3 px-2 z-10 scrollbar-none"
+      >
+        {messages.map((msg, i) => (
+          <ChatBubble key={i} role={msg.role} content={msg.content} />
+        ))}
+      </div>
+
+      {/* Orb */}
+      <div className="relative z-10 mt-auto mb-24">
+        <AIOrb state={state} onClick={handleOrbClick} />
+      </div>
+
+      {/* Title */}
+      <h1 className="absolute bottom-6 text-muted-foreground text-xs tracking-widest uppercase z-10">
+        Orion AI
+      </h1>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
