@@ -91,13 +91,6 @@ const Index = () => {
       { role: "user" as const, content: text },
     ];
 
-    // If we have ads data, inject it as context for the AI
-    if (adsData?.summary) {
-      const metricsContext = `[Dados Google Ads do usuário - últimos 30 dias: Impressões: ${adsData.summary.impressions}, Cliques: ${adsData.summary.clicks}, CTR: ${adsData.summary.ctr.toFixed(2)}%, CPC Médio: R$${adsData.summary.averageCpc.toFixed(2)}, Conversões: ${adsData.summary.conversions}, Custo Total: R$${adsData.summary.totalCost.toFixed(2)}. Campanhas: ${adsData.campaigns?.map(c => `${c.name} (${c.impressions} imp, ${c.clicks} cli, R$${c.cost.toFixed(2)})`).join("; ")}]`;
-      
-      allMessages.unshift({ role: "user" as const, content: metricsContext });
-    }
-
     try {
       const controller = new AbortController();
       abortRef.current = controller;
@@ -108,7 +101,7 @@ const Index = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages }),
+        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined }),
         signal: controller.signal,
       });
 
