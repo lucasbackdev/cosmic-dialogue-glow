@@ -36,7 +36,6 @@
 
     --orb-glow: 217 91% 60%;
     --orb-inner: 210 100% 70%;
-    --star-color: 210 40% 92%;
 
     --sidebar-background: 222 47% 6%;
     --sidebar-foreground: 210 40% 92%;
@@ -58,27 +57,13 @@
   }
 }
 
-/* Orb animations */
-@keyframes orb-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 40px 10px hsl(var(--orb-glow) / 0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 0 60px 20px hsl(var(--orb-glow) / 0.5); }
-}
-
-@keyframes orb-speaking {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 50px 15px hsl(var(--orb-glow) / 0.5); }
-  25% { transform: scale(1.12); box-shadow: 0 0 80px 30px hsl(var(--orb-glow) / 0.7); }
-  50% { transform: scale(0.95); box-shadow: 0 0 40px 10px hsl(var(--orb-glow) / 0.4); }
-  75% { transform: scale(1.08); box-shadow: 0 0 70px 25px hsl(var(--orb-glow) / 0.6); }
-}
-
-@keyframes orb-listening {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 50px 15px hsl(0 80% 55% / 0.4); }
-  50% { transform: scale(1.08); box-shadow: 0 0 70px 25px hsl(0 80% 55% / 0.6); }
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+@keyframes star-breathe {
+  0%, 100% {
+    transform: scale(1) translate(-50%, -50%);
+  }
+  50% {
+    transform: scale(1.6) translate(-50%, -50%);
+  }
 }
 
 @keyframes float-up {
