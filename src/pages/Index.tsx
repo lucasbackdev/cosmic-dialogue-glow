@@ -39,6 +39,8 @@ const Index = () => {
   const [showChat, setShowChat] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
