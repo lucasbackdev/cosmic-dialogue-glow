@@ -18,8 +18,8 @@ serve(async (req) => {
       throw new Error("ELEVENLABS_API_KEY is not configured");
     }
 
-    // Using "Sarah" voice - natural female voice
-    const voiceId = "EXAVITQu4vr4xnSDxMaL";
+    // Using "Brian" voice - natural male voice
+    const voiceId = "nPczCjzI2devNBz1zQrb";
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
