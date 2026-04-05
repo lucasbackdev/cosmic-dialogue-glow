@@ -1,19 +1,19 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
+import CampaignMetricsInline from "@/components/CampaignMetricsInline";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
-import CRMPanel from "@/components/CRMPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
+import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
+import { Send, Eye, EyeOff } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-// Keywords that trigger CRM panel
 const CRM_KEYWORDS = ["campanha", "métrica", "métricas", "google ads", "cliques", "impressões", "ctr", "cpc", "conversões", "custo", "orçamento", "anúncio", "anúncios", "performance", "desempenho"];
 
 const Index = () => {
@@ -30,10 +30,13 @@ const Index = () => {
     deleteConversation,
   } = useConversations(user?.id);
 
+  const { customerId, data: adsData, saveCustomerId } = useGoogleAds(user?.id);
+
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showCRM, setShowCRM] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   const [textInput, setTextInput] = useState("");
+  const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -42,14 +45,15 @@ const Index = () => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, showMetricsInChat]);
 
-  // Check if message mentions campaign metrics
   const checkCRMTrigger = useCallback((text: string) => {
     const lower = text.toLowerCase();
     const triggered = CRM_KEYWORDS.some(kw => lower.includes(kw));
-    if (triggered) setShowCRM(true);
-  }, []);
+    if (triggered && adsData?.summary) {
+      setShowMetricsInChat(true);
+    }
+  }, [adsData]);
 
   const sendMessage = useCallback(async (text: string) => {
     let convoId = currentConversationId;
@@ -62,11 +66,17 @@ const Index = () => {
     checkCRMTrigger(text);
     setState("speaking");
 
-    // Build message history from current messages
     const allMessages = [
       ...messages.map(m => ({ role: m.role, content: m.content })),
       { role: "user" as const, content: text },
     ];
+
+    // If we have ads data, inject it as context for the AI
+    if (adsData?.summary) {
+      const metricsContext = `[Dados Google Ads do usuário - últimos 30 dias: Impressões: ${adsData.summary.impressions}, Cliques: ${adsData.summary.clicks}, CTR: ${adsData.summary.ctr.toFixed(2)}%, CPC Médio: R$${adsData.summary.averageCpc.toFixed(2)}, Conversões: ${adsData.summary.conversions}, Custo Total: R$${adsData.summary.totalCost.toFixed(2)}. Campanhas: ${adsData.campaigns?.map(c => `${c.name} (${c.impressions} imp, ${c.clicks} cli, R$${c.cost.toFixed(2)})`).join("; ")}]`;
+      
+      allMessages.unshift({ role: "user" as const, content: metricsContext });
+    }
 
     try {
       const controller = new AbortController();
@@ -121,7 +131,6 @@ const Index = () => {
         }
       }
 
-      // Flush
       if (textBuffer.trim()) {
         for (let raw of textBuffer.split("\n")) {
           if (!raw) continue;
@@ -141,13 +150,11 @@ const Index = () => {
         }
       }
 
-      // Save final assistant message to DB
       if (assistantSoFar) {
         await finalizeAssistantMessage(convoId!, assistantSoFar);
         checkCRMTrigger(assistantSoFar);
       }
 
-      // Speak
       if (assistantSoFar && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(assistantSoFar);
@@ -172,7 +179,7 @@ const Index = () => {
       await addMessage(convoId!, "assistant", "Desculpe, ocorreu um erro. Tente novamente.");
       setState("idle");
     }
-  }, [messages, currentConversationId, createConversation, addMessage, updateLastAssistantMessage, finalizeAssistantMessage, checkCRMTrigger]);
+  }, [messages, currentConversationId, createConversation, addMessage, updateLastAssistantMessage, finalizeAssistantMessage, checkCRMTrigger, adsData]);
 
   const handleOrbClick = useCallback(() => {
     if (state === "speaking") return;
@@ -215,28 +222,41 @@ const Index = () => {
         conversations={conversations}
         currentId={currentConversationId}
         onSelect={setCurrentConversationId}
-        onNew={() => { setCurrentConversationId(null); setShowCRM(false); }}
+        onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
         onDelete={deleteConversation}
         onSignOut={signOut}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* CRM Panel */}
-      <CRMPanel visible={showCRM && !sidebarOpen} userId={user?.id} />
-
-      {/* Chat messages above orb */}
-      <div
-        ref={chatRef}
-        className="absolute top-4 left-4 right-4 bottom-[55%] overflow-y-auto flex flex-col gap-3 px-2 z-10"
-        style={{ scrollbarWidth: "none" }}
+      {/* Toggle chat visibility */}
+      <button
+        onClick={() => setShowChat(!showChat)}
+        className="fixed top-4 right-4 z-30 p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+        title={showChat ? "Ocultar chat" : "Mostrar chat"}
       >
-        {messages.map((msg, i) => (
-          <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
-        ))}
-      </div>
+        {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
 
-      {/* Centered orb */}
+      {/* Chat messages - left side, never overlapping orb */}
+      {showChat && (messages.length > 0 || showMetricsInChat) && (
+        <div
+          ref={chatRef}
+          className="fixed left-4 top-4 bottom-24 w-[45%] max-w-lg overflow-y-auto flex flex-col gap-4 px-2 z-10"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {messages.map((msg, i) => (
+            <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
+          ))}
+
+          {/* Inline campaign metrics */}
+          {showMetricsInChat && adsData?.summary && (
+            <CampaignMetricsInline summary={adsData.summary} />
+          )}
+        </div>
+      )}
+
+      {/* Centered orb - always visible */}
       <StarOrb state={state} onClick={handleOrbClick} />
 
       {/* Text input */}
