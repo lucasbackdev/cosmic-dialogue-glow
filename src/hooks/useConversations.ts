@@ -114,9 +114,10 @@ export function useConversations(userId: string | undefined) {
       .select()
       .single();
     if (data) {
+      const typed: DbMessage = { ...data, role: data.role as "user" | "assistant" };
       setMessages((prev) => {
         const filtered = prev.filter(m => m.id !== "temp");
-        return [...filtered, data];
+        return [...filtered, typed];
       });
     }
   }, []);
