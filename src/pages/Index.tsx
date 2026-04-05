@@ -56,6 +56,7 @@ const Index = () => {
   }, [adsData]);
 
   const sendMessage = useCallback(async (text: string) => {
+    setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
       convoId = await createConversation(text.slice(0, 60));
