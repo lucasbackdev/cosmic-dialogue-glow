@@ -6,6 +6,7 @@ import ConversationsSidebar from "@/components/ConversationsSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Send, Eye, EyeOff } from "lucide-react";
 
@@ -17,6 +18,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const CRM_KEYWORDS = ["campanha", "métrica", "métricas", "google ads", "cliques", "impressões", "ctr", "cpc", "conversões", "custo", "orçamento", "anúncio", "anúncios", "performance", "desempenho"];
 
 const Index = () => {
+  const { t } = useLanguage();
   const { user, signOut } = useAuth();
   const {
     conversations,
@@ -268,7 +270,7 @@ const Index = () => {
       <button
         onClick={() => setShowChat(!showChat)}
         className="fixed top-4 right-4 z-30 p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-        title={showChat ? "Ocultar chat" : "Mostrar chat"}
+        title={showChat ? t("hideChat") : t("showChat")}
       >
         {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
@@ -320,7 +322,7 @@ const Index = () => {
           <Input
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
-            placeholder="Digite sua pergunta..."
+            placeholder={t("typeQuestion")}
             className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
             disabled={state === "speaking"}
           />
@@ -336,7 +338,7 @@ const Index = () => {
 
       {/* Title */}
       <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
-        Orion AI
+        {t("orionAI")}
       </h1>
     </div>
   );
