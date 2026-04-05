@@ -34,7 +34,7 @@ const Index = () => {
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -56,6 +56,7 @@ const Index = () => {
   }, [adsData]);
 
   const sendMessage = useCallback(async (text: string) => {
+    setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
       convoId = await createConversation(text.slice(0, 60));
@@ -221,7 +222,7 @@ const Index = () => {
       <ConversationsSidebar
         conversations={conversations}
         currentId={currentConversationId}
-        onSelect={setCurrentConversationId}
+        onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
         onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
         onDelete={deleteConversation}
         onSignOut={signOut}
