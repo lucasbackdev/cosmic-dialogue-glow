@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const GOOGLE_ADS_API_VERSION = "v17";
+const GOOGLE_ADS_API_VERSION = "v23";
 const GOOGLE_ADS_BASE = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
 
 const CAMPAIGN_KEYWORDS = [
@@ -107,22 +107,24 @@ async function fetchGoogleAdsMetrics(customerId: string): Promise<string | null>
         metrics.conversions,
         metrics.cost_micros
       FROM campaign
-      WHERE campaign.status != 'REMOVED'
-        AND segments.date DURING LAST_30_DAYS
+      WHERE segments.date DURING LAST_30_DAYS
       ORDER BY metrics.impressions DESC
       LIMIT 20
     `;
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      "developer-token": developerToken,
+      "Content-Type": "application/json",
+    };
+
+    // Don't set login-customer-id for direct service account access
 
     const resp = await fetch(
       `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "developer-token": developerToken,
-          "login-customer-id": cleanMccId,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({ query }),
       }
     );
@@ -204,7 +206,15 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let systemContent = "Você é a Orion, uma assistente virtual especializada em Google Ads e marketing digital. Seu foco é EXCLUSIVAMENTE ajudar o usuário com campanhas do Google Ads: análise de métricas (impressões, cliques, CTR, CPC, conversões, custo), sugestões de otimização, estratégias de lances, segmentação de público, criação de anúncios, palavras-chave e orçamento. Se o usuário perguntar sobre assuntos que não sejam relacionados a Google Ads ou marketing digital, redirecione educadamente a conversa para seu foco. REGRAS DE RESPOSTA: 1) Seja CURTA e DIRETA — máximo 3-4 frases por resposta, a menos que o usuário peça detalhes. 2) Responda SEMPRE no mesmo idioma que o usuário usar. 3) Use frases curtas e objetivas. Vá direto ao ponto.";
+    let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads e marketing digital. Seu foco é EXCLUSIVAMENTE ajudar o usuário com campanhas do Google Ads: análise de métricas (impressões, cliques, CTR, CPC, conversões, custo), sugestões de otimização, estratégias de lances, segmentação de público, criação de anúncios, palavras-chave e orçamento. Se o usuário perguntar sobre assuntos que não sejam relacionados a Google Ads ou marketing digital, redirecione educadamente a conversa para seu foco.
+
+REGRAS DE RESPOSTA:
+1) Seja CURTA e DIRETA — máximo 3-4 frases por resposta, a menos que o usuário peça detalhes.
+2) Responda SEMPRE no mesmo idioma que o usuário usar.
+3) Use frases curtas e objetivas. Vá direto ao ponto.
+4) Quando o usuário pedir para ver campanhas ou métricas, LISTE todas as campanhas disponíveis com nome e status (Ativa/Pausada/Removida) em formato de lista numerada, e pergunte qual campanha ele quer analisar em detalhe.
+5) Quando o usuário escolher uma campanha específica (por número ou nome), mostre as métricas detalhadas apenas daquela campanha.
+6) Use emojis para indicar status: 🟢 Ativa, 🟡 Pausada, 🔴 Removida.`;
 
     // If user is asking about campaigns and has a customer ID, fetch real data
     if (googleAdsCustomerId && isCampaignQuestion(messages)) {
