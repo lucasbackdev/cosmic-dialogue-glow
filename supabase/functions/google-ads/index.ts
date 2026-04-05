@@ -87,8 +87,12 @@ async function sendLinkInvitation(
   const cleanMccId = mccId.replace(/-/g, "");
   const cleanClientId = clientCustomerId.replace(/-/g, "");
 
-  const resp = await fetch(
-    `${GOOGLE_ADS_BASE}/customers/${cleanMccId}/customerClientLinks:mutate`,
+  const url = `${GOOGLE_ADS_BASE}/customers/${cleanMccId}/customerClientLinks:mutate`;
+  console.log("Link invitation URL:", url);
+  console.log("MCC ID:", cleanMccId, "Client ID:", cleanClientId);
+  console.log("Developer token (first 5 chars):", developerToken.slice(0, 5));
+
+  const resp = await fetch(url,
     {
       method: "POST",
       headers: {
