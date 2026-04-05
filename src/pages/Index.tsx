@@ -239,26 +239,31 @@ const Index = () => {
         {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
 
-      {/* Chat messages - left side, never overlapping orb */}
+      {/* AI messages - left side */}
       {showChat && (
         <div
-          ref={chatRef}
-          className="fixed left-4 top-16 bottom-24 w-[42%] max-w-lg overflow-y-auto flex flex-col gap-3 px-2 z-10"
+          className="fixed left-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 z-10"
           style={{ scrollbarWidth: "none" }}
         >
-          {messages.length === 0 && !showMetricsInChat && (
-            <p className="text-muted-foreground text-xs text-center mt-8">
-              Envie uma mensagem para iniciar a conversa
-            </p>
-          )}
-          {messages.map((msg, i) => (
+          {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
-
-          {/* Inline campaign metrics */}
           {showMetricsInChat && adsData?.summary && (
             <CampaignMetricsInline summary={adsData.summary} />
           )}
+        </div>
+      )}
+
+      {/* User messages - right side */}
+      {showChat && (
+        <div
+          ref={chatRef}
+          className="fixed right-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 z-10"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {messages.filter(m => m.role === "user").map((msg, i) => (
+            <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
+          ))}
         </div>
       )}
 
