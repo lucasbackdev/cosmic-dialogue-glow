@@ -6,6 +6,7 @@ import ConversationsSidebar from "@/components/ConversationsSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Send, Eye, EyeOff } from "lucide-react";
 
