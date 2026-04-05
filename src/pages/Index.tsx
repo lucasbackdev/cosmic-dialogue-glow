@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import CampaignMetricsInline from "@/components/CampaignMetricsInline";
+import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
