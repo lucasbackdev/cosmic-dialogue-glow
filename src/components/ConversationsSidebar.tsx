@@ -1,6 +1,7 @@
 import { Plus, Trash2, MessageSquare, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/hooks/useConversations";
+import GoogleAdsSettings from "./GoogleAdsSettings";
 
 interface ConversationsSidebarProps {
   conversations: Conversation[];
@@ -11,6 +12,12 @@ interface ConversationsSidebarProps {
   onSignOut: () => void;
   open: boolean;
   onToggle: () => void;
+  googleAds?: {
+    customerId: string | null;
+    onSave: (id: string) => Promise<void>;
+    loading: boolean;
+    error: string | null;
+  };
 }
 
 const ConversationsSidebar = ({
@@ -22,6 +29,7 @@ const ConversationsSidebar = ({
   onSignOut,
   open,
   onToggle,
+  googleAds,
 }: ConversationsSidebarProps) => {
   return (
     <>
@@ -80,6 +88,16 @@ const ConversationsSidebar = ({
               </p>
             )}
           </div>
+
+          {/* Settings */}
+          {googleAds && (
+            <GoogleAdsSettings
+              customerId={googleAds.customerId}
+              onSave={googleAds.onSave}
+              loading={googleAds.loading}
+              error={googleAds.error}
+            />
+          )}
 
           {/* Sign out */}
           <button
