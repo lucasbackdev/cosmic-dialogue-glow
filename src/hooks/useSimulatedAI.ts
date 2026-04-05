@@ -116,13 +116,40 @@ export function useSimulatedAI() {
         }
       }
 
-      // Speak the final response
-      if (assistantSoFar && "speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(assistantSoFar);
-        utterance.lang = "pt-BR";
-        utterance.rate = 1;
-        utterance.onend = () => setState("idle");
-        window.speechSynthesis.speak(utterance);
+      // Speak the final response using ElevenLabs TTS
+      if (assistantSoFar) {
+        try {
+          const ttsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
+          const ttsResp = await fetch(ttsUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ text: assistantSoFar }),
+          });
+
+          if (ttsResp.ok) {
+            const audioBlob = await ttsResp.blob();
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            audio.onended = () => {
+              URL.revokeObjectURL(audioUrl);
+              setState("idle");
+            };
+            audio.onerror = () => {
+              URL.revokeObjectURL(audioUrl);
+              setState("idle");
+            };
+            await audio.play();
+          } else {
+            console.error("TTS error:", ttsResp.status);
+            setState("idle");
+          }
+        } catch (ttsErr) {
+          console.error("TTS fetch error:", ttsErr);
+          setState("idle");
+        }
       } else {
         setState("idle");
       }
