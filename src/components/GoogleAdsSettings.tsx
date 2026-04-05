@@ -65,7 +65,7 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
             {result && (
               <div className={cn(
                 "flex items-start gap-2 p-3 rounded-lg mb-3 text-xs",
-                result.success ? "bg-green-500/10 text-green-400" : "bg-destructive/10 text-destructive"
+                result.success ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
               )}>
                 {result.success ? <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
                 <span>{result.message}</span>
