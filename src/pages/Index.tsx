@@ -1,15 +1,42 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
-import { useSimulatedAI } from "@/hooks/useSimulatedAI";
+import ConversationsSidebar from "@/components/ConversationsSidebar";
+import CRMPanel from "@/components/CRMPanel";
+import { useAuth } from "@/hooks/useAuth";
+import { useConversations } from "@/hooks/useConversations";
+import { Input } from "@/components/ui/input";
+import { Send } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+
+// Keywords that trigger CRM panel
+const CRM_KEYWORDS = ["campanha", "métrica", "métricas", "google ads", "cliques", "impressões", "ctr", "cpc", "conversões", "custo", "orçamento", "anúncio", "anúncios", "performance", "desempenho"];
+
 const Index = () => {
-  const { messages, state, setState, sendMessage } = useSimulatedAI();
+  const { user, signOut } = useAuth();
+  const {
+    conversations,
+    currentConversationId,
+    setCurrentConversationId,
+    messages,
+    createConversation,
+    addMessage,
+    updateLastAssistantMessage,
+    finalizeAssistantMessage,
+    deleteConversation,
+  } = useConversations(user?.id);
+
+  const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCRM, setShowCRM] = useState(false);
+  const [textInput, setTextInput] = useState("");
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (chatRef.current) {
@@ -17,43 +44,187 @@ const Index = () => {
     }
   }, [messages]);
 
+  // Check if message mentions campaign metrics
+  const checkCRMTrigger = useCallback((text: string) => {
+    const lower = text.toLowerCase();
+    const triggered = CRM_KEYWORDS.some(kw => lower.includes(kw));
+    if (triggered) setShowCRM(true);
+  }, []);
+
+  const sendMessage = useCallback(async (text: string) => {
+    let convoId = currentConversationId;
+    if (!convoId) {
+      convoId = await createConversation(text.slice(0, 60));
+      if (!convoId) return;
+    }
+
+    await addMessage(convoId, "user", text);
+    checkCRMTrigger(text);
+    setState("speaking");
+
+    // Build message history from current messages
+    const allMessages = [
+      ...messages.map(m => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: text },
+    ];
+
+    try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: allMessages }),
+        signal: controller.signal,
+      });
+
+      if (!resp.ok || !resp.body) {
+        const errorData = await resp.json().catch(() => ({}));
+        throw new Error(errorData.error || "Erro ao conectar com a IA");
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let assistantSoFar = "";
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantSoFar += content;
+              updateLastAssistantMessage(convoId!, assistantSoFar);
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantSoFar += content;
+              updateLastAssistantMessage(convoId!, assistantSoFar);
+            }
+          } catch { /* ignore */ }
+        }
+      }
+
+      // Save final assistant message to DB
+      if (assistantSoFar) {
+        await finalizeAssistantMessage(convoId!, assistantSoFar);
+        checkCRMTrigger(assistantSoFar);
+      }
+
+      // Speak
+      if (assistantSoFar && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(assistantSoFar);
+        utterance.lang = "pt-BR";
+        utterance.rate = 1.3;
+        utterance.pitch = 1.1;
+        utterance.volume = 1;
+        const voices = window.speechSynthesis.getVoices();
+        const ptVoice = voices.find(v => v.lang === "pt-BR" && v.name.toLowerCase().includes("google"))
+          || voices.find(v => v.lang === "pt-BR" && !v.localService)
+          || voices.find(v => v.lang === "pt-BR");
+        if (ptVoice) utterance.voice = ptVoice;
+        utterance.onend = () => setState("idle");
+        utterance.onerror = () => setState("idle");
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setState("idle");
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      console.error("AI error:", err);
+      await addMessage(convoId!, "assistant", "Desculpe, ocorreu um erro. Tente novamente.");
+      setState("idle");
+    }
+  }, [messages, currentConversationId, createConversation, addMessage, updateLastAssistantMessage, finalizeAssistantMessage, checkCRMTrigger]);
+
   const handleOrbClick = useCallback(() => {
     if (state === "speaking") return;
-
     if (state === "listening") {
       recognitionRef.current?.stop();
       setState("idle");
       return;
     }
-
     if (!SpeechRecognition) {
       const text = prompt("Digite sua pergunta:");
       if (text) sendMessage(text);
       return;
     }
-
     const recognition = new SpeechRecognition();
     recognition.lang = "pt-BR";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       sendMessage(transcript);
     };
-
     recognition.onerror = () => setState("idle");
-    recognition.onend = () => {
-      setState((s) => (s === "listening" ? "idle" : s));
-    };
-
+    recognition.onend = () => setState((s) => (s === "listening" ? "idle" : s));
     recognitionRef.current = recognition;
     recognition.start();
     setState("listening");
-  }, [state, sendMessage, setState]);
+  }, [state, sendMessage]);
+
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textInput.trim() || state === "speaking") return;
+    sendMessage(textInput.trim());
+    setTextInput("");
+  };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-background">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
+      {/* Conversations sidebar */}
+      <ConversationsSidebar
+        conversations={conversations}
+        currentId={currentConversationId}
+        onSelect={setCurrentConversationId}
+        onNew={() => { setCurrentConversationId(null); setShowCRM(false); }}
+        onDelete={deleteConversation}
+        onSignOut={signOut}
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
+
+      {/* CRM Panel */}
+      <CRMPanel visible={showCRM && !sidebarOpen} />
+
       {/* Chat messages above orb */}
       <div
         ref={chatRef}
@@ -61,15 +232,35 @@ const Index = () => {
         style={{ scrollbarWidth: "none" }}
       >
         {messages.map((msg, i) => (
-          <ChatBubble key={i} role={msg.role} content={msg.content} />
+          <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
         ))}
       </div>
 
       {/* Centered orb */}
       <StarOrb state={state} onClick={handleOrbClick} />
 
+      {/* Text input */}
+      <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
+        <div className="relative">
+          <Input
+            value={textInput}
+            onChange={(e) => setTextInput(e.target.value)}
+            placeholder="Digite sua pergunta..."
+            className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
+            disabled={state === "speaking"}
+          />
+          <button
+            type="submit"
+            disabled={!textInput.trim() || state === "speaking"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </form>
+
       {/* Title */}
-      <h1 className="absolute bottom-6 text-muted-foreground text-xs tracking-widest uppercase z-10">
+      <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
         Orion AI
       </h1>
     </div>
