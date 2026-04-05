@@ -56,6 +56,8 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
 
   const jwt = `${unsignedToken}.${sigB64}`;
 
+  console.log("Requesting access token for service account:", sa.client_email);
+
   const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -71,6 +73,7 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
     throw new Error(`Failed to get access token: ${tokenData.error_description || tokenData.error}`);
   }
 
+  console.log("Access token obtained successfully");
   return tokenData.access_token;
 }
 
