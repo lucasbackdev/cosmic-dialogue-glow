@@ -156,8 +156,7 @@ async function fetchCampaignMetrics(
       metrics.conversions,
       metrics.cost_micros
     FROM campaign
-    WHERE campaign.status != 'REMOVED'
-      AND segments.date DURING LAST_30_DAYS
+    WHERE segments.date DURING LAST_30_DAYS
     ORDER BY metrics.impressions DESC
     LIMIT 20
   `;
@@ -168,10 +167,8 @@ async function fetchCampaignMetrics(
     "Content-Type": "application/json",
   };
 
-  // Only set login-customer-id if MCC is different from the target customer
-  if (cleanMccId !== cleanId) {
-    headers["login-customer-id"] = cleanMccId;
-  }
+  // Don't set login-customer-id when service account has direct access
+  // headers["login-customer-id"] = cleanMccId;
 
   console.log("Fetching metrics for customer:", cleanId, "login-customer-id:", headers["login-customer-id"] || "not set");
 
