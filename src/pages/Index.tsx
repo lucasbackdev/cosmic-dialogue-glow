@@ -175,8 +175,9 @@ const Index = () => {
         utterance.rate = 1.3;
         utterance.pitch = 1.1;
         utterance.volume = 1;
-        const voices = window.speechSynthesis.getVoices();
-        const ptVoice = voices.find(v => v.lang === "pt-BR" && v.name.toLowerCase().includes("google"))
+        const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
+        // Prefer the feminine non-local pt-BR voice (skip Google voice which is male)
+        const ptVoice = voices.find(v => v.lang === "pt-BR" && !v.localService && !v.name.toLowerCase().includes("google"))
           || voices.find(v => v.lang === "pt-BR" && !v.localService)
           || voices.find(v => v.lang === "pt-BR");
         if (ptVoice) utterance.voice = ptVoice;
