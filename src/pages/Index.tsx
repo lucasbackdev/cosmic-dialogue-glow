@@ -270,7 +270,7 @@ const Index = () => {
       <button
         onClick={() => setShowChat(!showChat)}
         className="fixed top-4 right-4 z-30 p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-        title={showChat ? "Ocultar chat" : "Mostrar chat"}
+        title={showChat ? t("hideChat") : t("showChat")}
       >
         {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
