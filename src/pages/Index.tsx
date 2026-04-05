@@ -46,7 +46,7 @@ const Index = () => {
 
     recognition.onerror = () => setState("idle");
     recognition.onend = () => {
-      if (state === "listening") setState("idle");
+      setState((s) => (s === "listening" ? "idle" : s));
     };
 
     recognitionRef.current = recognition;
