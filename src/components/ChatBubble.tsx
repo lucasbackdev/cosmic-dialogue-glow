@@ -9,19 +9,26 @@ interface ChatBubbleProps {
 const ChatBubble = ({ role, content }: ChatBubbleProps) => (
   <div
     className={cn(
-      "max-w-[85%] text-sm animate-[float-up_0.4s_ease-out_forwards]",
-      role === "user"
-        ? "self-end text-right text-muted-foreground/80 italic"
-        : "self-start text-foreground"
+      "w-full animate-[float-up_0.4s_ease-out_forwards]",
+      role === "user" ? "text-right" : "text-left"
     )}
   >
-    {role === "assistant" ? (
-      <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
-        <ReactMarkdown>{content}</ReactMarkdown>
-      </div>
-    ) : (
-      <span>{content}</span>
-    )}
+    <div
+      className={cn(
+        "inline-block max-w-[85%] text-sm",
+        role === "user"
+          ? "text-muted-foreground/80 italic"
+          : "text-foreground"
+      )}
+    >
+      {role === "assistant" ? (
+        <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
+          <ReactMarkdown>{content}</ReactMarkdown>
+        </div>
+      ) : (
+        <span>{content}</span>
+      )}
+    </div>
   </div>
 );
 
