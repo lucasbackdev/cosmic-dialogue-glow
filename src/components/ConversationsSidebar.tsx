@@ -2,6 +2,7 @@ import { Plus, Trash2, MessageSquare, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/hooks/useConversations";
 import GoogleAdsSettings from "./GoogleAdsSettings";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ConversationsSidebarProps {
   conversations: Conversation[];
@@ -31,9 +32,10 @@ const ConversationsSidebar = ({
   onToggle,
   googleAds,
 }: ConversationsSidebarProps) => {
+  const { t } = useLanguage();
+
   return (
     <>
-      {/* Toggle button - always visible */}
       <button
         onClick={onToggle}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md border border-border hover:bg-card/80 transition-colors"
@@ -41,7 +43,6 @@ const ConversationsSidebar = ({
         <MessageSquare className="w-5 h-5 text-foreground" />
       </button>
 
-      {/* Sidebar */}
       <div
         className={cn(
           "fixed top-0 left-0 h-full w-72 z-40 transition-transform duration-300 ease-in-out",
@@ -50,16 +51,14 @@ const ConversationsSidebar = ({
         )}
       >
         <div className="flex flex-col h-full pt-16 pb-4 px-3">
-          {/* New conversation button */}
           <button
             onClick={onNew}
             className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-foreground text-sm transition-colors mb-3"
           >
             <Plus className="w-4 h-4" />
-            Nova conversa
+            {t("newConversation")}
           </button>
 
-          {/* Conversations list */}
           <div className="flex-1 overflow-y-auto space-y-1" style={{ scrollbarWidth: "none" }}>
             {conversations.map((convo) => (
               <div
@@ -84,12 +83,11 @@ const ConversationsSidebar = ({
             ))}
             {conversations.length === 0 && (
               <p className="text-muted-foreground text-xs text-center mt-8">
-                Nenhuma conversa ainda
+                {t("noConversations")}
               </p>
             )}
           </div>
 
-          {/* Settings */}
           {googleAds && (
             <GoogleAdsSettings
               customerId={googleAds.customerId}
@@ -99,18 +97,16 @@ const ConversationsSidebar = ({
             />
           )}
 
-          {/* Sign out */}
           <button
             onClick={onSignOut}
             className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/50 text-sm transition-colors mt-2"
           >
             <LogOut className="w-4 h-4" />
-            Sair
+            {t("signOut")}
           </button>
         </div>
       </div>
 
-      {/* Backdrop */}
       {open && (
         <div
           className="fixed inset-0 z-30 bg-background/40 backdrop-blur-sm"

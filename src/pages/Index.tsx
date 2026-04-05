@@ -338,7 +338,7 @@ const Index = () => {
 
       {/* Title */}
       <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
-        Orion AI
+        {t("orionAI")}
       </h1>
     </div>
   );

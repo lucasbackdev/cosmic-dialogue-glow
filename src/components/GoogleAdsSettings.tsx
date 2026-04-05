@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Settings, X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Settings, X, Loader2, CheckCircle, AlertCircle, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useLanguage, type Language } from "@/contexts/LanguageContext";
 
 interface GoogleAdsSettingsProps {
   customerId: string | null;
@@ -11,6 +12,7 @@ interface GoogleAdsSettingsProps {
 }
 
 const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSettingsProps) => {
+  const { t, language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(customerId || "");
   const [saving, setSaving] = useState(false);
@@ -32,22 +34,46 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
         className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/50 text-sm transition-colors"
       >
         <Settings className="w-4 h-4" />
-        Configurações
+        {t("settings")}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm mx-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-foreground font-medium text-sm">Google Ads</h2>
+              <h2 className="text-foreground font-medium text-sm">{t("settings")}</h2>
               <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-muted-foreground text-xs mb-3">
-              Insira o ID da conta Google Ads (formato: 123-456-7890). Uma solicitação de vinculação será enviada para o proprietário da conta aceitar.
-            </p>
+            {/* Language selector */}
+            <div className="mb-5 pb-4 border-b border-border/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-foreground">{t("languageLabel")}</span>
+              </div>
+              <div className="flex gap-2">
+                {(["pt-BR", "en"] as Language[]).map((lang) => (
+                  <button
+                    key={lang}
+                    onClick={() => setLanguage(lang)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
+                      language === lang
+                        ? "bg-primary/20 border-primary/40 text-foreground"
+                        : "bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    {lang === "pt-BR" ? t("portuguese") : t("english")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Google Ads section */}
+            <h3 className="text-foreground font-medium text-xs mb-2">{t("googleAds")}</h3>
+            <p className="text-muted-foreground text-xs mb-3">{t("googleAdsDesc")}</p>
 
             <Input
               value={inputValue}
@@ -58,7 +84,7 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
 
             {customerId && !result && (
               <p className="text-xs text-muted-foreground mb-3">
-                Conta atual: <span className="text-foreground font-mono">{customerId}</span>
+                {t("currentAccount")}: <span className="text-foreground font-mono">{customerId}</span>
               </p>
             )}
 
@@ -88,16 +114,16 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
               {saving ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Enviando solicitação...
+                  {t("sendingRequest")}
                 </span>
               ) : (
-                "Enviar solicitação de vinculação"
+                t("sendLinkRequest")
               )}
             </button>
 
             {!result?.success && (
               <p className="text-muted-foreground text-[10px] mt-2 text-center">
-                Após enviar, o proprietário da conta precisará aceitar o convite no Google Ads.
+                {t("afterSending")}
               </p>
             )}
           </div>
