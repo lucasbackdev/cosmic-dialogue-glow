@@ -18,6 +18,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 const CRM_KEYWORDS = ["campanha", "métrica", "métricas", "google ads", "cliques", "impressões", "ctr", "cpc", "conversões", "custo", "orçamento", "anúncio", "anúncios", "performance", "desempenho"];
 
 const Index = () => {
+  const { t } = useLanguage();
   const { user, signOut } = useAuth();
   const {
     conversations,
