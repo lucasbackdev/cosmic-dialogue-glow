@@ -258,6 +258,18 @@ const Index = () => {
     setState("listening");
   }, [state, sendMessage]);
 
+  // Spacebar to activate mic (only when not focused on input)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === "Space" && !e.repeat && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        if (state === "idle") handleOrbClick();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [state, handleOrbClick]);
+
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim() || state === "speaking") return;
