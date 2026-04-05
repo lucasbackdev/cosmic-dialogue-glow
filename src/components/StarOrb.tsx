@@ -13,50 +13,47 @@ const CENTER = ORB_SIZE / 2;
 
 const StarOrb = ({ state, onClick }: StarOrbProps) => {
   const containerRef = useRef<HTMLButtonElement>(null);
-  const [rotation, setRotation] = useState(0);
-  const rotationRef = useRef(0);
-  const velocityRef = useRef(0);
+  const [rotX, setRotX] = useState(0);
+  const [rotY, setRotY] = useState(0);
+  const rotRef = useRef({ x: 0, y: 0 });
+  const velRef = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
-  const lastAngle = useRef(0);
+  const lastPos = useRef({ x: 0, y: 0 });
   const lastTime = useRef(0);
   const animFrameRef = useRef<number>(0);
   const dragStarted = useRef(false);
 
-  const getAngle = useCallback((e: MouseEvent | React.MouseEvent) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return 0;
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    return Math.atan2(e.clientY - cy, e.clientX - cx);
-  }, []);
-
   const handlePointerDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
     dragStarted.current = false;
-    lastAngle.current = getAngle(e);
+    lastPos.current = { x: e.clientX, y: e.clientY };
     lastTime.current = performance.now();
-    velocityRef.current = 0;
-  }, [getAngle]);
+    velRef.current = { x: 0, y: 0 };
+  }, []);
 
   useEffect(() => {
     const handleMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      const angle = getAngle(e);
-      let delta = angle - lastAngle.current;
-      // Normalize delta
-      if (delta > Math.PI) delta -= 2 * Math.PI;
-      if (delta < -Math.PI) delta += 2 * Math.PI;
+      const dx = e.clientX - lastPos.current.x;
+      const dy = e.clientY - lastPos.current.y;
 
-      if (Math.abs(delta) > 0.01) dragStarted.current = true;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragStarted.current = true;
 
       const now = performance.now();
       const dt = Math.max(now - lastTime.current, 1);
-      velocityRef.current = (delta / dt) * 1000; // rad/s
 
-      rotationRef.current += delta * (180 / Math.PI);
-      setRotation(rotationRef.current);
+      // dx rotates around Y axis, dy rotates around X axis
+      velRef.current = {
+        x: (-dy / dt) * 1000 * 0.3,
+        y: (dx / dt) * 1000 * 0.3,
+      };
 
-      lastAngle.current = angle;
+      rotRef.current.x += -dy * 0.3;
+      rotRef.current.y += dx * 0.3;
+      setRotX(rotRef.current.x);
+      setRotY(rotRef.current.y);
+
+      lastPos.current = { x: e.clientX, y: e.clientY };
       lastTime.current = now;
     };
 
@@ -70,16 +67,23 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
       window.removeEventListener("mousemove", handleMove);
       window.removeEventListener("mouseup", handleUp);
     };
-  }, [getAngle]);
+  }, []);
 
-  // Inertia animation
+  // Inertia
   useEffect(() => {
-    const friction = 0.97;
+    const friction = 0.96;
     const tick = () => {
-      if (!isDragging.current && Math.abs(velocityRef.current) > 0.5) {
-        velocityRef.current *= friction;
-        rotationRef.current += velocityRef.current * (1 / 60) * (180 / Math.PI);
-        setRotation(rotationRef.current);
+      if (!isDragging.current) {
+        const vx = velRef.current.x;
+        const vy = velRef.current.y;
+        if (Math.abs(vx) > 0.3 || Math.abs(vy) > 0.3) {
+          velRef.current.x *= friction;
+          velRef.current.y *= friction;
+          rotRef.current.x += velRef.current.x * (1 / 60);
+          rotRef.current.y += velRef.current.y * (1 / 60);
+          setRotX(rotRef.current.x);
+          setRotY(rotRef.current.y);
+        }
       }
       animFrameRef.current = requestAnimationFrame(tick);
     };
@@ -96,7 +100,10 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
   }, [onClick]);
 
   const stars = useMemo(() => {
-    const result = [];
+    const result: Array<{
+      id: number; angle: number; baseRadius: number; size: number;
+      delay: number; expandAmount: number; idleDrift: number;
+    }> = [];
     let id = 0;
 
     // Ring stars
@@ -113,7 +120,7 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
     // Center fill stars
     for (let i = 0; i < 120; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const baseRadius = Math.random() * 70; // fill 0-70px radius
+      const baseRadius = Math.random() * 70;
       const size = Math.random() * 2.2 + 0.6;
       const delay = Math.random() * 4;
       const expandAmount = 5 + Math.random() * 10;
@@ -130,14 +137,19 @@ const StarOrb = ({ state, onClick }: StarOrbProps) => {
       onMouseDown={handlePointerDown}
       onClick={handleClick}
       className="relative cursor-grab active:cursor-grabbing focus:outline-none"
-      style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
+      style={{
+        width: `${ORB_SIZE}px`,
+        height: `${ORB_SIZE}px`,
+        perspective: "800px",
+      }}
       aria-label="Ativar assistente de voz"
     >
       <div
         style={{
           width: "100%",
           height: "100%",
-          transform: `rotate(${rotation}deg)`,
+          transform: `rotateX(${rotX}deg) rotateY(${rotY}deg)`,
+          transformStyle: "preserve-3d",
           position: "relative",
         }}
       >
