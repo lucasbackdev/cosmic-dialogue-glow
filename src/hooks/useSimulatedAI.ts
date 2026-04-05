@@ -123,8 +123,8 @@ export function useSimulatedAI() {
 
         const utterance = new SpeechSynthesisUtterance(assistantSoFar);
         utterance.lang = "pt-BR";
-        utterance.rate = 1.05;
-        utterance.pitch = 1.05;
+        utterance.rate = 1.3;
+        utterance.pitch = 1.1;
         utterance.volume = 1;
 
         // Try to pick the best Portuguese voice available
