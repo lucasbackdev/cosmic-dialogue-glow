@@ -40,6 +40,18 @@ const Index = () => {
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+
+  // Preload voices
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+    const loadVoices = () => {
+      voicesRef.current = window.speechSynthesis.getVoices();
+    };
+    loadVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+  }, []);
 
   useEffect(() => {
     if (chatRef.current) {
