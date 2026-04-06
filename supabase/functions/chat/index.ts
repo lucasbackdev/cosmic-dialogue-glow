@@ -574,23 +574,13 @@ ${vehicleData}`;
         systemContent += `\n\nNão foi possível obter os dados para a placa "${plateFromHistory}". Informe o problema ao usuário.`;
       }
     } else if (detectedPlate) {
-      // Plate detected but no consultation type → show menu
-      console.log("Plate detected, showing menu:", detectedPlate);
-      const menuItems = Object.entries(VEHICLE_CONSULT_TYPES)
-        .map(([key, info]) => `${info.label} — ${info.price} por consulta`)
-        .join("\n");
+      // Plate detected but no consultation type → frontend shows visual menu
+      console.log("Plate detected, frontend will show menu:", detectedPlate);
       
       systemContent += `\n\nO usuário mencionou a placa "${detectedPlate}". NÃO faça a consulta ainda!
-Em vez disso, apresente o MENU de opções de consulta abaixo e pergunte o que ele deseja consultar.
-Diga que ele pode escolher uma, várias, ou pedir "tudo" (consulta completa).
-
-MENU DE CONSULTAS DISPONÍVEIS:
-${menuItems}
-
-💡 Consulta completa (todas): ~R$ 30,96
-
-Apresente este menu de forma bonita com emojis e pergunte: "Qual consulta deseja fazer? Pode escolher uma, várias, ou pedir TUDO!"
-IMPORTANTE: NÃO consulte nada ainda, apenas mostre as opções.`;
+Responda APENAS com uma frase curta e amigável como: "Identifiquei a placa ${detectedPlate}! Selecione as consultas que deseja no painel ao lado e clique em Consultar."
+NÃO liste as opções de consulta no texto — o menu visual já está sendo exibido no frontend automaticamente.
+Seja breve, máximo 2 frases.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
