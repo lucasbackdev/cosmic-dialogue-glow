@@ -314,7 +314,13 @@ const Index = () => {
             <CampaignSelector
               campaigns={adsData.campaigns as Campaign[]}
               selectedIndex={selectedCampaignIndex}
-              onSelect={(i) => setSelectedCampaignIndex(i)}
+              onSelect={(i) => {
+                setSelectedCampaignIndex(i);
+                const campaign = (adsData!.campaigns as Campaign[])[i];
+                if (campaign) {
+                  sendMessage(`Analise a campanha "${campaign.name}" em detalhes`, campaign.name);
+                }
+              }}
               period={period}
               onPeriodChange={changePeriod}
             />
