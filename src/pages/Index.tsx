@@ -271,6 +271,7 @@ const Index = () => {
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim() || state === "speaking") return;
+    sentViaVoiceRef.current = false;
     sendMessage(textInput.trim());
     setTextInput("");
   };
