@@ -9,7 +9,7 @@ import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
-import { Send, Eye, EyeOff, Mic } from "lucide-react";
+import { Send, Eye, EyeOff, Mic, Square } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -387,18 +387,32 @@ const Index = () => {
           >
             <Send className="w-4 h-4" />
           </button>
-          <button
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); handleOrbClick(); }}
-            className={`shrink-0 p-2.5 rounded-full transition-all ${
-              state === "listening"
-                ? "bg-primary text-primary-foreground animate-pulse"
-                : "bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60"
-            }`}
-            title="Segurar espaço para falar"
-          >
-            <Mic className="w-5 h-5" />
-          </button>
+          {state === "speaking" ? (
+            <button
+              type="button"
+              onClick={() => {
+                window.speechSynthesis.cancel();
+                setState("idle");
+              }}
+              className="shrink-0 p-2.5 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 transition-all animate-pulse"
+              title="Parar de falar"
+            >
+              <Square className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); handleOrbClick(); }}
+              className={`shrink-0 p-2.5 rounded-full transition-all ${
+                state === "listening"
+                  ? "bg-primary text-primary-foreground animate-pulse"
+                  : "bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60"
+              }`}
+              title="Segurar espaço para falar"
+            >
+              <Mic className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </form>
 
