@@ -363,8 +363,8 @@ const Index = () => {
       {/* AI messages - left side */}
       {showChat && (
         <div
-          className="fixed left-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 z-10"
-          style={{ scrollbarWidth: "none" }}
+          className="fixed left-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10"
+          style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--border)) transparent" }}
         >
           {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
