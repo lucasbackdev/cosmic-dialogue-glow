@@ -574,11 +574,8 @@ ${vehicleData}`;
         systemContent += `\n\nNão foi possível obter os dados para a placa "${plateFromHistory}". Informe o problema ao usuário.`;
       }
     } else if (detectedPlate) {
-      // Plate detected but no consultation type → show menu
-      console.log("Plate detected, showing menu:", detectedPlate);
-      const menuItems = Object.entries(VEHICLE_CONSULT_TYPES)
-        .map(([key, info]) => `${info.label} — ${info.price} por consulta`)
-        .join("\n");
+      // Plate detected but no consultation type → frontend shows visual menu
+      console.log("Plate detected, frontend will show menu:", detectedPlate);
       
       systemContent += `\n\nO usuário mencionou a placa "${detectedPlate}". NÃO faça a consulta ainda!
 Responda APENAS com uma frase curta e amigável como: "Identifiquei a placa ${detectedPlate}! Selecione as consultas que deseja no painel ao lado e clique em Consultar."
