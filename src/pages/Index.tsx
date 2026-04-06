@@ -82,6 +82,47 @@ const Index = () => {
     }
   }, []);
 
+  // Detect plate in user messages to show visual menu
+  const detectedPlate = useMemo(() => {
+    // Find last user message with a plate
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        const match = messages[i].content.match(PLATE_REGEX);
+        if (match) return match[1].replace(/[-\s]/g, "").toUpperCase();
+      }
+    }
+    return null;
+  }, [messages]);
+
+  // Show menu when AI responded with the menu (plate detected, last assistant message contains "menu" or consultation options)
+  const showVehicleMenu = useMemo(() => {
+    if (!detectedPlate) return false;
+    // Check if last assistant message is the menu (contains consultation option keywords)
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return false;
+    const lower = lastAssistant.content.toLowerCase();
+    return (lower.includes("dados básicos") || lower.includes("dados basicos")) && 
+           (lower.includes("fipe") || lower.includes("sinistro")) &&
+           (lower.includes("consulta") || lower.includes("menu"));
+  }, [messages, detectedPlate]);
+
+  const handleVehicleConsult = useCallback(async (types: string[]) => {
+    if (!detectedPlate || types.length === 0) return;
+    setVehicleLoading(true);
+    const typeLabels: Record<string, string> = {
+      basica: "dados básicos", fipe: "preço FIPE", sinistro: "sinistro",
+      roubo: "roubo e furto", leilao: "leilão", gravame: "gravame", infracoes: "infrações"
+    };
+    const labelList = types.map(t => typeLabels[t] || t).join(", ");
+    const allTypes = types.length === 7;
+    const text = allTypes 
+      ? `Quero consulta completa (tudo) da placa ${detectedPlate}`
+      : `Quero consultar ${labelList} da placa ${detectedPlate}`;
+    await sendMessage(text);
+    setPendingPlate(null);
+    setVehicleLoading(false);
+  }, [detectedPlate, sendMessage]);
+
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
