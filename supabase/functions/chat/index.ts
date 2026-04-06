@@ -392,17 +392,40 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads e marketing digital.
+    let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads, marketing digital e consulta veicular.
 
 REGRAS CRÍTICAS DE RESPOSTA:
 1) NUNCA liste métricas numéricas brutas no texto — os dados já estão no dashboard visual.
-2) Seja CONVERSACIONAL — máximo 3-4 frases curtas, a menos que esteja analisando uma campanha selecionada.
+2) Seja CONVERSACIONAL — máximo 3-4 frases curtas, a menos que esteja analisando uma campanha selecionada ou dados de veículo.
 3) Responda SEMPRE no mesmo idioma que o usuário usar.
 4) Quando o usuário pedir campanhas/métricas SEM selecionar uma específica, diga que os dados estão no dashboard e faça perguntas como:
    - "Qual campanha quer analisar?"
    - "Quer personalizar o período?"
    - "Posso comparar campanhas?"
-5) Foque em ser um CONSULTOR que guia o usuário.`;
+5) Foque em ser um CONSULTOR que guia o usuário.
+6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown. Dê uma análise do veículo incluindo:
+   - Resumo dos dados principais
+   - Estimativa de valor baseada no modelo/ano (se possível, sugira consultar a tabela FIPE)
+   - Dicas relevantes sobre o veículo
+   - Se o usuário perguntar sobre compra, dê dicas de verificação`;
+
+    // Check for vehicle plate in message
+    const detectedPlate = extractPlate(messages);
+    if (detectedPlate) {
+      console.log("Plate detected:", detectedPlate);
+      const vehicleData = await fetchVehicleData(detectedPlate);
+      if (vehicleData) {
+        systemContent += `\n\nO usuário consultou uma placa de veículo. Apresente os dados de forma organizada e bonita com emojis e markdown.
+Dê uma análise completa incluindo:
+- 🚗 Dados do veículo formatados
+- 💰 Sugestão de consultar tabela FIPE para valor
+- ⚠️ Dicas de verificação se for compra
+- 📊 Score geral do veículo baseado nos dados disponíveis (1-10)
+${vehicleData}`;
+      } else {
+        systemContent += `\n\nO usuário tentou consultar a placa "${detectedPlate}" mas não foi possível obter os dados. Informe que houve um problema e peça para verificar se a placa está correta.`;
+      }
+    }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
     if (googleAdsCustomerId && selectedCampaign) {
