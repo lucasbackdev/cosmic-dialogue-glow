@@ -52,7 +52,7 @@ const VehicleConsultMenu = ({ plate, onConsult, loading }: VehicleConsultMenuPro
   const allSelected = selected.size === CONSULT_OPTIONS.length;
 
   return (
-    <div className="w-full rounded-xl bg-card/60 backdrop-blur-md border border-border/30 overflow-hidden">
+    <div className="w-full max-h-[calc(100vh-10rem)] rounded-xl border border-border/30 bg-card/60 backdrop-blur-md overflow-hidden flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/20">
         <div className="flex items-center justify-between">
