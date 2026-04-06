@@ -84,32 +84,15 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   return tokenData.access_token;
 }
 
-async function fetchGoogleAdsMetrics(customerId: string): Promise<string | null> {
+async function fetchCampaignData(customerId: string): Promise<string | null> {
   const serviceAccountJson = Deno.env.get("GOOGLE_ADS_SERVICE_ACCOUNT_JSON");
   const developerToken = Deno.env.get("GOOGLE_ADS_DEVELOPER_TOKEN");
-  const mccId = Deno.env.get("GOOGLE_ADS_MCC_ID");
 
-  if (!serviceAccountJson || !developerToken || !mccId) return null;
+  if (!serviceAccountJson || !developerToken) return null;
 
   try {
     const accessToken = await getAccessToken(serviceAccountJson);
     const cleanId = customerId.replace(/-/g, "");
-    const cleanMccId = mccId.replace(/-/g, "");
-
-    const query = `
-      SELECT
-        campaign.name,
-        campaign.status,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.ctr,
-        metrics.average_cpc,
-        metrics.conversions,
-        metrics.cost_micros
-      FROM campaign
-      ORDER BY metrics.impressions DESC
-      LIMIT 20
-    `;
 
     const headers: Record<string, string> = {
       Authorization: `Bearer ${accessToken}`,
@@ -117,78 +100,225 @@ async function fetchGoogleAdsMetrics(customerId: string): Promise<string | null>
       "Content-Type": "application/json",
     };
 
-    // Don't set login-customer-id for direct service account access
+    // Fetch campaigns
+    const campaignQuery = `
+      SELECT campaign.name, campaign.status,
+        metrics.impressions, metrics.clicks, metrics.ctr,
+        metrics.average_cpc, metrics.conversions, metrics.cost_micros
+      FROM campaign ORDER BY metrics.impressions DESC LIMIT 20
+    `;
 
-    const resp = await fetch(
+    const campaignResp = await fetch(
       `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ query }),
-      }
+      { method: "POST", headers, body: JSON.stringify({ query: campaignQuery }) }
     );
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.warn("Google Ads metrics fetch failed:", resp.status, errText.slice(0, 300));
+    if (!campaignResp.ok) {
+      console.warn("Google Ads fetch failed:", campaignResp.status);
       return null;
     }
 
-    const rawData = await resp.json();
-    
+    const rawData = await campaignResp.json();
     const campaigns: { name: string; status: string; impressions: number; clicks: number; ctr: number; cpc: number; conversions: number; cost: number }[] = [];
-    let totalImpressions = 0, totalClicks = 0, totalConversions = 0, totalCostMicros = 0;
 
     if (rawData && Array.isArray(rawData)) {
       for (const batch of rawData) {
         if (batch.results) {
           for (const row of batch.results) {
             const m = row.metrics || {};
-            const impressions = Number(m.impressions || 0);
-            const clicks = Number(m.clicks || 0);
-            const conversions = Number(m.conversions || 0);
-            const costMicros = Number(m.costMicros || 0);
-
-            totalImpressions += impressions;
-            totalClicks += clicks;
-            totalConversions += conversions;
-            totalCostMicros += costMicros;
-
             campaigns.push({
               name: row.campaign?.name || "Sem nome",
               status: row.campaign?.status || "UNKNOWN",
-              impressions,
-              clicks,
+              impressions: Number(m.impressions || 0),
+              clicks: Number(m.clicks || 0),
               ctr: Number(m.ctr || 0) * 100,
               cpc: Number(m.averageCpc || 0) / 1_000_000,
-              conversions,
-              cost: costMicros / 1_000_000,
+              conversions: Number(m.conversions || 0),
+              cost: Number(m.costMicros || 0) / 1_000_000,
             });
           }
         }
       }
     }
 
-    const totalCost = totalCostMicros / 1_000_000;
-    const overallCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-    const overallCpc = totalClicks > 0 ? totalCost / totalClicks : 0;
-
-    // Format as readable context for the AI
-    let context = `\n\n[DADOS REAIS DO GOOGLE ADS - Últimos 30 dias]\n`;
-    context += `Resumo Geral: ${totalImpressions.toLocaleString()} impressões, ${totalClicks.toLocaleString()} cliques, CTR ${overallCtr.toFixed(2)}%, CPC médio R$${overallCpc.toFixed(2)}, ${totalConversions} conversões, Custo total R$${totalCost.toFixed(2)}\n`;
-    
-    if (campaigns.length > 0) {
-      context += `\nCampanhas:\n`;
-      for (const c of campaigns) {
-        context += `- ${c.name} [${c.status}]: ${c.impressions.toLocaleString()} imp, ${c.clicks} cli, CTR ${c.ctr.toFixed(2)}%, CPC R$${c.cpc.toFixed(2)}, ${c.conversions} conv, Custo R$${c.cost.toFixed(2)}\n`;
-      }
-    } else {
-      context += `Nenhuma campanha ativa encontrada.\n`;
+    let context = `\n\n[DADOS DO GOOGLE ADS]\nCampanhas disponíveis:\n`;
+    for (const c of campaigns) {
+      context += `- ${c.name} [${c.status}]\n`;
     }
+    return context;
+  } catch (err) {
+    console.warn("Error fetching Google Ads:", err);
+    return null;
+  }
+}
+
+async function fetchCampaignCreatives(customerId: string, campaignName: string): Promise<string | null> {
+  const serviceAccountJson = Deno.env.get("GOOGLE_ADS_SERVICE_ACCOUNT_JSON");
+  const developerToken = Deno.env.get("GOOGLE_ADS_DEVELOPER_TOKEN");
+
+  if (!serviceAccountJson || !developerToken) return null;
+
+  try {
+    const accessToken = await getAccessToken(serviceAccountJson);
+    const cleanId = customerId.replace(/-/g, "");
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      "developer-token": developerToken,
+      "Content-Type": "application/json",
+    };
+
+    // Fetch ad group ads with headlines, descriptions, and images
+    const adQuery = `
+      SELECT
+        campaign.name,
+        ad_group.name,
+        ad_group_ad.ad.responsive_search_ad.headlines,
+        ad_group_ad.ad.responsive_search_ad.descriptions,
+        ad_group_ad.ad.responsive_display_ad.headlines,
+        ad_group_ad.ad.responsive_display_ad.descriptions,
+        ad_group_ad.ad.responsive_display_ad.marketing_images,
+        ad_group_ad.ad.responsive_display_ad.square_marketing_images,
+        ad_group_ad.ad.responsive_display_ad.logo_images,
+        ad_group_ad.ad.responsive_display_ad.long_headline,
+        ad_group_ad.ad.responsive_display_ad.business_name,
+        ad_group_ad.ad.final_urls,
+        ad_group_ad.ad.type,
+        ad_group_ad.status,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.ctr,
+        metrics.conversions,
+        metrics.cost_micros
+      FROM ad_group_ad
+      WHERE campaign.name = '${campaignName.replace(/'/g, "\\'")}'
+      ORDER BY metrics.impressions DESC
+      LIMIT 10
+    `;
+
+    const adResp = await fetch(
+      `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
+      { method: "POST", headers, body: JSON.stringify({ query: adQuery }) }
+    );
+
+    if (!adResp.ok) {
+      const errText = await adResp.text();
+      console.warn("Ad creatives fetch failed:", adResp.status, errText.slice(0, 300));
+      return null;
+    }
+
+    const rawData = await adResp.json();
+    let context = `\n\n[DETALHES DOS ANÚNCIOS DA CAMPANHA "${campaignName}"]\n`;
+
+    if (rawData && Array.isArray(rawData)) {
+      for (const batch of rawData) {
+        if (!batch.results) continue;
+        for (const row of batch.results) {
+          const ad = row.adGroupAd?.ad || {};
+          const adGroup = row.adGroup?.name || "Sem grupo";
+          const status = row.adGroupAd?.status || "UNKNOWN";
+          const m = row.metrics || {};
+          const adType = ad.type || "UNKNOWN";
+
+          context += `\n--- Anúncio (Grupo: ${adGroup}) [${status}] ---\n`;
+          context += `Tipo: ${adType}\n`;
+
+          if (ad.finalUrls?.length) {
+            context += `URL final: ${ad.finalUrls.join(", ")}\n`;
+          }
+
+          // Responsive Search Ad
+          const rsa = ad.responsiveSearchAd;
+          if (rsa) {
+            if (rsa.headlines?.length) {
+              context += `Títulos:\n`;
+              for (const h of rsa.headlines) {
+                context += `  - "${h.text}" ${h.pinnedField ? `(fixado: ${h.pinnedField})` : ""}\n`;
+              }
+            }
+            if (rsa.descriptions?.length) {
+              context += `Descrições:\n`;
+              for (const d of rsa.descriptions) {
+                context += `  - "${d.text}" ${d.pinnedField ? `(fixado: ${d.pinnedField})` : ""}\n`;
+              }
+            }
+          }
+
+          // Responsive Display Ad
+          const rda = ad.responsiveDisplayAd;
+          if (rda) {
+            if (rda.businessName) context += `Empresa: ${rda.businessName}\n`;
+            if (rda.longHeadline?.text) context += `Título longo: "${rda.longHeadline.text}"\n`;
+            if (rda.headlines?.length) {
+              context += `Títulos:\n`;
+              for (const h of rda.headlines) {
+                context += `  - "${h.text}"\n`;
+              }
+            }
+            if (rda.descriptions?.length) {
+              context += `Descrições:\n`;
+              for (const d of rda.descriptions) {
+                context += `  - "${d.text}"\n`;
+              }
+            }
+            if (rda.marketingImages?.length) {
+              context += `Imagens de marketing: ${rda.marketingImages.length} imagem(ns)\n`;
+            }
+            if (rda.squareMarketingImages?.length) {
+              context += `Imagens quadradas: ${rda.squareMarketingImages.length} imagem(ns)\n`;
+            }
+            if (rda.logoImages?.length) {
+              context += `Logos: ${rda.logoImages.length} logo(s)\n`;
+            }
+          }
+
+          context += `Métricas: ${Number(m.impressions || 0)} imp, ${Number(m.clicks || 0)} cli, CTR ${(Number(m.ctr || 0) * 100).toFixed(2)}%, ${Number(m.conversions || 0)} conv, Custo R$${(Number(m.costMicros || 0) / 1_000_000).toFixed(2)}\n`;
+        }
+      }
+    }
+
+    // Also fetch keywords
+    const kwQuery = `
+      SELECT
+        ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type,
+        ad_group_criterion.status,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.ctr,
+        metrics.conversions,
+        metrics.cost_micros
+      FROM keyword_view
+      WHERE campaign.name = '${campaignName.replace(/'/g, "\\'")}'
+      ORDER BY metrics.impressions DESC
+      LIMIT 15
+    `;
+
+    try {
+      const kwResp = await fetch(
+        `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
+        { method: "POST", headers, body: JSON.stringify({ query: kwQuery }) }
+      );
+
+      if (kwResp.ok) {
+        const kwData = await kwResp.json();
+        context += `\n[PALAVRAS-CHAVE]\n`;
+        if (kwData && Array.isArray(kwData)) {
+          for (const batch of kwData) {
+            if (!batch.results) continue;
+            for (const row of batch.results) {
+              const kw = row.adGroupCriterion?.keyword || {};
+              const m = row.metrics || {};
+              context += `- "${kw.text}" [${kw.matchType}] ${row.adGroupCriterion?.status}: ${Number(m.impressions || 0)} imp, ${Number(m.clicks || 0)} cli, CTR ${(Number(m.ctr || 0) * 100).toFixed(2)}%, ${Number(m.conversions || 0)} conv\n`;
+            }
+          }
+        }
+      }
+    } catch { /* keywords are optional */ }
 
     return context;
   } catch (err) {
-    console.warn("Error fetching Google Ads for chat context:", err);
+    console.warn("Error fetching campaign creatives:", err);
     return null;
   }
 }
@@ -199,7 +329,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, googleAdsCustomerId } = await req.json();
+    const { messages, googleAdsCustomerId, selectedCampaign } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -208,27 +338,46 @@ serve(async (req) => {
     let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads e marketing digital.
 
 REGRAS CRÍTICAS DE RESPOSTA:
-1) NUNCA liste métricas, números ou dados de campanhas no texto. Os dados já são exibidos visualmente no dashboard ao lado. Repetir números no texto é redundante.
-2) Seja CURTA e CONVERSACIONAL — máximo 2-3 frases.
+1) NUNCA liste métricas numéricas brutas no texto — os dados já estão no dashboard visual.
+2) Seja CONVERSACIONAL — máximo 3-4 frases curtas, a menos que esteja analisando uma campanha selecionada.
 3) Responda SEMPRE no mesmo idioma que o usuário usar.
-4) Quando o usuário pedir campanhas/métricas, NÃO repita os dados. Em vez disso, diga que os dados estão no dashboard e faça PERGUNTAS de acompanhamento como:
-   - "Qual campanha você quer analisar mais a fundo?"
-   - "Quer que eu compare o desempenho entre duas campanhas?"
-   - "Deseja personalizar o período de análise?"
-   - "Quer sugestões de otimização para alguma campanha específica?"
-   - "Posso analisar palavras-chave ou público-alvo de alguma delas?"
-5) Quando o usuário escolher uma campanha, dê insights e sugestões ACIONÁVEIS sem repetir os números que já estão visíveis.
-6) Foque em ser um CONSULTOR que guia o usuário, não um relatório de dados.`;
+4) Quando o usuário pedir campanhas/métricas SEM selecionar uma específica, diga que os dados estão no dashboard e faça perguntas como:
+   - "Qual campanha quer analisar?"
+   - "Quer personalizar o período?"
+   - "Posso comparar campanhas?"
+5) Foque em ser um CONSULTOR que guia o usuário.`;
 
+    // If a specific campaign is selected, fetch its creatives and do deep analysis
+    if (googleAdsCustomerId && selectedCampaign) {
+      console.log("Deep analysis requested for campaign:", selectedCampaign);
+      const creativesContext = await fetchCampaignCreatives(googleAdsCustomerId, selectedCampaign);
+      if (creativesContext) {
+        systemContent += `\n\nO usuário selecionou a campanha "${selectedCampaign}" para análise detalhada. Você tem acesso aos anúncios, títulos, descrições, palavras-chave e métricas desta campanha.
 
-    // If user is asking about campaigns and has a customer ID, fetch real data
-    if (googleAdsCustomerId && isCampaignQuestion(messages)) {
-      console.log("Campaign question detected, fetching Google Ads data for:", googleAdsCustomerId);
-      const adsContext = await fetchGoogleAdsMetrics(googleAdsCustomerId);
-      if (adsContext) {
-        systemContent += `\n\nVocê tem acesso aos dados REAIS do Google Ads do usuário. Os dados e métricas JÁ ESTÃO SENDO EXIBIDOS no dashboard visual. NÃO repita números. Apenas faça perguntas inteligentes e ofereça insights consultivos.${adsContext}`;
+INSTRUÇÕES PARA ANÁLISE:
+1) Dê uma ANÁLISE SINCERA e DETALHADA da campanha.
+2) PONTUE cada elemento de 1 a 10:
+   - Títulos: avalie relevância, clareza, call-to-action, uso de palavras-chave
+   - Descrições: avalie proposta de valor, urgência, diferencial
+   - Palavras-chave: avalie relevância, tipos de correspondência, cobertura
+   - URLs de destino: avalie se parecem adequadas
+   - Imagens (se houver): comente sobre quantidade e variedade
+3) Liste O QUE ESTÁ BOM ✅ e O QUE PODE MELHORAR ⚠️
+4) Dê SUGESTÕES ESPECÍFICAS e acionáveis para cada ponto fraco
+5) Termine com um resumo geral e nota da campanha
+6) Use formatação markdown com headers para organizar
+
+${creativesContext}`;
       } else {
-        systemContent += "\n\nO usuário tem uma conta Google Ads configurada mas não foi possível obter os dados no momento. Informe que houve um problema temporário ao acessar os dados.";
+        systemContent += `\n\nO usuário selecionou a campanha "${selectedCampaign}" mas não foi possível obter os detalhes dos anúncios. Dê sugestões gerais baseadas nas métricas visíveis no dashboard.`;
+      }
+    } else if (googleAdsCustomerId && isCampaignQuestion(messages)) {
+      console.log("Campaign question detected, fetching Google Ads data for:", googleAdsCustomerId);
+      const adsContext = await fetchCampaignData(googleAdsCustomerId);
+      if (adsContext) {
+        systemContent += `\n\nOs dados e métricas JÁ ESTÃO SENDO EXIBIDOS no dashboard visual. NÃO repita números. Apenas faça perguntas inteligentes e ofereça insights.${adsContext}`;
+      } else {
+        systemContent += "\n\nO usuário tem uma conta Google Ads configurada mas não foi possível obter os dados no momento. Informe que houve um problema temporário.";
       }
     }
 
