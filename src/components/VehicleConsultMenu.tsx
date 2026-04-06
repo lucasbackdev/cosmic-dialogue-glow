@@ -52,7 +52,7 @@ const VehicleConsultMenu = ({ plate, onConsult, loading }: VehicleConsultMenuPro
   const allSelected = selected.size === CONSULT_OPTIONS.length;
 
   return (
-    <div className="w-full rounded-xl bg-card/60 backdrop-blur-md border border-border/30 overflow-hidden">
+    <div className="w-full max-h-[calc(100vh-10rem)] rounded-xl border border-border/30 bg-card/60 backdrop-blur-md overflow-hidden flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-border/20">
         <div className="flex items-center justify-between">
@@ -76,7 +76,7 @@ const VehicleConsultMenu = ({ plate, onConsult, loading }: VehicleConsultMenuPro
       </div>
 
       {/* Options Grid */}
-      <div className="p-3 grid grid-cols-2 gap-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 grid grid-cols-2 gap-2 content-start">
         {CONSULT_OPTIONS.map((option) => {
           const isSelected = selected.has(option.key);
           return (
