@@ -24,7 +24,7 @@ const translations = {
     portuguese: "Português (BR)",
     english: "English",
     // Dashboard
-    dashboardTitle: "Dashboard — Últimos 30 dias",
+    dashboardTitle: "Dashboard — Todo o período",
     notConnected: "Conta Google Ads não conectada. Vá em Configurações na barra lateral e insira o ID da sua conta para ver dados reais.",
     impressions: "Impressões",
     clicks: "Cliques",
@@ -82,7 +82,7 @@ const translations = {
     portuguese: "Português (BR)",
     english: "English",
     // Dashboard
-    dashboardTitle: "Dashboard — Last 30 days",
+    dashboardTitle: "Dashboard — All time",
     notConnected: "Google Ads account not connected. Go to Settings in the sidebar and enter your account ID to see real data.",
     impressions: "Impressions",
     clicks: "Clicks",

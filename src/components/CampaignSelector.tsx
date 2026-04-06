@@ -49,7 +49,7 @@ const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelect
         </span>
       </div>
 
-      <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+      <div className="space-y-2">
         {campaigns.map((c, i) => {
           const status = statusConfig[c.status] || statusConfig.REMOVED;
           const isSelected = selectedIndex === i;
