@@ -97,13 +97,13 @@ const Index = () => {
   // Show menu when AI responded with the menu (plate detected, last assistant message contains "menu" or consultation options)
   const showVehicleMenu = useMemo(() => {
     if (!detectedPlate) return false;
-    // Check if last assistant message is the menu (contains consultation option keywords)
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
     if (!lastAssistant) return false;
     const lower = lastAssistant.content.toLowerCase();
-    return (lower.includes("dados básicos") || lower.includes("dados basicos")) && 
-           (lower.includes("fipe") || lower.includes("sinistro")) &&
-           (lower.includes("consulta") || lower.includes("menu"));
+    // Match the new short response OR the old menu format
+    return (lower.includes("selecione as consultas") || lower.includes("painel ao lado") ||
+           ((lower.includes("dados básicos") || lower.includes("dados basicos")) && 
+            (lower.includes("fipe") || lower.includes("sinistro"))));
   }, [messages, detectedPlate]);
 
 
