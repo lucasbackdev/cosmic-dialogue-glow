@@ -275,7 +275,7 @@ serve(async (req) => {
     // Default: fetch metrics
     let rawData;
     try {
-      rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId);
+      rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId, period);
     } catch (metricsErr: any) {
       console.warn("Metrics fetch failed (account may not be linked yet):", metricsErr.message);
       const emptySummary = { impressions: 0, clicks: 0, ctr: 0, averageCpc: 0, conversions: 0, totalCost: 0 };
