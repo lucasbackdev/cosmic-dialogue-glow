@@ -172,7 +172,7 @@ const Index = () => {
         checkCRMTrigger(assistantSoFar);
       }
 
-      if (assistantSoFar && "speechSynthesis" in window) {
+      if (assistantSoFar && sentViaVoiceRef.current && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         // Strip markdown formatting so TTS reads clean text
         const cleanText = assistantSoFar
