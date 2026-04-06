@@ -76,7 +76,7 @@ const Index = () => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
