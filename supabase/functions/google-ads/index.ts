@@ -241,7 +241,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customerId, action } = body;
+    const { customerId, action, period } = body;
 
     if (!customerId) {
       return new Response(
