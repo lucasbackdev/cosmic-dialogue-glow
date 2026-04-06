@@ -315,6 +315,8 @@ const Index = () => {
               campaigns={adsData.campaigns as Campaign[]}
               selectedIndex={selectedCampaignIndex}
               onSelect={(i) => setSelectedCampaignIndex(i)}
+              period={period}
+              onPeriodChange={changePeriod}
             />
           )}
           {showMetricsInChat && selectedCampaignIndex !== null && adsData?.campaigns?.[selectedCampaignIndex] && (
