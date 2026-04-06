@@ -19,11 +19,46 @@ const CAMPAIGN_KEYWORDS = [
 
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
+const VEHICLE_CONSULT_TYPES: Record<string, { keywords: string[]; label: string; price: string }> = {
+  basica: { keywords: ["básica", "basica", "dados básicos", "dados basicos", "informações básicas"], label: "📋 Dados Básicos", price: "R$ 0,25" },
+  fipe: { keywords: ["fipe", "preço", "preco", "valor", "tabela fipe", "quanto vale"], label: "💰 Preço FIPE", price: "R$ 0,79" },
+  sinistro: { keywords: ["sinistro", "perda total", "pt", "batida", "acidente"], label: "💥 Sinistro / Perda Total", price: "R$ 3,60" },
+  roubo: { keywords: ["roubo", "furto", "roubado", "furtado"], label: "🚨 Histórico Roubo e Furto", price: "R$ 5,52" },
+  leilao: { keywords: ["leilão", "leilao", "leiloado"], label: "🔨 Registro de Leilão", price: "R$ 13,52" },
+  gravame: { keywords: ["gravame", "financiamento", "alienação", "alienacao", "financiado"], label: "🏦 Gravame / Financiamento", price: "R$ 3,68" },
+  infracoes: { keywords: ["infração", "infracao", "multa", "multas", "débito", "debito", "renainf"], label: "📝 Infrações (RENAINF)", price: "R$ 3,60" },
+};
+
 function extractPlate(messages: { role: string; content: string }[]): string | null {
   const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
   if (!lastUserMsg) return null;
   const match = lastUserMsg.content.match(PLATE_REGEX);
   return match ? match[1].replace(/[-\s]/g, "").toUpperCase() : null;
+}
+
+function extractPlateFromHistory(messages: { role: string; content: string }[]): string | null {
+  for (const m of [...messages].reverse()) {
+    if (m.role === "user") {
+      const match = m.content.match(PLATE_REGEX);
+      if (match) return match[1].replace(/[-\s]/g, "").toUpperCase();
+    }
+  }
+  return null;
+}
+
+function detectConsultTypes(text: string): string[] {
+  const lower = text.toLowerCase();
+  // Check for "tudo" / "completa" / "todas" first
+  if (/(tudo|completa|todas|todos|relatório completo|relatorio completo)/.test(lower)) {
+    return Object.keys(VEHICLE_CONSULT_TYPES);
+  }
+  const detected: string[] = [];
+  for (const [key, info] of Object.entries(VEHICLE_CONSULT_TYPES)) {
+    if (info.keywords.some(kw => lower.includes(kw))) {
+      detected.push(key);
+    }
+  }
+  return detected;
 }
 
 function isCampaignQuestion(messages: { role: string; content: string }[]): boolean {
