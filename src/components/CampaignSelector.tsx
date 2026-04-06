@@ -1,5 +1,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BarChart3, Play, Pause, Trash2, MousePointerClick, Eye, DollarSign, TrendingUp } from "lucide-react";
+import { BarChart3, Play, Pause, Trash2, MousePointerClick, Eye, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import type { DatePeriod } from "@/hooks/useGoogleAds";
 
 export interface Campaign {
   name: string;
@@ -16,6 +17,8 @@ interface CampaignSelectorProps {
   campaigns: Campaign[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
+  period: DatePeriod;
+  onPeriodChange: (period: DatePeriod) => void;
 }
 
 const statusConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
@@ -24,7 +27,14 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; color
   REMOVED: { icon: <Trash2 className="w-3 h-3" />, label: "Removida", color: "text-red-400 bg-red-400/10 border-red-400/30" },
 };
 
-const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelectorProps) => {
+const periods: { value: DatePeriod; label: string }[] = [
+  { value: "7d", label: "7 dias" },
+  { value: "30d", label: "30 dias" },
+  { value: "90d", label: "90 dias" },
+  { value: "all", label: "Tudo" },
+];
+
+const CampaignSelector = ({ campaigns, selectedIndex, onSelect, period, onPeriodChange }: CampaignSelectorProps) => {
   const { language } = useLanguage();
 
   const fmt = (n: number) => {
@@ -39,14 +49,29 @@ const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelect
 
   return (
     <div className="w-full animate-[float-up_0.4s_ease-out_forwards]">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <BarChart3 className="w-4 h-4 text-primary" />
         <span className="text-xs font-semibold text-foreground">
           {language === "pt-BR" ? "Suas Campanhas" : "Your Campaigns"}
         </span>
-        <span className="text-[10px] text-muted-foreground ml-auto">
-          {language === "pt-BR" ? "Clique para analisar" : "Click to analyze"}
-        </span>
+      </div>
+
+      {/* Period selector */}
+      <div className="flex items-center gap-1.5 mb-3">
+        <Calendar className="w-3 h-3 text-muted-foreground" />
+        {periods.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => onPeriodChange(p.value)}
+            className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${
+              period === p.value
+                ? "bg-primary/20 border-primary/40 text-primary font-medium"
+                : "bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary/50"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
 
       <div className="space-y-2">
@@ -64,7 +89,6 @@ const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelect
                   : "bg-secondary/30 border-border/30 hover:bg-secondary/50 hover:border-border/50"
               }`}
             >
-              {/* Header */}
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-sm font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>
                   {c.name}
@@ -75,7 +99,6 @@ const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelect
                 </span>
               </div>
 
-              {/* Mini metrics */}
               <div className="grid grid-cols-4 gap-2">
                 <div className="flex items-center gap-1">
                   <Eye className="w-3 h-3 text-muted-foreground" />

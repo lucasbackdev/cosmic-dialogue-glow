@@ -26,13 +26,15 @@ interface GoogleAdsData {
   campaigns: GoogleAdsCampaign[];
 }
 
+export type DatePeriod = "7d" | "30d" | "90d" | "all";
+
 export function useGoogleAds(userId: string | undefined) {
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [data, setData] = useState<GoogleAdsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<DatePeriod>("30d");
 
-  // Load saved customer ID
   useEffect(() => {
     if (!userId) return;
     supabase
@@ -47,7 +49,6 @@ export function useGoogleAds(userId: string | undefined) {
       });
   }, [userId]);
 
-  // Save customer ID
   const saveCustomerId = useCallback(async (id: string) => {
     if (!userId) return;
     const cleanId = id.replace(/\s/g, "");
@@ -62,8 +63,7 @@ export function useGoogleAds(userId: string | undefined) {
     return { success: true, message: "Conta salva com sucesso! Buscando métricas..." };
   }, [userId]);
 
-  // Fetch metrics
-  const fetchMetrics = useCallback(async () => {
+  const fetchMetrics = useCallback(async (p?: DatePeriod) => {
     if (!customerId) return;
     setLoading(true);
     setError(null);
@@ -80,7 +80,7 @@ export function useGoogleAds(userId: string | undefined) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ customerId }),
+          body: JSON.stringify({ customerId, period: p || period }),
         }
       );
 
@@ -92,12 +92,16 @@ export function useGoogleAds(userId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, period]);
 
-  // Auto-fetch when customer ID is set
   useEffect(() => {
     if (customerId) fetchMetrics();
   }, [customerId, fetchMetrics]);
 
-  return { customerId, data, loading, error, saveCustomerId, fetchMetrics };
+  const changePeriod = useCallback((p: DatePeriod) => {
+    setPeriod(p);
+    fetchMetrics(p);
+  }, [fetchMetrics]);
+
+  return { customerId, data, loading, error, saveCustomerId, fetchMetrics, period, changePeriod };
 }
