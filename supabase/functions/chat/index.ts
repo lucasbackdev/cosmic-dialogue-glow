@@ -19,11 +19,46 @@ const CAMPAIGN_KEYWORDS = [
 
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
+const VEHICLE_CONSULT_TYPES: Record<string, { keywords: string[]; label: string; price: string }> = {
+  basica: { keywords: ["básica", "basica", "dados básicos", "dados basicos", "informações básicas"], label: "📋 Dados Básicos", price: "R$ 0,25" },
+  fipe: { keywords: ["fipe", "preço", "preco", "valor", "tabela fipe", "quanto vale"], label: "💰 Preço FIPE", price: "R$ 0,79" },
+  sinistro: { keywords: ["sinistro", "perda total", "pt", "batida", "acidente"], label: "💥 Sinistro / Perda Total", price: "R$ 3,60" },
+  roubo: { keywords: ["roubo", "furto", "roubado", "furtado"], label: "🚨 Histórico Roubo e Furto", price: "R$ 5,52" },
+  leilao: { keywords: ["leilão", "leilao", "leiloado"], label: "🔨 Registro de Leilão", price: "R$ 13,52" },
+  gravame: { keywords: ["gravame", "financiamento", "alienação", "alienacao", "financiado"], label: "🏦 Gravame / Financiamento", price: "R$ 3,68" },
+  infracoes: { keywords: ["infração", "infracao", "multa", "multas", "débito", "debito", "renainf"], label: "📝 Infrações (RENAINF)", price: "R$ 3,60" },
+};
+
 function extractPlate(messages: { role: string; content: string }[]): string | null {
   const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
   if (!lastUserMsg) return null;
   const match = lastUserMsg.content.match(PLATE_REGEX);
   return match ? match[1].replace(/[-\s]/g, "").toUpperCase() : null;
+}
+
+function extractPlateFromHistory(messages: { role: string; content: string }[]): string | null {
+  for (const m of [...messages].reverse()) {
+    if (m.role === "user") {
+      const match = m.content.match(PLATE_REGEX);
+      if (match) return match[1].replace(/[-\s]/g, "").toUpperCase();
+    }
+  }
+  return null;
+}
+
+function detectConsultTypes(text: string): string[] {
+  const lower = text.toLowerCase();
+  // Check for "tudo" / "completa" / "todas" first
+  if (/(tudo|completa|todas|todos|relatório completo|relatorio completo)/.test(lower)) {
+    return Object.keys(VEHICLE_CONSULT_TYPES);
+  }
+  const detected: string[] = [];
+  for (const [key, info] of Object.entries(VEHICLE_CONSULT_TYPES)) {
+    if (info.keywords.some(kw => lower.includes(kw))) {
+      detected.push(key);
+    }
+  }
+  return detected;
 }
 
 function isCampaignQuestion(messages: { role: string; content: string }[]): boolean {
@@ -33,46 +68,138 @@ function isCampaignQuestion(messages: { role: string; content: string }[]): bool
   return CAMPAIGN_KEYWORDS.some(kw => lower.includes(kw));
 }
 
-async function fetchVehicleData(placa: string): Promise<string | null> {
+async function fetchVehicleData(placa: string, tipos: string[]): Promise<string | null> {
   const email = Deno.env.get("CONSULTAR_PLACA_EMAIL");
   const apiKey = Deno.env.get("CONSULTAR_PLACA_API_KEY");
   if (!email || !apiKey) return null;
 
+  const basicAuth = btoa(`${email}:${apiKey}`);
+
+  const ENDPOINTS: Record<string, { path: string; label: string }> = {
+    basica: { path: "consultarPlaca", label: "Dados Básicos" },
+    fipe: { path: "consultarPrecoFipe", label: "Preço FIPE" },
+    sinistro: { path: "consultarSinistroComPerdaTotal", label: "Sinistro / Perda Total" },
+    roubo: { path: "consultarHistoricoRouboFurto", label: "Histórico Roubo e Furto" },
+    leilao: { path: "consultarRegistroLeilaoPrime", label: "Registro de Leilão" },
+    gravame: { path: "consultarGravame", label: "Gravame / Financiamento" },
+    infracoes: { path: "consultarRegistrosInfracoesRenainf", label: "Infrações (RENAINF)" },
+  };
+
   try {
-    const basicAuth = btoa(`${email}:${apiKey}`);
-    const resp = await fetch(
-      `https://api.consultarplaca.com.br/v2/consultarPlaca?placa=${placa}`,
-      { headers: { Authorization: `Basic ${basicAuth}` } }
-    );
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    if (data.status !== "ok") return null;
-
-    const d = data.dados?.informacoes_veiculo;
-    if (!d) return null;
-
-    const v = d.dados_veiculo || {};
-    const t = d.dados_tecnicos || {};
-    const c = d.dados_carga || {};
-
     let context = `\n\n[DADOS DO VEÍCULO - PLACA ${placa}]\n`;
-    context += `Marca: ${v.marca || "N/A"}\n`;
-    context += `Modelo: ${v.modelo || "N/A"}\n`;
-    context += `Ano Fabricação: ${v.ano_fabricacao || "N/A"}\n`;
-    context += `Ano Modelo: ${v.ano_modelo || "N/A"}\n`;
-    context += `Cor: ${v.cor || "N/A"}\n`;
-    context += `Combustível: ${v.combustivel || "N/A"}\n`;
-    context += `Segmento: ${v.segmento || "N/A"}\n`;
-    context += `Procedência: ${v.procedencia || "N/A"}\n`;
-    context += `Município: ${v.municipio || "N/A"} - ${v.uf_municipio || "N/A"}\n`;
-    context += `Chassi: ${v.chassi || "N/A"}\n`;
-    if (t.tipo_veiculo) context += `Tipo: ${t.tipo_veiculo}\n`;
-    if (t.sub_segmento) context += `Sub-segmento: ${t.sub_segmento}\n`;
-    if (t.potencia) context += `Potência: ${t.potencia} cv\n`;
-    if (t.cilindradas) context += `Cilindradas: ${t.cilindradas} cc\n`;
-    if (t.numero_motor) context += `Motor: ${t.numero_motor}\n`;
-    if (c.capacidade_passageiro) context += `Passageiros: ${c.capacidade_passageiro}\n`;
-    if (c.numero_eixos) context += `Eixos: ${c.numero_eixos}\n`;
+    const validTypes = tipos.filter(t => ENDPOINTS[t]);
+
+    const results = await Promise.all(
+      validTypes.map(async (tipo) => {
+        const ep = ENDPOINTS[tipo];
+        try {
+          const resp = await fetch(
+            `https://api.consultarplaca.com.br/v2/${ep.path}?placa=${placa}`,
+            { headers: { Authorization: `Basic ${basicAuth}` } }
+          );
+          const data = await resp.json();
+          return { tipo, label: ep.label, data, ok: resp.ok };
+        } catch (err) {
+          console.warn(`Error fetching ${tipo}:`, err);
+          return { tipo, label: ep.label, data: null, ok: false };
+        }
+      })
+    );
+
+    for (const r of results) {
+      context += `\n--- ${r.label} ---\n`;
+      if (!r.ok || !r.data || r.data.status !== "ok") {
+        const msg = r.data?.mensagem || "Dados indisponíveis";
+        const errorType = r.data?.tipo_do_erro || "";
+        if (errorType === "credito_insuficiente") {
+          context += `⚠️ CRÉDITOS INSUFICIENTES para esta consulta. O usuário precisa adicionar créditos em consultarplaca.com.br\n`;
+        } else {
+          context += `Indisponível: ${msg}\n`;
+        }
+        continue;
+      }
+
+      const d = r.data.dados;
+      if (r.tipo === "basica" && d?.informacoes_veiculo) {
+        const v = d.informacoes_veiculo.dados_veiculo || {};
+        const t = d.informacoes_veiculo.dados_tecnicos || {};
+        const c = d.informacoes_veiculo.dados_carga || {};
+        context += `Marca: ${v.marca || "N/A"}\nModelo: ${v.modelo || "N/A"}\n`;
+        context += `Ano Fabricação: ${v.ano_fabricacao || "N/A"}\nAno Modelo: ${v.ano_modelo || "N/A"}\n`;
+        context += `Cor: ${v.cor || "N/A"}\nCombustível: ${v.combustivel || "N/A"}\n`;
+        context += `Segmento: ${v.segmento || "N/A"}\nProcedência: ${v.procedencia || "N/A"}\n`;
+        context += `Município: ${v.municipio || "N/A"} - ${v.uf_municipio || "N/A"}\n`;
+        context += `Chassi: ${v.chassi || "N/A"}\n`;
+        if (v.renavam) context += `RENAVAM: ${v.renavam}\n`;
+        if (t.tipo_veiculo) context += `Tipo: ${t.tipo_veiculo}\n`;
+        if (t.sub_segmento) context += `Sub-segmento: ${t.sub_segmento}\n`;
+        if (t.potencia) context += `Potência: ${t.potencia} cv\n`;
+        if (t.cilindradas) context += `Cilindradas: ${t.cilindradas} cc\n`;
+        if (t.numero_motor) context += `Motor: ${t.numero_motor}\n`;
+        if (c.capacidade_passageiro) context += `Passageiros: ${c.capacidade_passageiro}\n`;
+      }
+
+      if (r.tipo === "fipe" && d?.informacoes_veiculo?.preco_fipe) {
+        const fipe = d.informacoes_veiculo.preco_fipe;
+        context += `Referência: ${fipe.referencia || "N/A"}\n`;
+        context += `Preço FIPE: ${fipe.preco || "N/A"}\n`;
+        if (fipe.codigo_fipe) context += `Código FIPE: ${fipe.codigo_fipe}\n`;
+      }
+
+      if (r.tipo === "sinistro" && d?.registro_sinistro_com_perda_total) {
+        const s = d.registro_sinistro_com_perda_total;
+        context += `Possui registro: ${s.possui_registro}\n`;
+        if (s.registro) context += `Detalhe: ${s.registro}\n`;
+      }
+
+      if (r.tipo === "roubo" && d?.historico_roubo_furto) {
+        const rf = d.historico_roubo_furto.registros_roubo_furto;
+        context += `Possui registro: ${rf?.possui_registro || "N/A"}\n`;
+        if (rf?.registros?.length) {
+          for (const reg of rf.registros) {
+            context += `  - ${reg.tipo_ocorrencia} em ${reg.data_boletim_ocorrencia} (${reg.uf_ocorrencia})\n`;
+          }
+        }
+      }
+
+      if (r.tipo === "leilao" && d?.informacoes_sobre_leilao) {
+        const l = d.informacoes_sobre_leilao;
+        context += `Possui registro: ${l.possui_registro}\n`;
+        if (l.registro_sobre_oferta) {
+          const ro = l.registro_sobre_oferta;
+          context += `Classificação: ${ro.classificacao || "N/A"}\n`;
+          if (ro.leiloes?.length) {
+            for (const lei of ro.leiloes) {
+              context += `  - Leilão: ${lei.leiloeiro || "N/A"} | Lote: ${lei.lote || "N/A"} | Data: ${lei.data_leilao || "N/A"}\n`;
+              context += `    Condição: ${lei.condicao_geral || "N/A"} | Comitente: ${lei.comitente || "N/A"}\n`;
+            }
+          }
+        }
+      }
+
+      if (r.tipo === "gravame" && d?.gravame) {
+        const g = d.gravame;
+        context += `Possui gravame: ${g.possui_gravame}\n`;
+        if (g.registro) {
+          context += `Situação: ${g.registro.situacao || "N/A"}\n`;
+          if (g.registro.agente_financeiro) {
+            context += `Financeira: ${g.registro.agente_financeiro.nome || "N/A"}\n`;
+          }
+          if (g.registro.data_registro) context += `Data: ${g.registro.data_registro}\n`;
+        }
+      }
+
+      if (r.tipo === "infracoes" && d?.registro_debitos_por_infracoes_renainf) {
+        const inf = d.registro_debitos_por_infracoes_renainf.infracoes_renainf;
+        context += `Possui infrações: ${inf?.possui_infracoes || "N/A"}\n`;
+        if (inf?.infracoes?.length) {
+          for (const i of inf.infracoes) {
+            const di = i.dados_infracao || {};
+            context += `  - ${di.infracao || "N/A"} | Valor: R$ ${di.valor_aplicado || "N/A"} | ${di.orgao_autuador || ""}\n`;
+          }
+        }
+      }
+    }
 
     return context;
   } catch (err) {
@@ -386,7 +513,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, googleAdsCustomerId, selectedCampaign } = await req.json();
+    const { messages, googleAdsCustomerId, selectedCampaign, vehicleConsultTypes } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -403,28 +530,67 @@ REGRAS CRÍTICAS DE RESPOSTA:
    - "Quer personalizar o período?"
    - "Posso comparar campanhas?"
 5) Foque em ser um CONSULTOR que guia o usuário.
-6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown. Dê uma análise do veículo incluindo:
-   - Resumo dos dados principais
-   - Estimativa de valor baseada no modelo/ano (se possível, sugira consultar a tabela FIPE)
-   - Dicas relevantes sobre o veículo
-   - Se o usuário perguntar sobre compra, dê dicas de verificação`;
+6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown com emojis.`;
 
-    // Check for vehicle plate in message
+    // Vehicle plate detection logic
     const detectedPlate = extractPlate(messages);
-    if (detectedPlate) {
-      console.log("Plate detected:", detectedPlate);
-      const vehicleData = await fetchVehicleData(detectedPlate);
+    const plateFromHistory = extractPlateFromHistory(messages);
+    const lastUserMsg = [...messages].reverse().find((m: {role:string}) => m.role === "user");
+    const lastUserText = lastUserMsg?.content || "";
+
+    // Check if user is responding with consultation type choices (plate was in previous messages)
+    const userConsultTypes = detectConsultTypes(lastUserText);
+    
+    // Explicit types passed from frontend (future use)
+    const explicitTypes: string[] = Array.isArray(vehicleConsultTypes) ? vehicleConsultTypes : [];
+
+    if (detectedPlate && (userConsultTypes.length > 0 || explicitTypes.length > 0)) {
+      // User mentioned a plate AND specified what they want → fetch data
+      const typesToFetch = explicitTypes.length > 0 ? explicitTypes : userConsultTypes;
+      console.log("Fetching vehicle data for plate:", detectedPlate, "types:", typesToFetch);
+      const vehicleData = await fetchVehicleData(detectedPlate, typesToFetch);
       if (vehicleData) {
-        systemContent += `\n\nO usuário consultou uma placa de veículo. Apresente os dados de forma organizada e bonita com emojis e markdown.
-Dê uma análise completa incluindo:
-- 🚗 Dados do veículo formatados
-- 💰 Sugestão de consultar tabela FIPE para valor
-- ⚠️ Dicas de verificação se for compra
-- 📊 Score geral do veículo baseado nos dados disponíveis (1-10)
+        systemContent += `\n\nO usuário consultou a placa ${detectedPlate} com as seguintes consultas: ${typesToFetch.join(", ")}.
+Apresente TODOS os dados de forma organizada e bonita com emojis e markdown.
+Para cada tipo de consulta, crie uma seção com header.
+Dê uma análise completa e um score geral (1-10) no final.
+Se alguma consulta retornou "créditos insuficientes", informe o usuário que precisa adicionar créditos em consultarplaca.com.br.
 ${vehicleData}`;
       } else {
         systemContent += `\n\nO usuário tentou consultar a placa "${detectedPlate}" mas não foi possível obter os dados. Informe que houve um problema e peça para verificar se a placa está correta.`;
       }
+    } else if (!detectedPlate && plateFromHistory && userConsultTypes.length > 0) {
+      // User is responding with choices, plate is in history
+      console.log("User choosing consult types for plate in history:", plateFromHistory, "types:", userConsultTypes);
+      const vehicleData = await fetchVehicleData(plateFromHistory, userConsultTypes);
+      if (vehicleData) {
+        systemContent += `\n\nO usuário escolheu consultar: ${userConsultTypes.join(", ")} para a placa ${plateFromHistory}.
+Apresente TODOS os dados de forma organizada e bonita com emojis e markdown.
+Para cada tipo de consulta, crie uma seção com header.
+Dê uma análise completa e um score geral (1-10) no final.
+Se alguma consulta retornou "créditos insuficientes", informe o usuário que precisa adicionar créditos em consultarplaca.com.br.
+${vehicleData}`;
+      } else {
+        systemContent += `\n\nNão foi possível obter os dados para a placa "${plateFromHistory}". Informe o problema ao usuário.`;
+      }
+    } else if (detectedPlate) {
+      // Plate detected but no consultation type → show menu
+      console.log("Plate detected, showing menu:", detectedPlate);
+      const menuItems = Object.entries(VEHICLE_CONSULT_TYPES)
+        .map(([key, info]) => `${info.label} — ${info.price} por consulta`)
+        .join("\n");
+      
+      systemContent += `\n\nO usuário mencionou a placa "${detectedPlate}". NÃO faça a consulta ainda!
+Em vez disso, apresente o MENU de opções de consulta abaixo e pergunte o que ele deseja consultar.
+Diga que ele pode escolher uma, várias, ou pedir "tudo" (consulta completa).
+
+MENU DE CONSULTAS DISPONÍVEIS:
+${menuItems}
+
+💡 Consulta completa (todas): ~R$ 30,96
+
+Apresente este menu de forma bonita com emojis e pergunte: "Qual consulta deseja fazer? Pode escolher uma, várias, ou pedir TUDO!"
+IMPORTANTE: NÃO consulte nada ainda, apenas mostre as opções.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
