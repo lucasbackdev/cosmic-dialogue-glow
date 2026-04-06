@@ -68,46 +68,138 @@ function isCampaignQuestion(messages: { role: string; content: string }[]): bool
   return CAMPAIGN_KEYWORDS.some(kw => lower.includes(kw));
 }
 
-async function fetchVehicleData(placa: string): Promise<string | null> {
+async function fetchVehicleData(placa: string, tipos: string[]): Promise<string | null> {
   const email = Deno.env.get("CONSULTAR_PLACA_EMAIL");
   const apiKey = Deno.env.get("CONSULTAR_PLACA_API_KEY");
   if (!email || !apiKey) return null;
 
+  const basicAuth = btoa(`${email}:${apiKey}`);
+
+  const ENDPOINTS: Record<string, { path: string; label: string }> = {
+    basica: { path: "consultarPlaca", label: "Dados Básicos" },
+    fipe: { path: "consultarPrecoFipe", label: "Preço FIPE" },
+    sinistro: { path: "consultarSinistroComPerdaTotal", label: "Sinistro / Perda Total" },
+    roubo: { path: "consultarHistoricoRouboFurto", label: "Histórico Roubo e Furto" },
+    leilao: { path: "consultarRegistroLeilaoPrime", label: "Registro de Leilão" },
+    gravame: { path: "consultarGravame", label: "Gravame / Financiamento" },
+    infracoes: { path: "consultarRegistrosInfracoesRenainf", label: "Infrações (RENAINF)" },
+  };
+
   try {
-    const basicAuth = btoa(`${email}:${apiKey}`);
-    const resp = await fetch(
-      `https://api.consultarplaca.com.br/v2/consultarPlaca?placa=${placa}`,
-      { headers: { Authorization: `Basic ${basicAuth}` } }
-    );
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    if (data.status !== "ok") return null;
-
-    const d = data.dados?.informacoes_veiculo;
-    if (!d) return null;
-
-    const v = d.dados_veiculo || {};
-    const t = d.dados_tecnicos || {};
-    const c = d.dados_carga || {};
-
     let context = `\n\n[DADOS DO VEÍCULO - PLACA ${placa}]\n`;
-    context += `Marca: ${v.marca || "N/A"}\n`;
-    context += `Modelo: ${v.modelo || "N/A"}\n`;
-    context += `Ano Fabricação: ${v.ano_fabricacao || "N/A"}\n`;
-    context += `Ano Modelo: ${v.ano_modelo || "N/A"}\n`;
-    context += `Cor: ${v.cor || "N/A"}\n`;
-    context += `Combustível: ${v.combustivel || "N/A"}\n`;
-    context += `Segmento: ${v.segmento || "N/A"}\n`;
-    context += `Procedência: ${v.procedencia || "N/A"}\n`;
-    context += `Município: ${v.municipio || "N/A"} - ${v.uf_municipio || "N/A"}\n`;
-    context += `Chassi: ${v.chassi || "N/A"}\n`;
-    if (t.tipo_veiculo) context += `Tipo: ${t.tipo_veiculo}\n`;
-    if (t.sub_segmento) context += `Sub-segmento: ${t.sub_segmento}\n`;
-    if (t.potencia) context += `Potência: ${t.potencia} cv\n`;
-    if (t.cilindradas) context += `Cilindradas: ${t.cilindradas} cc\n`;
-    if (t.numero_motor) context += `Motor: ${t.numero_motor}\n`;
-    if (c.capacidade_passageiro) context += `Passageiros: ${c.capacidade_passageiro}\n`;
-    if (c.numero_eixos) context += `Eixos: ${c.numero_eixos}\n`;
+    const validTypes = tipos.filter(t => ENDPOINTS[t]);
+
+    const results = await Promise.all(
+      validTypes.map(async (tipo) => {
+        const ep = ENDPOINTS[tipo];
+        try {
+          const resp = await fetch(
+            `https://api.consultarplaca.com.br/v2/${ep.path}?placa=${placa}`,
+            { headers: { Authorization: `Basic ${basicAuth}` } }
+          );
+          const data = await resp.json();
+          return { tipo, label: ep.label, data, ok: resp.ok };
+        } catch (err) {
+          console.warn(`Error fetching ${tipo}:`, err);
+          return { tipo, label: ep.label, data: null, ok: false };
+        }
+      })
+    );
+
+    for (const r of results) {
+      context += `\n--- ${r.label} ---\n`;
+      if (!r.ok || !r.data || r.data.status !== "ok") {
+        const msg = r.data?.mensagem || "Dados indisponíveis";
+        const errorType = r.data?.tipo_do_erro || "";
+        if (errorType === "credito_insuficiente") {
+          context += `⚠️ CRÉDITOS INSUFICIENTES para esta consulta. O usuário precisa adicionar créditos em consultarplaca.com.br\n`;
+        } else {
+          context += `Indisponível: ${msg}\n`;
+        }
+        continue;
+      }
+
+      const d = r.data.dados;
+      if (r.tipo === "basica" && d?.informacoes_veiculo) {
+        const v = d.informacoes_veiculo.dados_veiculo || {};
+        const t = d.informacoes_veiculo.dados_tecnicos || {};
+        const c = d.informacoes_veiculo.dados_carga || {};
+        context += `Marca: ${v.marca || "N/A"}\nModelo: ${v.modelo || "N/A"}\n`;
+        context += `Ano Fabricação: ${v.ano_fabricacao || "N/A"}\nAno Modelo: ${v.ano_modelo || "N/A"}\n`;
+        context += `Cor: ${v.cor || "N/A"}\nCombustível: ${v.combustivel || "N/A"}\n`;
+        context += `Segmento: ${v.segmento || "N/A"}\nProcedência: ${v.procedencia || "N/A"}\n`;
+        context += `Município: ${v.municipio || "N/A"} - ${v.uf_municipio || "N/A"}\n`;
+        context += `Chassi: ${v.chassi || "N/A"}\n`;
+        if (v.renavam) context += `RENAVAM: ${v.renavam}\n`;
+        if (t.tipo_veiculo) context += `Tipo: ${t.tipo_veiculo}\n`;
+        if (t.sub_segmento) context += `Sub-segmento: ${t.sub_segmento}\n`;
+        if (t.potencia) context += `Potência: ${t.potencia} cv\n`;
+        if (t.cilindradas) context += `Cilindradas: ${t.cilindradas} cc\n`;
+        if (t.numero_motor) context += `Motor: ${t.numero_motor}\n`;
+        if (c.capacidade_passageiro) context += `Passageiros: ${c.capacidade_passageiro}\n`;
+      }
+
+      if (r.tipo === "fipe" && d?.informacoes_veiculo?.preco_fipe) {
+        const fipe = d.informacoes_veiculo.preco_fipe;
+        context += `Referência: ${fipe.referencia || "N/A"}\n`;
+        context += `Preço FIPE: ${fipe.preco || "N/A"}\n`;
+        if (fipe.codigo_fipe) context += `Código FIPE: ${fipe.codigo_fipe}\n`;
+      }
+
+      if (r.tipo === "sinistro" && d?.registro_sinistro_com_perda_total) {
+        const s = d.registro_sinistro_com_perda_total;
+        context += `Possui registro: ${s.possui_registro}\n`;
+        if (s.registro) context += `Detalhe: ${s.registro}\n`;
+      }
+
+      if (r.tipo === "roubo" && d?.historico_roubo_furto) {
+        const rf = d.historico_roubo_furto.registros_roubo_furto;
+        context += `Possui registro: ${rf?.possui_registro || "N/A"}\n`;
+        if (rf?.registros?.length) {
+          for (const reg of rf.registros) {
+            context += `  - ${reg.tipo_ocorrencia} em ${reg.data_boletim_ocorrencia} (${reg.uf_ocorrencia})\n`;
+          }
+        }
+      }
+
+      if (r.tipo === "leilao" && d?.informacoes_sobre_leilao) {
+        const l = d.informacoes_sobre_leilao;
+        context += `Possui registro: ${l.possui_registro}\n`;
+        if (l.registro_sobre_oferta) {
+          const ro = l.registro_sobre_oferta;
+          context += `Classificação: ${ro.classificacao || "N/A"}\n`;
+          if (ro.leiloes?.length) {
+            for (const lei of ro.leiloes) {
+              context += `  - Leilão: ${lei.leiloeiro || "N/A"} | Lote: ${lei.lote || "N/A"} | Data: ${lei.data_leilao || "N/A"}\n`;
+              context += `    Condição: ${lei.condicao_geral || "N/A"} | Comitente: ${lei.comitente || "N/A"}\n`;
+            }
+          }
+        }
+      }
+
+      if (r.tipo === "gravame" && d?.gravame) {
+        const g = d.gravame;
+        context += `Possui gravame: ${g.possui_gravame}\n`;
+        if (g.registro) {
+          context += `Situação: ${g.registro.situacao || "N/A"}\n`;
+          if (g.registro.agente_financeiro) {
+            context += `Financeira: ${g.registro.agente_financeiro.nome || "N/A"}\n`;
+          }
+          if (g.registro.data_registro) context += `Data: ${g.registro.data_registro}\n`;
+        }
+      }
+
+      if (r.tipo === "infracoes" && d?.registro_debitos_por_infracoes_renainf) {
+        const inf = d.registro_debitos_por_infracoes_renainf.infracoes_renainf;
+        context += `Possui infrações: ${inf?.possui_infracoes || "N/A"}\n`;
+        if (inf?.infracoes?.length) {
+          for (const i of inf.infracoes) {
+            const di = i.dados_infracao || {};
+            context += `  - ${di.infracao || "N/A"} | Valor: R$ ${di.valor_aplicado || "N/A"} | ${di.orgao_autuador || ""}\n`;
+          }
+        }
+      }
+    }
 
     return context;
   } catch (err) {
