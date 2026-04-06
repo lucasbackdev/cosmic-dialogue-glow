@@ -246,6 +246,7 @@ const Index = () => {
     recognition.maxAlternatives = 1;
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
+      sentViaVoiceRef.current = true;
       sendMessage(transcript);
     };
     recognition.onerror = () => setState("idle");
