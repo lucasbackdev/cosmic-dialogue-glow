@@ -410,6 +410,13 @@ const Index = () => {
               connected={!!customerId && !!adsData?.summary}
             />
           )}
+          {showVehicleMenu && detectedPlate && (
+            <VehicleConsultMenu
+              plate={detectedPlate}
+              onConsult={handleVehicleConsult}
+              loading={vehicleLoading}
+            />
+          )}
         </div>
       )}
 
