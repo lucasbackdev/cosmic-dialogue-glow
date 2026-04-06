@@ -169,7 +169,7 @@ const Index = () => {
 
       if (assistantSoFar) {
         await finalizeAssistantMessage(convoId!, assistantSoFar);
-        checkCRMTrigger(assistantSoFar);
+        // Don't trigger CRM on assistant responses
       }
 
       if (assistantSoFar && sentViaVoiceRef.current && "speechSynthesis" in window) {
