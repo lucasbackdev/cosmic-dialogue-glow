@@ -394,7 +394,7 @@ const Index = () => {
                 window.speechSynthesis.cancel();
                 setState("idle");
               }}
-              className="shrink-0 p-2.5 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/80 transition-all animate-pulse"
+              className="shrink-0 p-2.5 rounded-full bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all animate-pulse"
               title="Parar de falar"
             >
               <Square className="w-5 h-5" />
