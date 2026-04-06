@@ -16,7 +16,7 @@ const SpeechRecognition =
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
-const CRM_KEYWORDS = ["campanha", "métrica", "métricas", "google ads", "cliques", "impressões", "ctr", "cpc", "conversões", "custo", "orçamento", "anúncio", "anúncios", "performance", "desempenho"];
+const CRM_KEYWORDS = ["campanha", "campanhas", "google ads", "impressões", "ctr", "cpc", "conversões", "orçamento", "anúncio", "anúncios"];
 
 const Index = () => {
   const { t } = useLanguage();
