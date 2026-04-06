@@ -513,7 +513,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, googleAdsCustomerId, selectedCampaign } = await req.json();
+    const { messages, googleAdsCustomerId, selectedCampaign, vehicleConsultTypes } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -530,28 +530,67 @@ REGRAS CRÍTICAS DE RESPOSTA:
    - "Quer personalizar o período?"
    - "Posso comparar campanhas?"
 5) Foque em ser um CONSULTOR que guia o usuário.
-6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown. Dê uma análise do veículo incluindo:
-   - Resumo dos dados principais
-   - Estimativa de valor baseada no modelo/ano (se possível, sugira consultar a tabela FIPE)
-   - Dicas relevantes sobre o veículo
-   - Se o usuário perguntar sobre compra, dê dicas de verificação`;
+6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown com emojis.`;
 
-    // Check for vehicle plate in message
+    // Vehicle plate detection logic
     const detectedPlate = extractPlate(messages);
-    if (detectedPlate) {
-      console.log("Plate detected:", detectedPlate);
-      const vehicleData = await fetchVehicleData(detectedPlate);
+    const plateFromHistory = extractPlateFromHistory(messages);
+    const lastUserMsg = [...messages].reverse().find((m: {role:string}) => m.role === "user");
+    const lastUserText = lastUserMsg?.content || "";
+
+    // Check if user is responding with consultation type choices (plate was in previous messages)
+    const userConsultTypes = detectConsultTypes(lastUserText);
+    
+    // Explicit types passed from frontend (future use)
+    const explicitTypes: string[] = Array.isArray(vehicleConsultTypes) ? vehicleConsultTypes : [];
+
+    if (detectedPlate && (userConsultTypes.length > 0 || explicitTypes.length > 0)) {
+      // User mentioned a plate AND specified what they want → fetch data
+      const typesToFetch = explicitTypes.length > 0 ? explicitTypes : userConsultTypes;
+      console.log("Fetching vehicle data for plate:", detectedPlate, "types:", typesToFetch);
+      const vehicleData = await fetchVehicleData(detectedPlate, typesToFetch);
       if (vehicleData) {
-        systemContent += `\n\nO usuário consultou uma placa de veículo. Apresente os dados de forma organizada e bonita com emojis e markdown.
-Dê uma análise completa incluindo:
-- 🚗 Dados do veículo formatados
-- 💰 Sugestão de consultar tabela FIPE para valor
-- ⚠️ Dicas de verificação se for compra
-- 📊 Score geral do veículo baseado nos dados disponíveis (1-10)
+        systemContent += `\n\nO usuário consultou a placa ${detectedPlate} com as seguintes consultas: ${typesToFetch.join(", ")}.
+Apresente TODOS os dados de forma organizada e bonita com emojis e markdown.
+Para cada tipo de consulta, crie uma seção com header.
+Dê uma análise completa e um score geral (1-10) no final.
+Se alguma consulta retornou "créditos insuficientes", informe o usuário que precisa adicionar créditos em consultarplaca.com.br.
 ${vehicleData}`;
       } else {
         systemContent += `\n\nO usuário tentou consultar a placa "${detectedPlate}" mas não foi possível obter os dados. Informe que houve um problema e peça para verificar se a placa está correta.`;
       }
+    } else if (!detectedPlate && plateFromHistory && userConsultTypes.length > 0) {
+      // User is responding with choices, plate is in history
+      console.log("User choosing consult types for plate in history:", plateFromHistory, "types:", userConsultTypes);
+      const vehicleData = await fetchVehicleData(plateFromHistory, userConsultTypes);
+      if (vehicleData) {
+        systemContent += `\n\nO usuário escolheu consultar: ${userConsultTypes.join(", ")} para a placa ${plateFromHistory}.
+Apresente TODOS os dados de forma organizada e bonita com emojis e markdown.
+Para cada tipo de consulta, crie uma seção com header.
+Dê uma análise completa e um score geral (1-10) no final.
+Se alguma consulta retornou "créditos insuficientes", informe o usuário que precisa adicionar créditos em consultarplaca.com.br.
+${vehicleData}`;
+      } else {
+        systemContent += `\n\nNão foi possível obter os dados para a placa "${plateFromHistory}". Informe o problema ao usuário.`;
+      }
+    } else if (detectedPlate) {
+      // Plate detected but no consultation type → show menu
+      console.log("Plate detected, showing menu:", detectedPlate);
+      const menuItems = Object.entries(VEHICLE_CONSULT_TYPES)
+        .map(([key, info]) => `${info.label} — ${info.price} por consulta`)
+        .join("\n");
+      
+      systemContent += `\n\nO usuário mencionou a placa "${detectedPlate}". NÃO faça a consulta ainda!
+Em vez disso, apresente o MENU de opções de consulta abaixo e pergunte o que ele deseja consultar.
+Diga que ele pode escolher uma, várias, ou pedir "tudo" (consulta completa).
+
+MENU DE CONSULTAS DISPONÍVEIS:
+${menuItems}
+
+💡 Consulta completa (todas): ~R$ 30,96
+
+Apresente este menu de forma bonita com emojis e pergunte: "Qual consulta deseja fazer? Pode escolher uma, várias, ou pedir TUDO!"
+IMPORTANTE: NÃO consulte nada ainda, apenas mostre as opções.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
