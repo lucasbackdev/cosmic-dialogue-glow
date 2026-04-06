@@ -106,22 +106,6 @@ const Index = () => {
            (lower.includes("consulta") || lower.includes("menu"));
   }, [messages, detectedPlate]);
 
-  const handleVehicleConsult = useCallback(async (types: string[]) => {
-    if (!detectedPlate || types.length === 0) return;
-    setVehicleLoading(true);
-    const typeLabels: Record<string, string> = {
-      basica: "dados básicos", fipe: "preço FIPE", sinistro: "sinistro",
-      roubo: "roubo e furto", leilao: "leilão", gravame: "gravame", infracoes: "infrações"
-    };
-    const labelList = types.map(t => typeLabels[t] || t).join(", ");
-    const allTypes = types.length === 7;
-    const text = allTypes 
-      ? `Quero consulta completa (tudo) da placa ${detectedPlate}`
-      : `Quero consultar ${labelList} da placa ${detectedPlate}`;
-    await sendMessage(text);
-    setPendingPlate(null);
-    setVehicleLoading(false);
-  }, [detectedPlate, sendMessage]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
