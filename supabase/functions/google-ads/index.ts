@@ -136,15 +136,26 @@ async function sendLinkInvitation(
   return data;
 }
 
+function getPeriodClause(period?: string): string {
+  switch (period) {
+    case "7d": return "WHERE segments.date DURING LAST_7_DAYS";
+    case "30d": return "WHERE segments.date DURING LAST_30_DAYS";
+    case "90d": return "WHERE segments.date DURING LAST_90_DAYS" ;
+    case "all": return "";
+    default: return "WHERE segments.date DURING LAST_30_DAYS";
+  }
+}
+
 async function fetchCampaignMetrics(
   accessToken: string,
   developerToken: string,
   mccId: string,
-  customerId: string
+  customerId: string,
+  period?: string
 ) {
   const cleanId = customerId.replace(/-/g, "");
-  const cleanMccId = mccId.replace(/-/g, "");
 
+  const periodClause = getPeriodClause(period);
   const query = `
     SELECT
       campaign.name,
@@ -156,6 +167,7 @@ async function fetchCampaignMetrics(
       metrics.conversions,
       metrics.cost_micros
     FROM campaign
+    ${periodClause}
     ORDER BY metrics.impressions DESC
     LIMIT 20
   `;
