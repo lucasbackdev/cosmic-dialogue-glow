@@ -48,6 +48,7 @@ const Index = () => {
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const sentViaVoiceRef = useRef(false);
 
   // Preload voices
   useEffect(() => {
