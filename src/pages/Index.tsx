@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import CampaignMetricsInline from "@/components/CampaignMetricsInline";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
+import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
