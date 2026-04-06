@@ -274,6 +274,7 @@ const Index = () => {
     setVehicleLoading(false);
   }, [detectedPlate, sendMessage]);
 
+  const handleOrbClick = useCallback(() => {
     if (state === "speaking") return;
     if (state === "listening") {
       recognitionRef.current?.stop();
