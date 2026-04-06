@@ -9,7 +9,7 @@ import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
-import { Send, Eye, EyeOff, Mic, Square } from "lucide-react";
+import { Send, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -38,6 +38,7 @@ const Index = () => {
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [showInput, setShowInput] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState<number | null>(null);
@@ -47,6 +48,7 @@ const Index = () => {
   const recognitionRef = useRef<any>(null);
   const abortRef = useRef<AbortController | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const sentViaVoiceRef = useRef(false);
 
   // Preload voices
   useEffect(() => {
@@ -170,7 +172,7 @@ const Index = () => {
         checkCRMTrigger(assistantSoFar);
       }
 
-      if (assistantSoFar && "speechSynthesis" in window) {
+      if (assistantSoFar && sentViaVoiceRef.current && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         // Strip markdown formatting so TTS reads clean text
         const cleanText = assistantSoFar
@@ -244,6 +246,7 @@ const Index = () => {
     recognition.maxAlternatives = 1;
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
+      sentViaVoiceRef.current = true;
       sendMessage(transcript);
     };
     recognition.onerror = () => setState("idle");
@@ -268,6 +271,7 @@ const Index = () => {
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!textInput.trim() || state === "speaking") return;
+    sentViaVoiceRef.current = false;
     sendMessage(textInput.trim());
     setTextInput("");
   };
@@ -292,14 +296,23 @@ const Index = () => {
         }}
       />
 
-      {/* Toggle chat visibility */}
-      <button
-        onClick={() => setShowChat(!showChat)}
-        className="fixed top-4 right-4 z-30 p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-        title={showChat ? t("hideChat") : t("showChat")}
-      >
-        {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-      </button>
+      {/* Toggle buttons */}
+      <div className="fixed top-4 right-4 z-30 flex gap-2">
+        <button
+          onClick={() => setShowInput(!showInput)}
+          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+          title={showInput ? "Ocultar campo de texto" : "Mostrar campo de texto"}
+        >
+          <Keyboard className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+          title={showChat ? t("hideChat") : t("showChat")}
+        >
+          {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
 
       {/* AI messages - left side */}
       {showChat && (
@@ -371,50 +384,52 @@ const Index = () => {
       <StarOrb state={state} onClick={handleOrbClick} audioLevel={audioLevel} />
 
       {/* Text input */}
-      <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
-        <div className="relative flex items-center gap-2">
-          <Input
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder={state === "listening" ? "Ouvindo..." : t("typeQuestion")}
-            className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
-            disabled={state === "speaking" || state === "listening"}
-          />
-          <button
-            type="submit"
-            disabled={!textInput.trim() || state === "speaking" || state === "listening"}
-            className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-          {state === "speaking" ? (
+      {showInput && (
+        <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
+          <div className="relative flex items-center gap-2">
+            <Input
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder={state === "listening" ? "Ouvindo..." : t("typeQuestion")}
+              className="pr-10 bg-card/40 backdrop-blur-md border-border/50 text-foreground placeholder:text-muted-foreground"
+              disabled={state === "speaking" || state === "listening"}
+            />
             <button
-              type="button"
-              onClick={() => {
-                window.speechSynthesis.cancel();
-                setState("idle");
-              }}
-              className="shrink-0 p-2.5 rounded-full bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all animate-pulse"
-              title="Parar de falar"
+              type="submit"
+              disabled={!textInput.trim() || state === "speaking" || state === "listening"}
+              className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
             >
-              <Square className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </button>
-          ) : (
-            <button
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); handleOrbClick(); }}
-              className={`shrink-0 p-2.5 rounded-full transition-all ${
-                state === "listening"
-                  ? "bg-primary text-primary-foreground animate-pulse"
-                  : "bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60"
-              }`}
-              title="Segurar espaço para falar"
-            >
-              <Mic className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-      </form>
+            {state === "speaking" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  window.speechSynthesis.cancel();
+                  setState("idle");
+                }}
+                className="shrink-0 p-2.5 rounded-full bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60 transition-all animate-pulse"
+                title="Parar de falar"
+              >
+                <Square className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); handleOrbClick(); }}
+                className={`shrink-0 p-2.5 rounded-full transition-all ${
+                  state === "listening"
+                    ? "bg-primary text-primary-foreground animate-pulse"
+                    : "bg-card/40 backdrop-blur-md border border-border/50 text-muted-foreground hover:text-foreground hover:bg-card/60"
+                }`}
+                title="Segurar espaço para falar"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
       {/* Title */}
       <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
