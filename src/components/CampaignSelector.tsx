@@ -49,7 +49,7 @@ const CampaignSelector = ({ campaigns, selectedIndex, onSelect }: CampaignSelect
         </span>
       </div>
 
-      <div className="space-y-2">,
+      <div className="space-y-2">
         {campaigns.map((c, i) => {
           const status = statusConfig[c.status] || statusConfig.REMOVED;
           const isSelected = selectedIndex === i;
