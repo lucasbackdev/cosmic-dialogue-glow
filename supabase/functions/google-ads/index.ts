@@ -136,15 +136,26 @@ async function sendLinkInvitation(
   return data;
 }
 
+function getPeriodClause(period?: string): string {
+  switch (period) {
+    case "7d": return "WHERE segments.date DURING LAST_7_DAYS";
+    case "30d": return "WHERE segments.date DURING LAST_30_DAYS";
+    case "90d": return "WHERE segments.date DURING LAST_90_DAYS" ;
+    case "all": return "";
+    default: return "WHERE segments.date DURING LAST_30_DAYS";
+  }
+}
+
 async function fetchCampaignMetrics(
   accessToken: string,
   developerToken: string,
   mccId: string,
-  customerId: string
+  customerId: string,
+  period?: string
 ) {
   const cleanId = customerId.replace(/-/g, "");
-  const cleanMccId = mccId.replace(/-/g, "");
 
+  const periodClause = getPeriodClause(period);
   const query = `
     SELECT
       campaign.name,
@@ -156,6 +167,7 @@ async function fetchCampaignMetrics(
       metrics.conversions,
       metrics.cost_micros
     FROM campaign
+    ${periodClause}
     ORDER BY metrics.impressions DESC
     LIMIT 20
   `;
@@ -229,7 +241,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { customerId, action } = body;
+    const { customerId, action, period } = body;
 
     if (!customerId) {
       return new Response(
@@ -263,7 +275,7 @@ serve(async (req) => {
     // Default: fetch metrics
     let rawData;
     try {
-      rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId);
+      rawData = await fetchCampaignMetrics(accessToken, developerToken, mccId, customerId, period);
     } catch (metricsErr: any) {
       console.warn("Metrics fetch failed (account may not be linked yet):", metricsErr.message);
       const emptySummary = { impressions: 0, clicks: 0, ctr: 0, averageCpc: 0, conversions: 0, totalCost: 0 };

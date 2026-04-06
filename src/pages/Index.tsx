@@ -33,7 +33,7 @@ const Index = () => {
     deleteConversation,
   } = useConversations(user?.id);
 
-  const { customerId, data: adsData, saveCustomerId } = useGoogleAds(user?.id);
+  const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -76,7 +76,7 @@ const Index = () => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
@@ -103,7 +103,7 @@ const Index = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined }),
+        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined, selectedCampaign: selectedCampaignName || undefined }),
         signal: controller.signal,
       });
 
@@ -314,7 +314,15 @@ const Index = () => {
             <CampaignSelector
               campaigns={adsData.campaigns as Campaign[]}
               selectedIndex={selectedCampaignIndex}
-              onSelect={(i) => setSelectedCampaignIndex(i)}
+              onSelect={(i) => {
+                setSelectedCampaignIndex(i);
+                const campaign = (adsData!.campaigns as Campaign[])[i];
+                if (campaign) {
+                  sendMessage(`Analise a campanha "${campaign.name}" em detalhes`, campaign.name);
+                }
+              }}
+              period={period}
+              onPeriodChange={changePeriod}
             />
           )}
           {showMetricsInChat && selectedCampaignIndex !== null && adsData?.campaigns?.[selectedCampaignIndex] && (
