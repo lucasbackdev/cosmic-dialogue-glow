@@ -45,6 +45,8 @@ const Index = () => {
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState<number | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [pendingPlate, setPendingPlate] = useState<string | null>(null);
+  const [vehicleLoading, setVehicleLoading] = useState(false);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
