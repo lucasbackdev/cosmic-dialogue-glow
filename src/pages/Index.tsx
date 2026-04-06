@@ -103,7 +103,7 @@ const Index = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined }),
+        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined, selectedCampaign: selectedCampaignName || undefined }),
         signal: controller.signal,
       });
 
