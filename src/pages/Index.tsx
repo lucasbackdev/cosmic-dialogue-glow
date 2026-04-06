@@ -1,9 +1,10 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import CampaignMetricsInline from "@/components/CampaignMetricsInline";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
+import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -17,6 +18,7 @@ const SpeechRecognition =
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const CRM_KEYWORDS = ["campanha", "campanhas", "google ads", "impressões", "ctr", "cpc", "conversões", "orçamento", "anúncio", "anúncios"];
+const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
 const Index = () => {
   const { t } = useLanguage();
@@ -43,6 +45,8 @@ const Index = () => {
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState<number | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [pendingPlate, setPendingPlate] = useState<string | null>(null);
+  const [vehicleLoading, setVehicleLoading] = useState(false);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -77,6 +81,31 @@ const Index = () => {
       setShowMetricsInChat(true);
     }
   }, []);
+
+  // Detect plate in user messages to show visual menu
+  const detectedPlate = useMemo(() => {
+    // Find last user message with a plate
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        const match = messages[i].content.match(PLATE_REGEX);
+        if (match) return match[1].replace(/[-\s]/g, "").toUpperCase();
+      }
+    }
+    return null;
+  }, [messages]);
+
+  // Show menu when AI responded with the menu (plate detected, last assistant message contains "menu" or consultation options)
+  const showVehicleMenu = useMemo(() => {
+    if (!detectedPlate) return false;
+    // Check if last assistant message is the menu (contains consultation option keywords)
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return false;
+    const lower = lastAssistant.content.toLowerCase();
+    return (lower.includes("dados básicos") || lower.includes("dados basicos")) && 
+           (lower.includes("fipe") || lower.includes("sinistro")) &&
+           (lower.includes("consulta") || lower.includes("menu"));
+  }, [messages, detectedPlate]);
+
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
@@ -228,6 +257,23 @@ const Index = () => {
     }
   }, [messages, currentConversationId, createConversation, addMessage, updateLastAssistantMessage, finalizeAssistantMessage, checkCRMTrigger, adsData]);
 
+  const handleVehicleConsult = useCallback(async (types: string[]) => {
+    if (!detectedPlate || types.length === 0) return;
+    setVehicleLoading(true);
+    const typeLabels: Record<string, string> = {
+      basica: "dados básicos", fipe: "preço FIPE", sinistro: "sinistro",
+      roubo: "roubo e furto", leilao: "leilão", gravame: "gravame", infracoes: "infrações"
+    };
+    const labelList = types.map(t => typeLabels[t] || t).join(", ");
+    const allTypes = types.length === 7;
+    const text = allTypes 
+      ? `Quero consulta completa (tudo) da placa ${detectedPlate}`
+      : `Quero consultar ${labelList} da placa ${detectedPlate}`;
+    await sendMessage(text);
+    setPendingPlate(null);
+    setVehicleLoading(false);
+  }, [detectedPlate, sendMessage]);
+
   const handleOrbClick = useCallback(() => {
     if (state === "speaking") return;
     if (state === "listening") {
@@ -362,6 +408,13 @@ const Index = () => {
                 totalCost: 0,
               }}
               connected={!!customerId && !!adsData?.summary}
+            />
+          )}
+          {showVehicleMenu && detectedPlate && (
+            <VehicleConsultMenu
+              plate={detectedPlate}
+              onConsult={handleVehicleConsult}
+              loading={vehicleLoading}
             />
           )}
         </div>
