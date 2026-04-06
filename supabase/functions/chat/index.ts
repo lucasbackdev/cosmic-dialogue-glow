@@ -227,7 +227,7 @@ REGRAS CRÍTICAS DE RESPOSTA:
       console.log("Campaign question detected, fetching Google Ads data for:", googleAdsCustomerId);
       const adsContext = await fetchGoogleAdsMetrics(googleAdsCustomerId);
       if (adsContext) {
-        systemContent += `\n\nVocê tem acesso aos dados REAIS do Google Ads do usuário. Use esses dados para responder com precisão. Analise tendências, sugira otimizações e dê insights acionáveis baseados nos números reais.${adsContext}`;
+        systemContent += `\n\nVocê tem acesso aos dados REAIS do Google Ads do usuário. Os dados e métricas JÁ ESTÃO SENDO EXIBIDOS no dashboard visual. NÃO repita números. Apenas faça perguntas inteligentes e ofereça insights consultivos.${adsContext}`;
       } else {
         systemContent += "\n\nO usuário tem uma conta Google Ads configurada mas não foi possível obter os dados no momento. Informe que houve um problema temporário ao acessar os dados.";
       }
