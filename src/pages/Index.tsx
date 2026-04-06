@@ -33,7 +33,7 @@ const Index = () => {
     deleteConversation,
   } = useConversations(user?.id);
 
-  const { customerId, data: adsData, saveCustomerId } = useGoogleAds(user?.id);
+  const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);

@@ -53,7 +53,7 @@ const CRMPanel = ({ visible, userId }: CRMPanelProps) => {
           </div>
           <div className="flex gap-1">
             {customerId && (
-              <button onClick={fetchMetrics} disabled={loading} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={() => fetchMetrics()} disabled={loading} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
               </button>
             )}
