@@ -156,7 +156,6 @@ async function fetchCampaignMetrics(
       metrics.conversions,
       metrics.cost_micros
     FROM campaign
-    WHERE segments.date DURING LAST_30_DAYS
     ORDER BY metrics.impressions DESC
     LIMIT 20
   `;
