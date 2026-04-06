@@ -76,7 +76,7 @@ const VehicleConsultMenu = ({ plate, onConsult, loading }: VehicleConsultMenuPro
       </div>
 
       {/* Options Grid */}
-      <div className="p-3 grid grid-cols-2 gap-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 grid grid-cols-2 gap-2 content-start">
         {CONSULT_OPTIONS.map((option) => {
           const isSelected = selected.has(option.key);
           return (
