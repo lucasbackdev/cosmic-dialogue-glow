@@ -17,11 +17,68 @@ const CAMPAIGN_KEYWORDS = [
   "como estão", "relatório", "report", "análise", "analyze", "budget",
 ];
 
+const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
+
+function extractPlate(messages: { role: string; content: string }[]): string | null {
+  const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+  if (!lastUserMsg) return null;
+  const match = lastUserMsg.content.match(PLATE_REGEX);
+  return match ? match[1].replace(/[-\s]/g, "").toUpperCase() : null;
+}
+
 function isCampaignQuestion(messages: { role: string; content: string }[]): boolean {
   const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
   if (!lastUserMsg) return false;
   const lower = lastUserMsg.content.toLowerCase();
   return CAMPAIGN_KEYWORDS.some(kw => lower.includes(kw));
+}
+
+async function fetchVehicleData(placa: string): Promise<string | null> {
+  const email = Deno.env.get("CONSULTAR_PLACA_EMAIL");
+  const apiKey = Deno.env.get("CONSULTAR_PLACA_API_KEY");
+  if (!email || !apiKey) return null;
+
+  try {
+    const basicAuth = btoa(`${email}:${apiKey}`);
+    const resp = await fetch(
+      `https://api.consultarplaca.com.br/v2/consultarPlaca?placa=${placa}`,
+      { headers: { Authorization: `Basic ${basicAuth}` } }
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data.status !== "ok") return null;
+
+    const d = data.dados?.informacoes_veiculo;
+    if (!d) return null;
+
+    const v = d.dados_veiculo || {};
+    const t = d.dados_tecnicos || {};
+    const c = d.dados_carga || {};
+
+    let context = `\n\n[DADOS DO VEÍCULO - PLACA ${placa}]\n`;
+    context += `Marca: ${v.marca || "N/A"}\n`;
+    context += `Modelo: ${v.modelo || "N/A"}\n`;
+    context += `Ano Fabricação: ${v.ano_fabricacao || "N/A"}\n`;
+    context += `Ano Modelo: ${v.ano_modelo || "N/A"}\n`;
+    context += `Cor: ${v.cor || "N/A"}\n`;
+    context += `Combustível: ${v.combustivel || "N/A"}\n`;
+    context += `Segmento: ${v.segmento || "N/A"}\n`;
+    context += `Procedência: ${v.procedencia || "N/A"}\n`;
+    context += `Município: ${v.municipio || "N/A"} - ${v.uf_municipio || "N/A"}\n`;
+    context += `Chassi: ${v.chassi || "N/A"}\n`;
+    if (t.tipo_veiculo) context += `Tipo: ${t.tipo_veiculo}\n`;
+    if (t.sub_segmento) context += `Sub-segmento: ${t.sub_segmento}\n`;
+    if (t.potencia) context += `Potência: ${t.potencia} cv\n`;
+    if (t.cilindradas) context += `Cilindradas: ${t.cilindradas} cc\n`;
+    if (t.numero_motor) context += `Motor: ${t.numero_motor}\n`;
+    if (c.capacidade_passageiro) context += `Passageiros: ${c.capacidade_passageiro}\n`;
+    if (c.numero_eixos) context += `Eixos: ${c.numero_eixos}\n`;
+
+    return context;
+  } catch (err) {
+    console.warn("Error fetching vehicle data:", err);
+    return null;
+  }
 }
 
 async function getAccessToken(serviceAccountJson: string): Promise<string> {
@@ -335,17 +392,40 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads e marketing digital.
+    let systemContent = `Você é a Orion, uma assistente virtual especializada em Google Ads, marketing digital e consulta veicular.
 
 REGRAS CRÍTICAS DE RESPOSTA:
 1) NUNCA liste métricas numéricas brutas no texto — os dados já estão no dashboard visual.
-2) Seja CONVERSACIONAL — máximo 3-4 frases curtas, a menos que esteja analisando uma campanha selecionada.
+2) Seja CONVERSACIONAL — máximo 3-4 frases curtas, a menos que esteja analisando uma campanha selecionada ou dados de veículo.
 3) Responda SEMPRE no mesmo idioma que o usuário usar.
 4) Quando o usuário pedir campanhas/métricas SEM selecionar uma específica, diga que os dados estão no dashboard e faça perguntas como:
    - "Qual campanha quer analisar?"
    - "Quer personalizar o período?"
    - "Posso comparar campanhas?"
-5) Foque em ser um CONSULTOR que guia o usuário.`;
+5) Foque em ser um CONSULTOR que guia o usuário.
+6) Quando receber dados de veículo, apresente de forma organizada e bonita usando markdown. Dê uma análise do veículo incluindo:
+   - Resumo dos dados principais
+   - Estimativa de valor baseada no modelo/ano (se possível, sugira consultar a tabela FIPE)
+   - Dicas relevantes sobre o veículo
+   - Se o usuário perguntar sobre compra, dê dicas de verificação`;
+
+    // Check for vehicle plate in message
+    const detectedPlate = extractPlate(messages);
+    if (detectedPlate) {
+      console.log("Plate detected:", detectedPlate);
+      const vehicleData = await fetchVehicleData(detectedPlate);
+      if (vehicleData) {
+        systemContent += `\n\nO usuário consultou uma placa de veículo. Apresente os dados de forma organizada e bonita com emojis e markdown.
+Dê uma análise completa incluindo:
+- 🚗 Dados do veículo formatados
+- 💰 Sugestão de consultar tabela FIPE para valor
+- ⚠️ Dicas de verificação se for compra
+- 📊 Score geral do veículo baseado nos dados disponíveis (1-10)
+${vehicleData}`;
+      } else {
+        systemContent += `\n\nO usuário tentou consultar a placa "${detectedPlate}" mas não foi possível obter os dados. Informe que houve um problema e peça para verificar se a placa está correta.`;
+      }
+    }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
     if (googleAdsCustomerId && selectedCampaign) {
