@@ -38,6 +38,7 @@ const Index = () => {
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [showInput, setShowInput] = useState(true);
   const [textInput, setTextInput] = useState("");
   const [showMetricsInChat, setShowMetricsInChat] = useState(false);
   const [selectedCampaignIndex, setSelectedCampaignIndex] = useState<number | null>(null);
