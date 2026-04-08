@@ -616,15 +616,17 @@ Seja breve, máximo 2 frases.`;
       const serviceMatches = userQuery.match(/(?:serviço de|busca[mnr]? (?:por)?|precis[ao]m? de|procur[ao]m?|querem?)\s+(.+?)(?:\.|$|,|\s+(?:nos?|na|em|para))/i);
       const serviceKeyword = serviceMatches?.[1] || "";
       
-      // Build targeted search queries - freelance developers for apps/sites/automation (NOT job postings)
+      // Build targeted search queries - include freelance portals for real postings with dates
+      const freelancePortals = ["site:upwork.com", "site:freelancer.com", "site:workana.com", "site:fiverr.com", "site:99freelas.com.br", "site:toptal.com"];
+      
       if (serviceKeyword) {
-        searchQueries.push(`Brazilian business owner USA hiring freelance ${serviceKeyword} -jobs -vacancy -career`);
-        searchQueries.push(`empreendedor brasileiro exterior contratando freelancer ${serviceKeyword} -vaga -emprego`);
-        searchQueries.push(`Brazilian entrepreneur Europe Canada needs freelance ${serviceKeyword} for company`);
+        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} ${serviceKeyword} developer needed`);
+        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} ${serviceKeyword} freelancer`);
+        searchQueries.push(`Brazilian business owner hiring freelance ${serviceKeyword} build app website automation`);
       } else {
-        searchQueries.push(`Brazilian business owner USA hiring freelance developer build website app -jobs -vacancy`);
-        searchQueries.push(`empreendedor brasileiro exterior precisa freelancer desenvolver site aplicativo automação -vaga -emprego`);
-        searchQueries.push(`Brazilian entrepreneur looking freelance web developer build app automation 2026`);
+        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} web developer needed build website app 2025 2026`);
+        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} freelance developer app automation`);
+        searchQueries.push(`Brazilian entrepreneur hiring freelance developer build website app automation`);
       }
       
       // Also search for the raw user query
@@ -636,7 +638,7 @@ Seja breve, máximo 2 frases.`;
       if (firecrawlApiKey) {
         try {
           // Run searches in parallel
-          const searchPromises = searchQueries.slice(0, 3).map(async (q) => {
+          const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
             try {
               const resp = await fetch("https://api.firecrawl.dev/v1/search", {
                 method: "POST",
@@ -646,7 +648,7 @@ Seja breve, máximo 2 frases.`;
                 },
                 body: JSON.stringify({
                   query: q,
-                  limit: 5,
+                  limit: 8,
                   scrapeOptions: { formats: ["markdown"] },
                 }),
               });
@@ -672,8 +674,7 @@ Seja breve, máximo 2 frases.`;
               firecrawlContext += `Título: ${result.title || "N/A"}\n`;
               firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
               if (result.markdown) {
-                // Limit markdown to first 500 chars to save tokens
-                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 500)}\n`;
+                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 800)}\n`;
               }
             }
             console.log(`Firecrawl returned ${flatResults.length} real results`);
@@ -691,15 +692,17 @@ Seja breve, máximo 2 frases.`;
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
 
 ${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
-Extraia nomes de pessoas, empresas, websites e serviços a partir dos dados reais.
+Extraia nomes de pessoas, empresas, websites, datas de postagem e serviços a partir dos dados reais.
 NUNCA INVENTE dados que não estão nos resultados. Se não encontrar um dado (telefone, email, etc), deixe vazio "".
+Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Workana, 99Freelas, Fiverr, Toptal).
+Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
 ${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
-REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no exterior (EUA, Canadá, Europa).
-- Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
-- São empreendedores brasileiros que emigraram e abriram negócios fora do Brasil
-- NUNCA gere leads de outras nacionalidades. APENAS brasileiros.
-- IMPORTANTE: Busque empresas que PRECISAM CONTRATAR FREELANCERS para desenvolver site, aplicativo ou automação para a empresa deles. NÃO são vagas de emprego CLT/PJ. São empresas que querem CONTRATAR um freelancer dev.
+REGRA ABSOLUTA: Foque em leads REAIS de portais freelance e da web.
+- Priorize postagens de portais freelance (Upwork, Freelancer, Workana, 99Freelas, Fiverr, Toptal)
+- Extraia a DATA REAL em que a pessoa postou o projeto/pedido
+- Se encontrar brasileiros, destaque. Mas mostre QUALQUER lead real encontrado nos dados.
+- IMPORTANTE: São pessoas/empresas que PUBLICARAM projetos pedindo desenvolvedores freelancers.
 - Se ele especificar um serviço (ex: "desenvolvimento web"), mostre leads diretos desse nicho
 - Se ele NÃO especificar, mostre uma LISTA DE NICHOS para ele escolher
 
@@ -712,26 +715,26 @@ Se o usuário especificou o serviço, use este formato:
 {
   "leads": [
     {
-      "name": "Nome da empresa REAL encontrada nos dados. Se encontrar o nome do dono, coloque aqui.",
-      "company": "Nome da empresa REAL",
+      "name": "Nome da pessoa ou empresa REAL encontrada nos dados.",
+      "company": "Nome da empresa REAL (se disponível)",
       "country": "País (REAL, extraído dos dados)",
-      "city": "Cidade (REAL, extraída dos dados, senão vazio)",
+      "city": "Cidade (REAL, senão vazio)",
       "sector": "Nicho de atuação (REAL)",
-      "service_needed": "Serviço que a empresa claramente precisa baseado nos dados reais",
-      "website": "URL do site OFICIAL da empresa SOMENTE. NÃO coloque links de artigos, diretórios ou terceiros. Se não encontrar o site oficial da empresa, deixe vazio.",
+      "service_needed": "Serviço que a pessoa publicou que precisa (extraído da postagem real)",
+      "website": "URL do site OFICIAL da empresa. Se for link do portal freelance (upwork.com/job/xxx), use como source. Se não encontrar site oficial, deixe vazio.",
       "linkedin": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "instagram": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "whatsapp": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "phone": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "email": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "score": 9,
-      "search_query": "NÃO INVENTE. Coloque APENAS se os dados reais mostram o que a empresa buscou. Senão, deixe vazio.",
-      "search_query_pt": "Tradução APENAS se search_query existir, senão vazio",
-      "recent_activity": "APENAS atividade REAL encontrada nos dados (ex: 'Mencionado em artigo X em março 2026'). NÃO invente atividades.",
-      "problem": "Descrição detalhada do problema que a empresa/pessoa enfrenta",
-      "solution": "Como você pode resolver o problema dela com seu serviço",
-      "outreach_message": "Mensagem pronta para enviar no WhatsApp/email para esta pessoa",
-      "fair_price": "USD $3,000 - $8,000 (~R$ 15.000 - R$ 40.000) - SEMPRE coloque o valor na moeda local E conversão em reais"
+      "search_query": "O que a pessoa PUBLICOU/PEDIU no portal freelance. Ex: 'Need developer to build e-commerce website'. Extraia da postagem real.",
+      "search_query_pt": "Tradução para português do pedido",
+      "recent_activity": "Data e portal onde publicou. Ex: 'Publicado em Upwork em 05/04/2026'. REAL, extraído dos dados.",
+      "problem": "Descrição do que a pessoa precisa baseado na postagem real",
+      "solution": "Como você pode resolver com seu serviço de desenvolvimento",
+      "outreach_message": "Mensagem pronta para enviar",
+      "fair_price": "Orçamento que a pessoa indicou (se disponível) OU estimativa de mercado com moeda local + R$"
     }
   ],
   "strategies": [
@@ -758,17 +761,17 @@ Se o usuário NÃO especificou o serviço, use nichos:
 
 REGRAS ABSOLUTAS - NADA FICTÍCIO:
 1) TUDO deve vir dos dados reais do Firecrawl. Se não encontrou, NÃO inclua.
-2) NUNCA invente: nomes, empresas, contatos, pesquisas, atividades. NADA.
-3) website: SOMENTE o site oficial da empresa (ex: empresa.com). NUNCA links de artigos, listas, diretórios ou sites de terceiros.
-4) search_query: SOMENTE se os dados reais mostrarem o que a empresa pesquisou. Se não, deixe "".
-5) recent_activity: SOMENTE atividades reais documentadas nos dados. Se não encontrou, deixe "".
+2) NUNCA invente: nomes, empresas, contatos, pesquisas, atividades, datas. NADA.
+3) website: Site oficial da empresa OU link direto da postagem no portal freelance.
+4) search_query: O que a pessoa REALMENTE publicou/pediu. Extraia do conteúdo real.
+5) recent_activity: Data e fonte REAL da postagem (ex: "Publicado em Upwork em 03/2026"). NUNCA invente datas.
 6) Contatos (phone, email, whatsapp, linkedin, instagram): SOMENTE se encontrados nos dados reais. Senão "".
-7) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS. Qualidade > quantidade.
-8) problem e solution: baseie-se em dados reais sobre a empresa, não invente cenários.
-9) fair_price: valor NA MOEDA LOCAL + conversão em R$
-10) Score de 1-10 baseado no potencial real
+7) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS.
+8) problem e solution: baseie-se na postagem real da pessoa.
+9) fair_price: Se a postagem tem budget, mostre. Senão, estime com moeda local + R$.
+10) Score de 1-10 baseado no potencial real.
 11) APÓS o JSON, escreva APENAS 1 frase curta.
-12) Se não encontrar NENHUM lead real, diga honestamente que não encontrou e sugira termos de busca melhores.`;
+12) Se não encontrar NENHUM lead real, diga honestamente e sugira termos melhores.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
