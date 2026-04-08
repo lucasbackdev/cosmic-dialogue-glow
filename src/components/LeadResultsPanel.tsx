@@ -15,6 +15,7 @@ export interface LeadData {
   phone?: string;
   email?: string;
   search_query_pt?: string;
+  score: number;
   recent_activity?: string;
   search_query?: string;
   problem?: string;
