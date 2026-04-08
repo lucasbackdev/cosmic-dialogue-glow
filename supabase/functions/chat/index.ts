@@ -652,21 +652,11 @@ Seja breve, máximo 2 frases.`;
       const isNicheFollowUp = previousAiMsg?.content?.includes("[NICHE_SELECT]") || previousAiMsg?.content?.includes("Qual nicho") || previousAiMsg?.content?.includes("qual nicho") || previousAiMsg?.content?.includes("escolha") || previousAiMsg?.content?.includes("Escolha");
       
       if (!userHasNiche && !isNicheFollowUp) {
-        // User hasn't specified a niche yet → short response, frontend will show dashboard
         console.log("No niche specified - frontend will show niche dashboard");
-        systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS - PERGUNTAR NICHO PRIMEIRO]
-O usuário quer buscar leads mas NÃO especificou o nicho/setor.
-
-Responda com APENAS 1-2 frases curtas pedindo para ele escolher o nicho no painel ao lado.
-Exemplo: "Ótimo! Escolha o nicho que deseja prospectar no painel ao lado 🎯 Vou buscar leads REAIS de brasileiros no 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá e 🇪🇺 Europa!"
-
-REGRAS:
-1) NÃO faça busca no Firecrawl ainda
-2) NÃO gere leads ainda
-3) NÃO inclua [LEADS_JSON]
-4) Responda APENAS 1-2 frases curtas
-5) Mencione "painel ao lado" para o usuário saber onde clicar
-6) Pergunte também qual SERVIÇO o usuário quer oferecer para esse nicho (ex: criação de site, app, automação, tráfego pago, etc.)`;
+        systemContent += `\n\nO usuário quer buscar leads mas ainda não disse qual nicho.
+O painel de nichos já apareceu automaticamente do lado. Responda de forma natural e curta (1-2 frases), tipo:
+"Show! Dá uma olhada no painel ali do lado e escolhe o nicho que te interessa 🎯 E me conta — qual serviço você quer oferecer? Criação de site, app, automação...?"
+NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.`;
       } else {
         // User specified a niche OR is following up with a choice → SEARCH
         console.log("Niche detected or follow-up - searching Firecrawl");
