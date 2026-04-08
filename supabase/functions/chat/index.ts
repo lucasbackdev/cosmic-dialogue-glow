@@ -638,7 +638,7 @@ Seja breve, máximo 2 frases.`;
       if (firecrawlApiKey) {
         try {
           // Run searches in parallel
-          const searchPromises = searchQueries.slice(0, 3).map(async (q) => {
+          const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
             try {
               const resp = await fetch("https://api.firecrawl.dev/v1/search", {
                 method: "POST",
@@ -648,7 +648,7 @@ Seja breve, máximo 2 frases.`;
                 },
                 body: JSON.stringify({
                   query: q,
-                  limit: 5,
+                  limit: 8,
                   scrapeOptions: { formats: ["markdown"] },
                 }),
               });
