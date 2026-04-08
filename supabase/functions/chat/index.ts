@@ -675,11 +675,12 @@ REGRAS:
 1) Gere pelo menos 5-10 leads realistas por nicho baseados em tendências reais do mercado
 2) Organize por score (maior primeiro) e atividade mais recente
 3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email) - mesmo que estimados com base no perfil
-4) OBRIGATÓRIO: search_query deve mostrar EXATAMENTE o que a pessoa pesquisou no Google
-5) OBRIGATÓRIO: problem deve descrever o problema real que a empresa enfrenta
-6) OBRIGATÓRIO: solution deve mostrar como resolver com o serviço oferecido
-7) OBRIGATÓRIO: outreach_message deve ser uma mensagem pronta, personalizada, profissional para copiar e enviar
-8) OBRIGATÓRIO: fair_price deve dar uma faixa de preço justa baseada no mercado atual
+4) OBRIGATÓRIO: search_query deve mostrar EXATAMENTE o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL dela
+5) OBRIGATÓRIO: search_query_pt deve ser a TRADUÇÃO para português da pesquisa
+6) OBRIGATÓRIO: problem deve descrever o problema real que a empresa enfrenta
+7) OBRIGATÓRIO: solution deve mostrar como resolver com o serviço oferecido
+8) OBRIGATÓRIO: outreach_message deve ser uma mensagem pronta, personalizada, profissional para copiar e enviar
+9) OBRIGATÓRIO: fair_price deve ter o valor NA MOEDA LOCAL do país do lead (USD, EUR, CAD) E a conversão em reais (R$)
 9) recent_activity deve ter data estimada (mais recente possível) e o que buscou
 10) Score de 1-10 baseado no potencial e urgência
 11) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
