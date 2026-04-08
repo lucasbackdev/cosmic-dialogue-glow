@@ -437,6 +437,12 @@ const Index = () => {
               loading={vehicleLoading}
             />
           )}
+          {parsedLeads && (
+            <LeadResultsPanel
+              leads={parsedLeads.leads}
+              strategies={parsedLeads.strategies}
+            />
+          )}
         </div>
       )}
 
