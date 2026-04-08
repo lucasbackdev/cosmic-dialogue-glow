@@ -672,13 +672,17 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
         
         const searchQueries: string[] = [];
         const nicheText = lastUserText;
-        const serviceText = serviceContext || "desenvolvimento web aplicativo automação";
+        const serviceText = serviceContext || "website app development automation";
         
-        // 4 focused queries without scrapeOptions to stay fast
-        searchQueries.push(`brasileiro ${nicheText} precisa ${serviceText} freelancer site:upwork.com OR site:workana.com OR site:99freelas.com.br`);
-        searchQueries.push(`Brazilian ${nicheText} needs ${serviceText} freelancer site:freelancer.com OR site:fiverr.com OR site:toptal.com`);
-        searchQueries.push(`empreendedor brasileiro ${nicheText} exterior EUA Canadá Europa precisa ${serviceText}`);
-        searchQueries.push(`${nicheText} ${serviceText} hire developer freelance Brazil Portuguese`);
+        // 4 queries — each focused on a DIFFERENT region for maximum coverage
+        // Query 1: Brazilian entrepreneurs in USA needing services
+        searchQueries.push(`Brazilian entrepreneur ${nicheText} USA needs ${serviceText} site:upwork.com OR site:freelancer.com`);
+        // Query 2: Brazilian entrepreneurs in Canada & Europe
+        searchQueries.push(`Brazilian ${nicheText} Canada Europe needs ${serviceText} site:workana.com OR site:fiverr.com OR site:toptal.com`);
+        // Query 3: Brasileiros no exterior buscando serviços
+        searchQueries.push(`brasileiro ${nicheText} Estados Unidos Canadá Europa precisa ${serviceText} freelancer desenvolvedor`);
+        // Query 4: Brazil-based businesses needing the service
+        searchQueries.push(`${nicheText} Brasil precisa ${serviceText} freelancer site:99freelas.com.br OR site:workana.com OR site:upwork.com`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
@@ -695,7 +699,7 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
                   },
                   body: JSON.stringify({
                     query: q,
-                    limit: 5,
+                    limit: 8,
                   }),
                 });
                 if (resp.ok) {
@@ -750,12 +754,15 @@ Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Worka
 Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
 ${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
-REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS.
-- Busque em TODAS as regiões: Brasil, Estados Unidos, Canadá e Europa
-- Mas os leads devem ser de BRASILEIROS (nomes brasileiros, empresas de brasileiros)
-- Priorize postagens de portais freelance com DATA REAL de publicação
-- São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado
-- Organize por região: 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá, 🇪🇺 Europa
+REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS (ou empresas de brasileiros).
+DISTRIBUIÇÃO REGIONAL OBRIGATÓRIA — mostre leads de TODAS as 4 regiões:
+- 🇧🇷 Brasil (brasileiros no Brasil)
+- 🇺🇸 EUA (brasileiros com empresas nos Estados Unidos)
+- 🇨🇦 Canadá (brasileiros com empresas no Canadá)
+- 🇪🇺 Europa (brasileiros com empresas na Europa)
+NÃO foque apenas no Brasil. Distribua leads entre as 4 regiões.
+Priorize postagens de portais freelance com DATA REAL de publicação.
+São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado.
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
 Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
