@@ -25,6 +25,10 @@ const LEAD_KEYWORDS = [
   "desenvolvimento de aplicativo", "app developer", "web developer",
   "buscar clientes", "encontrar empresas", "prospectar clientes",
   "empreendedores brasileiros", "brasileiros no exterior",
+  "empresas que buscam", "pessoas que buscam", "quem precisa de",
+  "serviço de", "mostre empresas", "mostre pessoas", "nicho", "nichos",
+  "clientes potenciais", "marketing digital", "design", "consultoria",
+  "contabilidade", "advocacia", "freelancer", "agência",
 ];
 
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
@@ -604,47 +608,83 @@ Seja breve, máximo 2 frases.`;
     if (isLeadProspectingQuestion(messages)) {
       console.log("Lead prospecting question detected");
       systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO]
-Você agora é uma ESPECIALISTA em prospecção de leads B2B focada em brasileiros com empresas no exterior (EUA, Canadá, Europa).
+Você agora é uma ESPECIALISTA em prospecção de leads B2B.
+
+ANALISE o prompt do usuário:
+- Se ele especificar um serviço (ex: "desenvolvimento web"), mostre leads diretos desse nicho
+- Se ele NÃO especificar, mostre uma LISTA DE NICHOS para ele escolher
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
-Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON] com os dados estruturados.
+Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
 Depois do bloco JSON, escreva uma análise conversacional curta (2-3 frases).
 
-Formato do JSON:
+Se o usuário especificou o serviço, use este formato:
 [LEADS_JSON]
 {
   "leads": [
     {
       "name": "Nome da pessoa ou empresa",
-      "company": "Nome da empresa (se diferente)",
-      "country": "EUA/Canadá/Europa",
+      "company": "Nome da empresa",
+      "country": "País",
       "city": "Cidade",
       "sector": "Nicho de atuação",
-      "service_needed": "Tráfego pago / Dev web / App",
+      "service_needed": "Serviço que busca",
       "website": "https://...",
-      "linkedin": "https://linkedin.com/...",
+      "linkedin": "https://linkedin.com/in/...",
       "instagram": "https://instagram.com/...",
-      "score": 8,
-      "recent_activity": "Março 2026 - buscou por Google Ads agency"
+      "whatsapp": "+1 (555) 123-4567",
+      "phone": "+1 (555) 123-4567",
+      "email": "contato@empresa.com",
+      "score": 9,
+      "search_query": "O que a pessoa pesquisou no Google (ex: 'web developer for small business near me')",
+      "recent_activity": "Abril 2026 - pesquisou por agência de marketing digital",
+      "problem": "Descrição detalhada do problema que a empresa/pessoa enfrenta",
+      "solution": "Como você pode resolver o problema dela com seu serviço",
+      "outreach_message": "Mensagem pronta para enviar no WhatsApp/email para esta pessoa, personalizada e profissional",
+      "fair_price": "R$ 3.000 a R$ 8.000 (valor justo de mercado para este tipo de serviço)"
     }
   ],
   "strategies": [
-    "Grupos do Facebook: Brasileiros nos EUA, Brazilian Entrepreneurs",
-    "LinkedIn: buscar por 'Brazilian founder' + localização",
-    "Instagram hashtags: #brasileirosnoseua #empreendedorbrasileiro"
+    "Estratégia específica de prospecção 1",
+    "Estratégia específica de prospecção 2"
   ]
 }
 [/LEADS_JSON]
 
+Se o usuário NÃO especificou o serviço, use nichos:
+[LEADS_JSON]
+{
+  "niches": [
+    {
+      "niche": "Desenvolvimento Web e Aplicativos",
+      "leads": [
+        { ... mesmo formato acima ... }
+      ]
+    },
+    {
+      "niche": "Tráfego Pago e Marketing Digital",
+      "leads": [...]
+    }
+  ],
+  "strategies": [...]
+}
+[/LEADS_JSON]
+
 REGRAS:
-1) Gere pelo menos 5-10 leads realistas baseados em tendências e nichos comuns
+1) Gere pelo menos 5-10 leads realistas por nicho baseados em tendências reais do mercado
 2) Organize por score (maior primeiro) e atividade mais recente
-3) Inclua o máximo de informações possível: site, redes sociais, cidade
-4) O campo "recent_activity" deve ter data estimada e o que a pessoa buscou
-5) Cada lead deve ter score de 1-10 baseado no potencial
-6) As strategies devem ser acionáveis e específicas
-7) Após o JSON, escreva apenas 2-3 frases de análise conversacional
-8) Seja honesto que os dados são baseados em tendências e conhecimento geral`;
+3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email) - mesmo que estimados com base no perfil
+4) OBRIGATÓRIO: search_query deve mostrar EXATAMENTE o que a pessoa pesquisou no Google
+5) OBRIGATÓRIO: problem deve descrever o problema real que a empresa enfrenta
+6) OBRIGATÓRIO: solution deve mostrar como resolver com o serviço oferecido
+7) OBRIGATÓRIO: outreach_message deve ser uma mensagem pronta, personalizada, profissional para copiar e enviar
+8) OBRIGATÓRIO: fair_price deve dar uma faixa de preço justa baseada no mercado atual
+9) recent_activity deve ter data estimada (mais recente possível) e o que buscou
+10) Score de 1-10 baseado no potencial e urgência
+11) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
+12) As strategies devem ser acionáveis e específicas
+13) Após o JSON, escreva apenas 2-3 frases de análise
+14) Seja honesto que os dados são baseados em tendências e análise de mercado`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
