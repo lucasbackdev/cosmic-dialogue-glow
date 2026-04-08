@@ -111,34 +111,34 @@ const LeadCard = ({ lead }: { lead: LeadData }) => {
       {/* Contacts */}
       <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/20">
         {lead.whatsapp && (
-          <a href={`https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-green-400 hover:text-green-300 transition-colors">
+          <button onClick={() => window.open(`https://wa.me/${lead.whatsapp!.replace(/\D/g, "")}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-green-400 hover:text-green-300 transition-colors cursor-pointer">
             <MessageCircle className="w-3 h-3" /> WhatsApp
-          </a>
+          </button>
         )}
         {lead.phone && (
-          <a href={`tel:${lead.phone}`} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => window.open(`tel:${lead.phone}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
             <Phone className="w-3 h-3" /> {lead.phone}
-          </a>
+          </button>
         )}
         {lead.email && (
-          <a href={`mailto:${lead.email}`} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => window.open(`mailto:${lead.email}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
             <Mail className="w-3 h-3" /> Email
-          </a>
+          </button>
         )}
         {lead.website && (
-          <a href={lead.website} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => window.open(lead.website, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
             <Globe className="w-3 h-3" /> Site
-          </a>
+          </button>
         )}
         {lead.linkedin && (
-          <a href={lead.linkedin} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => window.open(lead.linkedin, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
             <ExternalLink className="w-3 h-3" /> LinkedIn
-          </a>
+          </button>
         )}
         {lead.instagram && (
-          <a href={lead.instagram} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => window.open(lead.instagram, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
             <ExternalLink className="w-3 h-3" /> Instagram
-          </a>
+          </button>
         )}
       </div>
 
