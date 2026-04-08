@@ -655,23 +655,20 @@ REGRAS:
         console.log("Niche detected or follow-up - searching Firecrawl");
         
         const searchQueries: string[] = [];
-        const freelancePortals = ["site:upwork.com", "site:freelancer.com", "site:workana.com", "site:fiverr.com", "site:99freelas.com.br", "site:toptal.com"];
         
         // Use the user's text as the niche keyword
         const nicheText = lastUserText;
         
-        // Search across regions: Brazil, USA, Canada, Europe
-        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} Brazilian ${nicheText} developer website app`);
-        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} ${nicheText} freelance developer needed`);
-        searchQueries.push(`Brazilian ${nicheText} business owner USA Canada Europe needs website app developer freelancer`);
-        searchQueries.push(`empreendedor brasileiro ${nicheText} exterior precisa desenvolvedor site aplicativo`);
+        // Only 2 focused queries to avoid timeout
+        searchQueries.push(`brasileiro ${nicheText} precisa desenvolvedor site aplicativo freelancer upwork workana 99freelas`);
+        searchQueries.push(`Brazilian ${nicheText} needs developer website app freelancer USA Canada Europe`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
         
         if (firecrawlApiKey) {
           try {
-            const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
+            const searchPromises = searchQueries.map(async (q) => {
               try {
                 const resp = await fetch("https://api.firecrawl.dev/v1/search", {
                   method: "POST",
@@ -681,8 +678,7 @@ REGRAS:
                   },
                   body: JSON.stringify({
                     query: q,
-                    limit: 8,
-                    scrapeOptions: { formats: ["markdown"] },
+                    limit: 5,
                   }),
                 });
                 if (resp.ok) {
