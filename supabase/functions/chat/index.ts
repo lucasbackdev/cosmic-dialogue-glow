@@ -699,6 +699,7 @@ REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no ext
 - Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
 - São empreendedores brasileiros que emigraram e abriram negócios fora do Brasil
 - NUNCA gere leads de outras nacionalidades. APENAS brasileiros.
+- IMPORTANTE: Busque empresas que PRECISAM CONTRATAR FREELANCERS para desenvolver site, aplicativo ou automação para a empresa deles. NÃO são vagas de emprego CLT/PJ. São empresas que querem CONTRATAR um freelancer dev.
 - Se ele especificar um serviço (ex: "desenvolvimento web"), mostre leads diretos desse nicho
 - Se ele NÃO especificar, mostre uma LISTA DE NICHOS para ele escolher
 
