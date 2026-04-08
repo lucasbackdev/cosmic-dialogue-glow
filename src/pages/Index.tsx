@@ -6,6 +6,7 @@ import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
+import NicheSelectorDashboard, { type NicheCategory } from "@/components/NicheSelectorDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
