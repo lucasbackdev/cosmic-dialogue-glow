@@ -6,6 +6,7 @@ import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
+import NicheSelectorDashboard, { type NicheCategory } from "@/components/NicheSelectorDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -33,6 +34,18 @@ function parseLeadData(text: string): { leads: LeadData[]; niches?: NicheGroup[]
     if (parsed.niches && Array.isArray(parsed.niches)) {
       const allLeads = parsed.niches.flatMap((n: NicheGroup) => n.leads);
       return { leads: allLeads, niches: parsed.niches, strategies: parsed.strategies || [] };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+function parseNicheSelect(text: string): NicheCategory[] | null {
+  const match = text.match(/\[NICHE_SELECT\]([\s\S]*?)\[\/NICHE_SELECT\]/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1].trim());
+    if (parsed.categories && Array.isArray(parsed.categories)) {
+      return parsed.categories;
     }
   } catch { /* ignore */ }
   return null;
@@ -129,6 +142,13 @@ const Index = () => {
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
     if (!lastAssistant) return null;
     return parseLeadData(lastAssistant.content);
+  }, [messages]);
+
+  // Parse niche selector from assistant messages
+  const nicheCategories = useMemo(() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return null;
+    return parseNicheSelect(lastAssistant.content);
   }, [messages]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
@@ -439,6 +459,12 @@ const Index = () => {
               plate={detectedPlate}
               onConsult={handleVehicleConsult}
               loading={vehicleLoading}
+            />
+          )}
+          {nicheCategories && !parsedLeads && (
+            <NicheSelectorDashboard
+              categories={nicheCategories}
+              onSelect={(niche) => sendMessage(`Buscar leads de ${niche}`)}
             />
           )}
           {parsedLeads && (
