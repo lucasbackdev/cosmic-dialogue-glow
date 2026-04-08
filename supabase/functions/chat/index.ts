@@ -616,15 +616,17 @@ Seja breve, máximo 2 frases.`;
       const serviceMatches = userQuery.match(/(?:serviço de|busca[mnr]? (?:por)?|precis[ao]m? de|procur[ao]m?|querem?)\s+(.+?)(?:\.|$|,|\s+(?:nos?|na|em|para))/i);
       const serviceKeyword = serviceMatches?.[1] || "";
       
-      // Build targeted search queries - freelance developers for apps/sites/automation (NOT job postings)
+      // Build targeted search queries - include freelance portals for real postings with dates
+      const freelancePortals = ["site:upwork.com", "site:freelancer.com", "site:workana.com", "site:fiverr.com", "site:99freelas.com.br", "site:toptal.com"];
+      
       if (serviceKeyword) {
-        searchQueries.push(`Brazilian business owner USA hiring freelance ${serviceKeyword} -jobs -vacancy -career`);
-        searchQueries.push(`empreendedor brasileiro exterior contratando freelancer ${serviceKeyword} -vaga -emprego`);
-        searchQueries.push(`Brazilian entrepreneur Europe Canada needs freelance ${serviceKeyword} for company`);
+        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} ${serviceKeyword} developer needed`);
+        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} ${serviceKeyword} freelancer`);
+        searchQueries.push(`Brazilian business owner hiring freelance ${serviceKeyword} build app website automation`);
       } else {
-        searchQueries.push(`Brazilian business owner USA hiring freelance developer build website app -jobs -vacancy`);
-        searchQueries.push(`empreendedor brasileiro exterior precisa freelancer desenvolver site aplicativo automação -vaga -emprego`);
-        searchQueries.push(`Brazilian entrepreneur looking freelance web developer build app automation 2026`);
+        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} web developer needed build website app 2025 2026`);
+        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} freelance developer app automation`);
+        searchQueries.push(`Brazilian entrepreneur hiring freelance developer build website app automation`);
       }
       
       // Also search for the raw user query
