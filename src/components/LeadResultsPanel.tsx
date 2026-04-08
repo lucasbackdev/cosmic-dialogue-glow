@@ -108,37 +108,49 @@ const LeadCard = ({ lead }: { lead: LeadData }) => {
         <span className="truncate">{lead.service_needed}</span>
       </div>
 
-      {/* Contacts */}
+      {/* Contacts - show data directly with copy */}
       <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/20">
         {lead.whatsapp && (
-          <button onClick={() => window.open(`https://wa.me/${lead.whatsapp!.replace(/\D/g, "")}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-green-400 hover:text-green-300 transition-colors cursor-pointer">
-            <MessageCircle className="w-3 h-3" /> WhatsApp
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-green-400">
+            <MessageCircle className="w-3 h-3" />
+            <span>{lead.whatsapp}</span>
+            <CopyButton text={lead.whatsapp} />
+          </div>
         )}
         {lead.phone && (
-          <button onClick={() => window.open(`tel:${lead.phone}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <Phone className="w-3 h-3" /> {lead.phone}
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Phone className="w-3 h-3" />
+            <span>{lead.phone}</span>
+            <CopyButton text={lead.phone} />
+          </div>
         )}
         {lead.email && (
-          <button onClick={() => window.open(`mailto:${lead.email}`, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <Mail className="w-3 h-3" /> Email
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Mail className="w-3 h-3" />
+            <span className="truncate max-w-[120px]">{lead.email}</span>
+            <CopyButton text={lead.email} />
+          </div>
         )}
         {lead.website && (
-          <button onClick={() => window.open(lead.website, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <Globe className="w-3 h-3" /> Site
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <Globe className="w-3 h-3" />
+            <span className="truncate max-w-[100px]">{lead.website}</span>
+            <CopyButton text={lead.website} />
+          </div>
         )}
         {lead.linkedin && (
-          <button onClick={() => window.open(lead.linkedin, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <ExternalLink className="w-3 h-3" /> LinkedIn
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <ExternalLink className="w-3 h-3" />
+            <span className="truncate max-w-[100px]">LinkedIn</span>
+            <CopyButton text={lead.linkedin} />
+          </div>
         )}
         {lead.instagram && (
-          <button onClick={() => window.open(lead.instagram, "_blank")} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-            <ExternalLink className="w-3 h-3" /> Instagram
-          </button>
+          <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+            <ExternalLink className="w-3 h-3" />
+            <span className="truncate max-w-[100px]">Instagram</span>
+            <CopyButton text={lead.instagram} />
+          </div>
         )}
       </div>
 
