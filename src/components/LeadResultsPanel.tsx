@@ -1,4 +1,5 @@
-import { Building2, MapPin, Globe, Star, Calendar, Briefcase, Users, ExternalLink, TrendingUp, Search } from "lucide-react";
+import { Building2, MapPin, Globe, Star, Briefcase, Users, ExternalLink, TrendingUp, Search, Phone, Mail, MessageCircle, DollarSign, AlertTriangle, CheckCircle, Copy, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 export interface LeadData {
   name: string;
@@ -10,12 +11,26 @@ export interface LeadData {
   website?: string;
   linkedin?: string;
   instagram?: string;
+  whatsapp?: string;
+  phone?: string;
+  email?: string;
   score: number;
   recent_activity?: string;
+  search_query?: string;
+  problem?: string;
+  solution?: string;
+  outreach_message?: string;
+  fair_price?: string;
+}
+
+export interface NicheGroup {
+  niche: string;
+  leads: LeadData[];
 }
 
 interface LeadResultsPanelProps {
   leads: LeadData[];
+  niches?: NicheGroup[];
   strategies?: string[];
 }
 
@@ -32,62 +47,183 @@ const ScoreBadge = ({ score }: { score: number }) => {
   );
 };
 
-const LeadCard = ({ lead }: { lead: LeadData }) => (
-  <div className="p-3 rounded-xl bg-secondary/40 border border-border/30 space-y-2 hover:bg-secondary/60 hover:border-primary/30 transition-all duration-200">
-    <div className="flex items-start justify-between gap-2">
-      <div className="flex items-center gap-2 min-w-0">
-        <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <Building2 className="w-4 h-4 text-primary" />
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors"
+      title="Copiar"
+    >
+      {copied ? <CheckCircle className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+    </button>
+  );
+};
+
+const LeadCard = ({ lead }: { lead: LeadData }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="p-3 rounded-xl bg-secondary/40 border border-border/30 space-y-2 hover:bg-secondary/60 hover:border-primary/30 transition-all duration-200">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
+            {lead.company && <p className="text-[10px] text-muted-foreground truncate">{lead.company}</p>}
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
-          {lead.company && <p className="text-[10px] text-muted-foreground truncate">{lead.company}</p>}
+        <ScoreBadge score={lead.score} />
+      </div>
+
+      {/* Basic info */}
+      <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <MapPin className="w-3 h-3 shrink-0" />
+          <span className="truncate">{lead.city ? `${lead.city}, ${lead.country}` : lead.country}</span>
+        </div>
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Briefcase className="w-3 h-3 shrink-0" />
+          <span className="truncate">{lead.sector}</span>
         </div>
       </div>
-      <ScoreBadge score={lead.score} />
-    </div>
 
-    <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <MapPin className="w-3 h-3 shrink-0" />
-        <span className="truncate">{lead.city ? `${lead.city}, ${lead.country}` : lead.country}</span>
-      </div>
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <Briefcase className="w-3 h-3 shrink-0" />
-        <span className="truncate">{lead.sector}</span>
-      </div>
-    </div>
-
-    <div className="flex items-center gap-1 text-[10px] text-primary">
-      <TrendingUp className="w-3 h-3 shrink-0" />
-      <span className="truncate">{lead.service_needed}</span>
-    </div>
-
-    {lead.recent_activity && (
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-        <Calendar className="w-3 h-3 shrink-0" />
-        <span className="truncate">{lead.recent_activity}</span>
-      </div>
-    )}
-
-    <div className="flex items-center gap-2 pt-1 border-t border-border/20">
-      {lead.website && (
-        <a href={lead.website} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-          <Globe className="w-3 h-3" /> Site
-        </a>
+      {/* What they searched */}
+      {lead.search_query && (
+        <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
+          <p className="text-[10px] text-muted-foreground mb-0.5 font-medium">Pesquisou por:</p>
+          <p className="text-[11px] text-primary font-medium">"{lead.search_query}"</p>
+          {lead.recent_activity && (
+            <p className="text-[9px] text-muted-foreground mt-0.5">{lead.recent_activity}</p>
+          )}
+        </div>
       )}
-      {lead.linkedin && (
-        <a href={lead.linkedin} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-          <ExternalLink className="w-3 h-3" /> LinkedIn
-        </a>
-      )}
-      {lead.instagram && (
-        <a href={lead.instagram} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-          <ExternalLink className="w-3 h-3" /> Instagram
-        </a>
+
+      {/* Service needed */}
+      <div className="flex items-center gap-1 text-[10px] text-primary">
+        <TrendingUp className="w-3 h-3 shrink-0" />
+        <span className="truncate">{lead.service_needed}</span>
+      </div>
+
+      {/* Contacts */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/20">
+        {lead.whatsapp && (
+          <a href={`https://wa.me/${lead.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-green-400 hover:text-green-300 transition-colors">
+            <MessageCircle className="w-3 h-3" /> WhatsApp
+          </a>
+        )}
+        {lead.phone && (
+          <a href={`tel:${lead.phone}`} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <Phone className="w-3 h-3" /> {lead.phone}
+          </a>
+        )}
+        {lead.email && (
+          <a href={`mailto:${lead.email}`} className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <Mail className="w-3 h-3" /> Email
+          </a>
+        )}
+        {lead.website && (
+          <a href={lead.website} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <Globe className="w-3 h-3" /> Site
+          </a>
+        )}
+        {lead.linkedin && (
+          <a href={lead.linkedin} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <ExternalLink className="w-3 h-3" /> LinkedIn
+          </a>
+        )}
+        {lead.instagram && (
+          <a href={lead.instagram} target="_blank" rel="noopener" className="flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+            <ExternalLink className="w-3 h-3" /> Instagram
+          </a>
+        )}
+      </div>
+
+      {/* Expandable details */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-center gap-1 text-[10px] text-muted-foreground hover:text-foreground pt-1 transition-colors"
+      >
+        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        {expanded ? "Menos detalhes" : "Problema, solução, mensagem e preço"}
+      </button>
+
+      {expanded && (
+        <div className="space-y-2 pt-1 animate-[float-up_0.3s_ease-out_forwards]">
+          {/* Problem */}
+          {lead.problem && (
+            <div className="p-2 rounded-lg bg-red-500/5 border border-red-500/10">
+              <div className="flex items-center gap-1 mb-1">
+                <AlertTriangle className="w-3 h-3 text-red-400" />
+                <span className="text-[10px] font-semibold text-red-400">Problema</span>
+              </div>
+              <p className="text-[11px] text-foreground/80 leading-relaxed">{lead.problem}</p>
+            </div>
+          )}
+
+          {/* Solution */}
+          {lead.solution && (
+            <div className="p-2 rounded-lg bg-green-500/5 border border-green-500/10">
+              <div className="flex items-center gap-1 mb-1">
+                <CheckCircle className="w-3 h-3 text-green-400" />
+                <span className="text-[10px] font-semibold text-green-400">Solução</span>
+              </div>
+              <p className="text-[11px] text-foreground/80 leading-relaxed">{lead.solution}</p>
+            </div>
+          )}
+
+          {/* Fair price */}
+          {lead.fair_price && (
+            <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
+              <div className="flex items-center gap-1 mb-1">
+                <DollarSign className="w-3 h-3 text-primary" />
+                <span className="text-[10px] font-semibold text-primary">Valor justo de mercado</span>
+              </div>
+              <p className="text-[11px] text-foreground font-semibold">{lead.fair_price}</p>
+            </div>
+          )}
+
+          {/* Outreach message */}
+          {lead.outreach_message && (
+            <div className="p-2 rounded-lg bg-secondary/60 border border-border/30">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1">
+                  <MessageCircle className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-semibold text-primary">Mensagem sugerida</span>
+                </div>
+                <CopyButton text={lead.outreach_message} />
+              </div>
+              <p className="text-[11px] text-foreground/80 leading-relaxed italic">"{lead.outreach_message}"</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
-  </div>
+  );
+};
+
+const NicheCard = ({ niche, onSelect, selected }: { niche: NicheGroup; onSelect: () => void; selected: boolean }) => (
+  <button
+    onClick={onSelect}
+    className={`p-3 rounded-xl border text-left transition-all duration-200 ${
+      selected
+        ? "bg-primary/10 border-primary/30 shadow-md shadow-primary/5"
+        : "bg-secondary/40 border-border/30 hover:bg-secondary/60 hover:border-primary/20"
+    }`}
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${selected ? "bg-primary/20" : "bg-primary/10"}`}>
+          <Briefcase className={`w-3.5 h-3.5 ${selected ? "text-primary" : "text-primary/70"}`} />
+        </div>
+        <span className="text-xs font-semibold text-foreground">{niche.niche}</span>
+      </div>
+      <span className="text-[10px] text-muted-foreground">{niche.leads.length} lead{niche.leads.length !== 1 ? "s" : ""}</span>
+    </div>
+  </button>
 );
 
 const StrategyCard = ({ strategy }: { strategy: string }) => (
@@ -97,22 +233,50 @@ const StrategyCard = ({ strategy }: { strategy: string }) => (
   </div>
 );
 
-const LeadResultsPanel = ({ leads, strategies }: LeadResultsPanelProps) => {
+const LeadResultsPanel = ({ leads, niches, strategies }: LeadResultsPanelProps) => {
+  const [selectedNiche, setSelectedNiche] = useState<string | null>(null);
+
+  const hasNiches = niches && niches.length > 0;
+  const displayLeads = hasNiches && selectedNiche
+    ? niches.find(n => n.niche === selectedNiche)?.leads || []
+    : leads;
+
   return (
     <div className="w-full animate-[float-up_0.4s_ease-out_forwards] space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Leads Encontrados</span>
+          <span className="text-xs font-semibold text-foreground">
+            {hasNiches && !selectedNiche ? "Nichos Encontrados" : "Leads Encontrados"}
+          </span>
         </div>
-        <span className="text-[10px] text-muted-foreground">{leads.length} resultado{leads.length !== 1 ? "s" : ""}</span>
+        {selectedNiche && (
+          <button onClick={() => setSelectedNiche(null)} className="text-[10px] text-primary hover:underline">
+            ← Voltar aos nichos
+          </button>
+        )}
+        {!hasNiches && (
+          <span className="text-[10px] text-muted-foreground">{leads.length} resultado{leads.length !== 1 ? "s" : ""}</span>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-        {leads.map((lead, i) => (
-          <LeadCard key={i} lead={lead} />
-        ))}
-      </div>
+      {/* Niche selection */}
+      {hasNiches && !selectedNiche && (
+        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+          {niches.map((n, i) => (
+            <NicheCard key={i} niche={n} onSelect={() => setSelectedNiche(n.niche)} selected={false} />
+          ))}
+        </div>
+      )}
+
+      {/* Lead cards */}
+      {(!hasNiches || selectedNiche) && (
+        <div className="grid grid-cols-1 gap-2 max-h-[50vh] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
+          {displayLeads.map((lead, i) => (
+            <LeadCard key={i} lead={lead} />
+          ))}
+        </div>
+      )}
 
       {strategies && strategies.length > 0 && (
         <div className="space-y-1.5">

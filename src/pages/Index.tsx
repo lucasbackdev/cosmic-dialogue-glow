@@ -444,6 +444,7 @@ const Index = () => {
           {parsedLeads && (
             <LeadResultsPanel
               leads={parsedLeads.leads}
+              niches={parsedLeads.niches}
               strategies={parsedLeads.strategies}
             />
           )}
