@@ -5,6 +5,7 @@ import CampaignMetricsInline from "@/components/CampaignMetricsInline";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
+import LeadResultsPanel, { type LeadData } from "@/components/LeadResultsPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -18,7 +19,20 @@ const SpeechRecognition =
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
 const CRM_KEYWORDS = ["campanha", "campanhas", "google ads", "impressões", "ctr", "cpc", "conversões", "orçamento", "anúncio", "anúncios"];
+const LEAD_KEYWORDS = ["lead", "leads", "prospecção", "prospectar", "encontrar clientes", "brasileiros", "tráfego pago", "trafego pago", "desenvolvedor web", "empreendedores", "empresas nos eua", "empresas no canadá", "empresas na europa", "brasileiros no exterior"];
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
+
+function parseLeadData(text: string): { leads: LeadData[]; strategies: string[] } | null {
+  const match = text.match(/\[LEADS_JSON\]([\s\S]*?)\[\/LEADS_JSON\]/);
+  if (!match) return null;
+  try {
+    const parsed = JSON.parse(match[1].trim());
+    if (parsed.leads && Array.isArray(parsed.leads)) {
+      return { leads: parsed.leads, strategies: parsed.strategies || [] };
+    }
+  } catch { /* ignore */ }
+  return null;
+}
 
 const Index = () => {
   const { t } = useLanguage();
@@ -106,6 +120,12 @@ const Index = () => {
             (lower.includes("fipe") || lower.includes("sinistro"))));
   }, [messages, detectedPlate]);
 
+  // Parse lead data from assistant messages
+  const parsedLeads = useMemo(() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return null;
+    return parseLeadData(lastAssistant.content);
+  }, [messages]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
@@ -415,6 +435,12 @@ const Index = () => {
               plate={detectedPlate}
               onConsult={handleVehicleConsult}
               loading={vehicleLoading}
+            />
+          )}
+          {parsedLeads && (
+            <LeadResultsPanel
+              leads={parsedLeads.leads}
+              strategies={parsedLeads.strategies}
             />
           )}
         </div>

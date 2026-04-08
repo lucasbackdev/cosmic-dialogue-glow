@@ -6,30 +6,34 @@ interface ChatBubbleProps {
   content: string;
 }
 
-const ChatBubble = ({ role, content }: ChatBubbleProps) => (
-  <div
-    className={cn(
-      "w-full animate-[float-up_0.4s_ease-out_forwards]",
-      role === "user" ? "text-right" : "text-left"
-    )}
-  >
+const ChatBubble = ({ role, content }: ChatBubbleProps) => {
+  const displayContent = content.replace(/\[LEADS_JSON\][\s\S]*?\[\/LEADS_JSON\]/g, "").trim();
+
+  return (
     <div
       className={cn(
-        "inline-block max-w-[85%] text-sm",
-        role === "user"
-          ? "text-muted-foreground/80 italic"
-          : "text-foreground"
+        "w-full animate-[float-up_0.4s_ease-out_forwards]",
+        role === "user" ? "text-right" : "text-left"
       )}
     >
-      {role === "assistant" ? (
-        <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
-      ) : (
-        <span>{content}</span>
-      )}
+      <div
+        className={cn(
+          "inline-block max-w-[85%] text-sm",
+          role === "user"
+            ? "text-muted-foreground/80 italic"
+            : "text-foreground"
+        )}
+      >
+        {role === "assistant" ? (
+          <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
+            <ReactMarkdown>{displayContent}</ReactMarkdown>
+          </div>
+        ) : (
+          <span>{content}</span>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default ChatBubble;
