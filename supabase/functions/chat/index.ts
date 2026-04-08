@@ -681,8 +681,8 @@ REGRAS:
 7) OBRIGATÓRIO: solution deve mostrar como resolver com o serviço oferecido
 8) OBRIGATÓRIO: outreach_message deve ser uma mensagem pronta, personalizada, profissional para copiar e enviar
 9) OBRIGATÓRIO: fair_price deve ter o valor NA MOEDA LOCAL do país do lead (USD, EUR, CAD) E a conversão em reais (R$)
-9) recent_activity deve ter data estimada (mais recente possível) e o que buscou
-10) Score de 1-10 baseado no potencial e urgência
+10) OBRIGATÓRIO: recent_activity deve ser SEMPRE de 2026 (janeiro a abril de 2026). NUNCA use datas de 2025 ou anos anteriores.
+11) Score de 1-10 baseado no potencial e urgência
 11) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
 12) As strategies devem ser acionáveis e específicas
 13) APÓS o JSON, escreva APENAS 1 frase curta e direta como "Encontrei X leads no nicho Y. Os dados estão no painel." NÃO escreva parágrafos, NÃO repita dados do JSON, NÃO faça análise longa.
