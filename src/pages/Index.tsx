@@ -144,7 +144,14 @@ const Index = () => {
     return parseLeadData(lastAssistant.content);
   }, [messages]);
 
-  const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
+  // Parse niche selector from assistant messages
+  const nicheCategories = useMemo(() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return null;
+    return parseNicheSelect(lastAssistant.content);
+  }, [messages]);
+
+
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
