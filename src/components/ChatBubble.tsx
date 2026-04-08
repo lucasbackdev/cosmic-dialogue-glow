@@ -7,7 +7,7 @@ interface ChatBubbleProps {
 }
 
 const ChatBubble = ({ role, content }: ChatBubbleProps) => {
-  const displayContent = content.replace(/\[LEADS_JSON\][\s\S]*?\[\/LEADS_JSON\]/g, "").trim();
+  const displayContent = content.replace(/\[LEADS_JSON\][\s\S]*?\[\/LEADS_JSON\]/g, "").replace(/\[NICHE_SELECT\][\s\S]*?\[\/NICHE_SELECT\]/g, "").trim();
 
   return (
     <div
