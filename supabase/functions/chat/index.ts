@@ -31,6 +31,30 @@ const LEAD_KEYWORDS = [
   "contabilidade", "advocacia", "freelancer", "agência",
 ];
 
+const LEAD_NICHE_KEYWORDS = [
+  "clínica", "clinica", "estética", "estetica", "distribuidora", "restaurante",
+  "loja", "e-commerce", "ecommerce", "imobiliária", "imobiliaria", "contabilidade",
+  "advocacia", "escritório", "escritorio", "consultório", "consultorio", "academia",
+  "salão", "salao", "barbearia", "padaria", "pizzaria", "hamburgueria",
+  "pet shop", "petshop", "oficina", "mecânica", "mecanica", "construtora",
+  "arquitetura", "dentista", "odontologia", "psicologia", "nutrição", "nutricao",
+  "fotografia", "marketing", "agência", "agencia", "farmácia", "farmacia",
+  "escola", "curso", "treinamento", "coaching", "consultoria", "saúde", "saude",
+  "beleza", "moda", "roupa", "calçado", "calcado", "joalheria", "ótica", "otica",
+  "supermercado", "mercado", "atacado", "varejo", "importação", "importacao",
+  "exportação", "exportacao", "logística", "logistica", "transporte", "frete",
+  "tecnologia", "software", "app", "aplicativo", "site", "web", "automação", "automacao",
+  "food truck", "cafeteria", "bar", "pub", "hotel", "pousada", "airbnb",
+  "lavanderia", "limpeza", "segurança", "seguranca", "energia solar",
+  "desenvolvimento", "developer", "web developer",
+];
+
+const LEAD_SERVICE_KEYWORDS = [
+  "site", "website", "landing page", "lp", "aplicativo", "app", "automação", "automacao",
+  "sistema", "crm", "chatbot", "e-commerce", "ecommerce", "integração", "integracao",
+  "tráfego", "trafego", "google ads", "design", "marketing", "software",
+];
+
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
 const VEHICLE_CONSULT_TYPES: Record<string, { keywords: string[]; label: string; price: string }> = {
@@ -100,6 +124,56 @@ type LeadSearchResult = {
   markdown?: string;
   sourceType?: string;
   contactDetails?: ContactDetails;
+};
+
+type LeadRegion = "BR" | "US" | "CA" | "EU";
+
+type SearchPlan = {
+  region: LeadRegion;
+  query: string;
+  country?: string;
+  lang?: string;
+};
+
+type SearchCandidate = LeadSearchResult & {
+  region: LeadRegion;
+  query: string;
+};
+
+type GeneratedLead = {
+  name: string;
+  company: string;
+  country: string;
+  city: string;
+  sector: string;
+  service_needed: string;
+  website: string;
+  linkedin: string;
+  instagram: string;
+  whatsapp: string;
+  phone: string;
+  email: string;
+  search_query_pt: string;
+  score: number;
+  recent_activity: string;
+  search_query: string;
+  problem: string;
+  solution: string;
+  outreach_message: string;
+  fair_price: string;
+};
+
+type RankedLead = {
+  region: LeadRegion;
+  lead: GeneratedLead;
+  rank: number;
+};
+
+const LEAD_REGION_LABELS: Record<LeadRegion, string> = {
+  BR: "🇧🇷 Brasil",
+  US: "🇺🇸 Estados Unidos",
+  CA: "🇨🇦 Canadá",
+  EU: "🇪🇺 Europa",
 };
 
 function emptyContactDetails(): ContactDetails {
@@ -253,6 +327,19 @@ function extractContactDetailsFromText(text: string, baseUrl?: string): ContactD
     }
   }
 
+  if (baseUrl) {
+    const host = getHostname(baseUrl);
+    if (!details.linkedin && (host === "linkedin.com" || host.endsWith(".linkedin.com"))) {
+      details.linkedin = baseUrl;
+    }
+    if (!details.instagram && (host === "instagram.com" || host.endsWith(".instagram.com"))) {
+      details.instagram = baseUrl;
+    }
+    if (!details.whatsapp && (host === "wa.me" || host.endsWith(".wa.me") || host === "whatsapp.com" || host.endsWith(".whatsapp.com"))) {
+      details.whatsapp = baseUrl;
+    }
+  }
+
   if (!details.website && baseUrl && !isPortalUrl(baseUrl) && !isSocialUrl(baseUrl)) {
     details.website = new URL(baseUrl).origin;
   }
@@ -341,6 +428,554 @@ async function enrichLeadSource(result: LeadSearchResult, firecrawlApiKey: strin
     sourceType: classifyLeadSource(result),
     contactDetails,
   };
+}
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function stripLeadRequestPrefix(text: string): string {
+  return normalizeWhitespace(
+    text
+      .replace(/^(buscar|busque|quero|preciso|mostre|me dê|me de|encontre)\s+leads?\s+(reais\s+)?(de|para)\s+/i, "")
+      .replace(/^leads?\s+(reais\s+)?(de|para)\s+/i, "")
+      .replace(/^buscar\s+leads?\s+/i, "")
+      .replace(/^nicho[:\s-]*/i, "")
+  );
+}
+
+function cleanServiceText(text: string): string {
+  return normalizeWhitespace(
+    text
+      .replace(/^(quero|vou|pretendo|posso)\s+(oferecer|prestar|vender)\s+/i, "")
+      .replace(/^(serviç[oa]s?|service)[:\s-]*/i, "")
+      .replace(/^o que eu quero prestar[:\s-]*/i, "")
+  );
+}
+
+function extractLeadNiche(messages: { role: string; content: string }[]): string {
+  const userMessages = [...messages].reverse().filter((message) => message.role === "user");
+
+  for (const message of userMessages) {
+    const cleaned = stripLeadRequestPrefix(message.content);
+    const lower = cleaned.toLowerCase();
+    if (!cleaned || cleaned.length > 120) continue;
+    if (LEAD_NICHE_KEYWORDS.some((keyword) => lower.includes(keyword))) {
+      return cleaned;
+    }
+  }
+
+  return "";
+}
+
+function extractLeadService(messages: { role: string; content: string }[]): string {
+  const userMessages = [...messages].reverse().filter((message) => message.role === "user");
+
+  for (const message of userMessages) {
+    const lower = message.content.toLowerCase();
+    if (LEAD_SERVICE_KEYWORDS.some((keyword) => lower.includes(keyword))) {
+      return cleanServiceText(message.content);
+    }
+  }
+
+  return "";
+}
+
+function extractServiceSearchSnippet(serviceText: string): string {
+  const lower = serviceText.toLowerCase();
+  const matchedKeywords = LEAD_SERVICE_KEYWORDS.filter((keyword) => lower.includes(keyword));
+  const uniqueKeywords = Array.from(new Set(matchedKeywords)).slice(0, 4);
+  const fallbackKeywords = ["site", "aplicativo", "automação"];
+  return (uniqueKeywords.length > 0 ? uniqueKeywords : fallbackKeywords)
+    .map((keyword) => `"${keyword}"`)
+    .join(" OR ");
+}
+
+function buildLeadSearchPlans(nicheText: string, serviceText: string): SearchPlan[] {
+  const niche = nicheText || "empresa";
+  const serviceSnippet = extractServiceSearchSnippet(serviceText);
+
+  return [
+    {
+      region: "BR",
+      country: "BR",
+      lang: "pt",
+      query: `"${niche}" ("preciso de desenvolvedor" OR "procuro desenvolvedor" OR "orçamento para site" OR "orçamento para aplicativo" OR "preciso de automação") (${serviceSnippet}) (site:99freelas.com.br OR site:workana.com OR site:linkedin.com OR site:instagram.com)`,
+    },
+    {
+      region: "US",
+      country: "US",
+      lang: "en",
+      query: `"${niche}" ("looking for developer" OR "need a website" OR "need an app" OR "need automation" OR "procuro desenvolvedor") (${serviceSnippet}) ("Brazilian" OR "empresa brasileira" OR "brasileiro") ("United States" OR USA OR "Estados Unidos") (site:upwork.com OR site:freelancer.com OR site:linkedin.com OR site:instagram.com)`,
+    },
+    {
+      region: "CA",
+      country: "CA",
+      lang: "en",
+      query: `"${niche}" ("looking for developer" OR "need a website" OR "need an app" OR "need automation" OR "procuro desenvolvedor") (${serviceSnippet}) ("Brazilian" OR "empresa brasileira" OR "brasileiro") (Canada OR Canadá) (site:upwork.com OR site:freelancer.com OR site:linkedin.com OR site:instagram.com)`,
+    },
+    {
+      region: "EU",
+      lang: "en",
+      query: `"${niche}" ("looking for developer" OR "need a website" OR "need an app" OR "need automation" OR "procuro desenvolvedor") (${serviceSnippet}) ("Brazilian" OR "empresa brasileira" OR "brasileiro") (Europa OR Europe OR Portugal OR Ireland OR UK OR "United Kingdom" OR Espanha OR Spain) (site:upwork.com OR site:freelancer.com OR site:linkedin.com OR site:instagram.com)`,
+    },
+  ];
+}
+
+function normalizeUrlForDedup(url?: string): string {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_term",
+      "utm_content",
+      "ref",
+      "source",
+      "fbclid",
+      "gclid",
+    ].forEach((param) => parsed.searchParams.delete(param));
+    parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return parsed.toString().toLowerCase();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+function dedupeByUrl<T extends { url?: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = normalizeUrlForDedup(item.url) || normalizeWhitespace(JSON.stringify(item)).toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function getSourceLabel(url?: string): string {
+  const host = getHostname(url);
+  if (!host) return "Web";
+  if (host.includes("upwork.com")) return "Upwork";
+  if (host.includes("freelancer.com")) return "Freelancer";
+  if (host.includes("workana.com")) return "Workana";
+  if (host.includes("99freelas.com.br")) return "99Freelas";
+  if (host.includes("linkedin.com")) return "LinkedIn";
+  if (host.includes("instagram.com")) return "Instagram";
+  return host.replace(/^www\./, "");
+}
+
+function extractRootLabel(url?: string): string {
+  const host = getHostname(url);
+  if (!host) return "";
+  const parts = host.split(".");
+  if (parts.length >= 3 && parts.slice(-2).join(".") === "com.br") {
+    return parts[parts.length - 3];
+  }
+  return parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+}
+
+function titleizeSlug(value: string): string {
+  return value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function portalPathLooksLikeProject(url?: string): boolean {
+  if (!url) return false;
+
+  try {
+    const host = getHostname(url);
+    const path = new URL(url).pathname.toLowerCase();
+
+    if (host.includes("upwork.com")) {
+      return /\/jobs\/|\/freelance-jobs\/|\/nx\/search\/jobs\/details\//.test(path);
+    }
+    if (host.includes("freelancer.com")) {
+      return /\/projects\//.test(path);
+    }
+    if (host.includes("workana.com")) {
+      return /\/job\//.test(path) || /\/jobs\/[a-z0-9-]+/.test(path);
+    }
+    if (host.includes("99freelas.com.br")) {
+      return /\/projeto\//.test(path);
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function containsHiringIntent(text: string): boolean {
+  return /(preciso de|precisamos de|procuro|busco|buscando|orçamento para|orcamento para|quero contratar|contratar desenvolvedor|desenvolvedor para|minha empresa precisa|looking for|need (?:a |an )?(?:developer|website|app|automation)|developer needed|seeking (?:a |an )?developer|hiring|request for proposal|rfp|quote for|web development needed|indica(?:ç|c)[aã]o de desenvolvedor|recomenda(?:ç|c)[aã]o de desenvolvedor)/i.test(text);
+}
+
+function containsFreelancerOffer(text: string): boolean {
+  return /(hire me|available for work|i am a developer|eu sou desenvolvedor|sou desenvolvedor|nossa ag[eê]ncia|nossa agencia|our agency|we build|we create websites|servi[çc]os de desenvolvimento|ag[eê]ncia especializada|agency that offers|portf[oó]lio|portfolio|software house|especialistas em)/i.test(text);
+}
+
+function hasDirectContact(details: ContactDetails): boolean {
+  return Boolean(details.email || details.phone || details.whatsapp || details.linkedin || details.instagram);
+}
+
+function countContactSignals(details: ContactDetails): number {
+  return [details.email, details.phone, details.whatsapp, details.linkedin, details.instagram, details.website]
+    .filter(Boolean)
+    .length;
+}
+
+function looksLikeLeadCandidate(result: SearchCandidate): boolean {
+  const combined = normalizeWhitespace([result.title, result.description, result.markdown].filter(Boolean).join(" "));
+  if (!combined) return false;
+
+  const lower = combined.toLowerCase();
+  if (containsFreelancerOffer(lower) && !containsHiringIntent(lower)) return false;
+  if (classifyLeadSource(result) === "portal_listing") return false;
+
+  if (isPortalUrl(result.url)) {
+    return portalPathLooksLikeProject(result.url) || containsHiringIntent(lower);
+  }
+
+  return containsHiringIntent(lower);
+}
+
+function hasBrazilianContext(result: SearchCandidate): boolean {
+  const contactDetails = result.contactDetails || emptyContactDetails();
+  const combined = normalizeWhitespace([
+    result.title,
+    result.description,
+    result.markdown,
+    result.url,
+    contactDetails.website,
+    contactDetails.linkedin,
+    contactDetails.instagram,
+  ].filter(Boolean).join(" ")).toLowerCase();
+
+  return /(brasileir|brazilian|brasil|portugu[eê]s|portuguese|\.com\.br)/i.test(combined);
+}
+
+function extractLeadExcerpt(text: string, maxLength = 180): string {
+  const normalized = normalizeWhitespace(text);
+  if (!normalized) return "";
+
+  const lower = normalized.toLowerCase();
+  const needles = [
+    "preciso de",
+    "procuro",
+    "orçamento para",
+    "looking for",
+    "need a",
+    "need an",
+    "need developer",
+    "developer needed",
+    "hiring",
+  ];
+
+  const foundIndex = needles
+    .map((needle) => lower.indexOf(needle))
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0];
+
+  if (typeof foundIndex === "number") {
+    const start = Math.max(0, foundIndex - 20);
+    return normalized.slice(start, start + maxLength).trim();
+  }
+
+  return normalized.slice(0, maxLength).trim();
+}
+
+function extractDateSnippet(text: string): string {
+  const normalized = normalizeWhitespace(text);
+  const patterns = [
+    /\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/i,
+    /\b\d{1,2}\s+(?:de\s+)?(?:janeiro|fevereiro|mar[çc]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|january|february|march|april|may|june|july|august|september|october|november|december)\s+(?:de\s+)?\d{4}\b/i,
+    /\b(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez|feb|apr|aug|sep|oct|dec)[a-z]*\.?\s+\d{1,2},?\s+\d{4}\b/i,
+    /\b(?:posted|published|publicado|postado)\s+(?:on\s+)?[^.|\n]{0,40}/i,
+    /\b(?:today|yesterday|hoje|ontem)\b/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match?.[0]) return match[0];
+  }
+
+  return "";
+}
+
+function extractBudgetSnippet(text: string): string {
+  const normalized = normalizeWhitespace(text);
+  const patterns = [
+    /(?:R\$|US\$|USD|CAD\$|C\$|€|EUR|\$)\s?\d[\d.,]*(?:\s?(?:-|a|to)\s?(?:R\$|US\$|USD|CAD\$|C\$|€|EUR|\$)?\s?\d[\d.,]*)?/i,
+    /(?:budget|orçamento|orcamento|faixa)\s*[:\-]?\s*[^.|\n]{0,40}/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match?.[0]) return match[0].trim();
+  }
+
+  return "";
+}
+
+function buildRecentActivity(text: string, url?: string): string {
+  const dateSnippet = extractDateSnippet(text);
+  const sourceLabel = getSourceLabel(url);
+
+  if (dateSnippet && sourceLabel) return `${sourceLabel} · ${dateSnippet}`;
+  if (dateSnippet) return dateSnippet;
+  if (sourceLabel) return `Fonte: ${sourceLabel}`;
+  return "";
+}
+
+function inferServiceNeeded(text: string, serviceText: string): string {
+  const lower = text.toLowerCase();
+  if (/(app|aplicativo|mobile)/i.test(lower)) return "Desenvolvimento de aplicativo";
+  if (/(automação|automacao|automation|workflow|integraç|integrac|bot|chatbot)/i.test(lower)) return "Automação de processos";
+  if (/(site|website|landing page|e-commerce|ecommerce|loja virtual)/i.test(lower)) return "Criação ou melhoria de site";
+  return serviceText || "Criação de site, app ou automação";
+}
+
+function calculateLeadScore(text: string, details: ContactDetails, recentActivity: string, portal: boolean): number {
+  let score = 4;
+  if (details.email) score += 2;
+  if (details.phone) score += 2;
+  if (details.whatsapp) score += 2;
+  if (details.linkedin || details.instagram) score += 1;
+  if (details.website && !isPortalUrl(details.website)) score += 1;
+  if (containsHiringIntent(text)) score += 1;
+  if (recentActivity) score += 1;
+  if (portal && !hasDirectContact(details)) score -= 1;
+  return Math.max(1, Math.min(10, score));
+}
+
+function extractCompanyName(result: SearchCandidate, details: ContactDetails): string {
+  const companyUrl = details.website && !isPortalUrl(details.website) && !isSocialUrl(details.website)
+    ? details.website
+    : (!isPortalUrl(result.url) && !isSocialUrl(result.url) ? result.url : "");
+
+  if (companyUrl) {
+    return titleizeSlug(extractRootLabel(companyUrl));
+  }
+
+  return "";
+}
+
+function extractLeadName(result: SearchCandidate, companyName: string): string {
+  const rawTitle = normalizeWhitespace(result.title || "");
+  const cleanedTitle = rawTitle.replace(/\s*[|\-–]\s*(Upwork|Freelancer|Workana|99Freelas|LinkedIn|Instagram).*$/i, "").trim();
+
+  if (cleanedTitle) {
+    return cleanedTitle.slice(0, 90);
+  }
+
+  if (companyName) return companyName;
+  return getSourceLabel(result.url);
+}
+
+function buildOutreachMessage(name: string, serviceText: string, sourceLabel: string): string {
+  const greeting = name ? `Oi, ${name}!` : "Oi!";
+  const offer = serviceText || "site, aplicativo ou automação";
+  return `${greeting} Vi seu pedido em ${sourceLabel} e posso ajudar com ${offer}. Se fizer sentido, te mando uma proposta rápida.`;
+}
+
+function buildLeadFromCandidate(result: SearchCandidate, nicheText: string, serviceText: string): GeneratedLead {
+  const details = mergeContactDetails(emptyContactDetails(), result.contactDetails || emptyContactDetails());
+  const combinedText = normalizeWhitespace([result.title, result.description, result.markdown].filter(Boolean).join(" "));
+  const companyName = extractCompanyName(result, details);
+  const name = extractLeadName(result, companyName);
+  const searchQuery = extractLeadExcerpt(combinedText || result.title || result.description || "");
+  const recentActivity = buildRecentActivity(combinedText, result.url);
+  const budget = extractBudgetSnippet(combinedText);
+  const score = calculateLeadScore(combinedText, details, recentActivity, isPortalUrl(result.url));
+  const linkedin = details.linkedin || (result.url && getHostname(result.url).includes("linkedin.com") ? result.url : "");
+  const instagram = details.instagram || (result.url && getHostname(result.url).includes("instagram.com") ? result.url : "");
+  const website = details.website || (result.url && !isSocialUrl(result.url) ? result.url : "");
+  const sourceLabel = getSourceLabel(result.url);
+
+  return {
+    name,
+    company: companyName,
+    country: LEAD_REGION_LABELS[result.region],
+    city: "",
+    sector: nicheText,
+    service_needed: inferServiceNeeded(combinedText, serviceText),
+    website,
+    linkedin,
+    instagram,
+    whatsapp: details.whatsapp,
+    phone: details.phone,
+    email: details.email,
+    search_query_pt: "",
+    score,
+    recent_activity: recentActivity,
+    search_query: searchQuery,
+    problem: searchQuery ? `Pedido real encontrado: ${searchQuery}` : "",
+    solution: serviceText ? `Oferecer ${serviceText} com foco nesse nicho.` : "",
+    outreach_message: buildOutreachMessage(companyName || name, serviceText, sourceLabel),
+    fair_price: budget,
+  };
+}
+
+function buildLeadStrategies(leads: GeneratedLead[], serviceText: string): string[] {
+  const directContactCount = leads.filter((lead) => Boolean(lead.email || lead.phone || lead.whatsapp || lead.linkedin || lead.instagram)).length;
+  const internationalCount = leads.filter((lead) => lead.country !== LEAD_REGION_LABELS.BR).length;
+
+  return [
+    directContactCount > 0
+      ? `Comece pelos ${directContactCount} leads com contato direto público.`
+      : "Comece pelos leads com site oficial e formulário ativo.",
+    internationalCount > 0
+      ? `Priorize os ${internationalCount} leads fora do Brasil destacando que você atende brasileiros no exterior remotamente.`
+      : "Peça uma nova rodada focada em EUA, Canadá ou Europa para ampliar a prospecção.",
+    serviceText
+      ? `Abra a conversa oferecendo ${serviceText} com um exemplo curto do resultado que você entrega.`
+      : "Defina no chat se quer vender site, app ou automação para qualificar melhor os próximos leads.",
+  ].slice(0, 3);
+}
+
+function dedupeRankedLeads(items: RankedLead[]): RankedLead[] {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const lead = item.lead;
+    const key = [
+      lead.email,
+      lead.phone,
+      lead.whatsapp,
+      lead.linkedin,
+      lead.instagram,
+      lead.website,
+      `${lead.name}-${lead.country}`,
+    ].find(Boolean) || `${lead.name}-${lead.country}`;
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function selectBalancedLeads(items: RankedLead[], maxItems = 10): RankedLead[] {
+  const grouped: Record<LeadRegion, RankedLead[]> = {
+    BR: [],
+    US: [],
+    CA: [],
+    EU: [],
+  };
+
+  items.forEach((item) => grouped[item.region].push(item));
+  (Object.keys(grouped) as LeadRegion[]).forEach((region) => {
+    grouped[region].sort((a, b) => b.rank - a.rank);
+  });
+
+  const selected: RankedLead[] = [];
+  const usedKeys = new Set<string>();
+
+  for (const region of Object.keys(grouped) as LeadRegion[]) {
+    for (const item of grouped[region].slice(0, 2)) {
+      const key = `${item.lead.name}-${item.lead.country}-${item.lead.website || item.lead.linkedin || item.lead.instagram || item.lead.email}`;
+      if (usedKeys.has(key)) continue;
+      usedKeys.add(key);
+      selected.push(item);
+    }
+  }
+
+  const remaining = items
+    .slice()
+    .sort((a, b) => b.rank - a.rank)
+    .filter((item) => {
+      const key = `${item.lead.name}-${item.lead.country}-${item.lead.website || item.lead.linkedin || item.lead.instagram || item.lead.email}`;
+      return !usedKeys.has(key);
+    });
+
+  for (const item of remaining) {
+    if (selected.length >= maxItems) break;
+    selected.push(item);
+  }
+
+  return selected.slice(0, maxItems);
+}
+
+async function searchLeadCandidates(searchPlans: SearchPlan[], firecrawlApiKey: string): Promise<SearchCandidate[]> {
+  const searchResults = await Promise.all(
+    searchPlans.map(async (plan) => {
+      try {
+        const response = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${firecrawlApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query: plan.query,
+            limit: 10,
+            lang: plan.lang,
+            country: plan.country,
+            scrapeOptions: { formats: ["markdown"] },
+          }),
+        });
+
+        if (!response.ok) {
+          console.warn("Firecrawl search failed for region:", plan.region, response.status);
+          return [] as SearchCandidate[];
+        }
+
+        const data = await response.json();
+        const results = Array.isArray(data?.data) ? data.data : [];
+        return results.map((result: LeadSearchResult) => ({
+          ...result,
+          region: plan.region,
+          query: plan.query,
+        }));
+      } catch (error) {
+        console.warn("Firecrawl search error for region:", plan.region, error);
+        return [] as SearchCandidate[];
+      }
+    })
+  );
+
+  return dedupeByUrl(searchResults.flat());
+}
+
+function createSseTextResponse(content: string): Response {
+  const created = Math.floor(Date.now() / 1000);
+  const id = `lead-${crypto.randomUUID()}`;
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const push = (payload: unknown) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+      };
+
+      push({
+        id,
+        object: "chat.completion.chunk",
+        created,
+        model: "orion-leads",
+        choices: [{ index: 0, delta: { role: "assistant", content }, finish_reason: null }],
+      });
+      push({
+        id,
+        object: "chat.completion.chunk",
+        created,
+        model: "orion-leads",
+        choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: "stop", native_finish_reason: "STOP" }],
+      });
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+  });
 }
 
 function isLeadProspectingQuestion(messages: { role: string; content: string }[]): boolean {
@@ -893,27 +1528,8 @@ Seja breve, máximo 2 frases.`;
       console.log("Lead prospecting question detected");
       
       const userQuery = lastUserText.toLowerCase();
-      
-      // Check if user already specified a niche/sector
-      const nicheKeywords = [
-        "clínica", "clinica", "estética", "estetica", "distribuidora", "restaurante",
-        "loja", "e-commerce", "ecommerce", "imobiliária", "imobiliaria", "contabilidade",
-        "advocacia", "escritório", "escritorio", "consultório", "consultorio", "academia",
-        "salão", "salao", "barbearia", "padaria", "pizzaria", "hamburgueria",
-        "pet shop", "petshop", "oficina", "mecânica", "mecanica", "construtora",
-        "arquitetura", "dentista", "odontologia", "psicologia", "nutrição", "nutricao",
-        "fotografia", "marketing", "agência", "agencia", "farmácia", "farmacia",
-        "escola", "curso", "treinamento", "coaching", "consultoria", "saúde", "saude",
-        "beleza", "moda", "roupa", "calçado", "calcado", "joalheria", "ótica", "otica",
-        "supermercado", "mercado", "atacado", "varejo", "importação", "importacao",
-        "exportação", "exportacao", "logística", "logistica", "transporte", "frete",
-        "tecnologia", "software", "app", "aplicativo", "site", "web", "automação", "automacao",
-        "food truck", "cafeteria", "bar", "pub", "hotel", "pousada", "airbnb",
-        "lavanderia", "limpeza", "segurança", "seguranca", "energia solar",
-        "desenvolvimento", "developer", "web developer", "freelancer",
-      ];
-      
-      const userHasNiche = nicheKeywords.some(kw => userQuery.includes(kw));
+      const rememberedNiche = extractLeadNiche(messages);
+      const userHasNiche = LEAD_NICHE_KEYWORDS.some((keyword) => userQuery.includes(keyword)) || Boolean(rememberedNiche);
       
       // Also check if this is a follow-up where user chose a niche from the previous AI message
       const previousAiMsg = [...messages].reverse().find((m: {role:string}) => m.role === "assistant");
@@ -926,162 +1542,90 @@ O painel de nichos já apareceu automaticamente do lado. Responda de forma natur
 "Show! Dá uma olhada no painel ali do lado e escolhe o nicho que te interessa 🎯 E me conta — qual serviço você quer oferecer? Criação de site, app, automação...?"
 NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.`;
       } else {
-        // User specified a niche OR is following up with a choice → SEARCH
-        console.log("Niche detected or follow-up - searching Firecrawl");
-        
-        // Extract service context from conversation history
-        let serviceContext = "";
-        for (const m of messages) {
-          const lower = m.content.toLowerCase();
-          if (m.role === "user" && (lower.includes("serviço") || lower.includes("oferecer") || lower.includes("prestar") || lower.includes("vender") || lower.includes("desenvolvimento") || lower.includes("automação") || lower.includes("tráfego") || lower.includes("design") || lower.includes("marketing"))) {
-            serviceContext = m.content;
-          }
-        }
-        
-        const searchQueries: string[] = [];
-        const nicheText = lastUserText;
-        const serviceText = serviceContext || "website aplicativo automação desenvolvimento";
-        
-        // 4 queries — focused on finding COMPANIES/PEOPLE who POSTED PROJECTS needing developers
-        // These are potential CLIENTS, not freelancers offering services
-        // Query 1: Projects posted by businesses needing development (Brazil)
-        searchQueries.push(`"preciso de" OR "procuro" OR "orçamento para" ${nicheText} ${serviceText} site:99freelas.com.br OR site:workana.com`);
-        // Query 2: Businesses posting jobs/projects needing developers (USA)
-        searchQueries.push(`"looking for" OR "need developer" OR "need a website" ${nicheText} site:upwork.com OR site:freelancer.com`);
-        // Query 3: Brazilian business owners abroad posting projects  
-        searchQueries.push(`${nicheText} "need" OR "looking for" OR "hiring" developer website app Brazil OR Brazilian site:upwork.com OR site:toptal.com`);
-        // Query 4: Direct company searches - businesses in the niche that likely need digital services
-        searchQueries.push(`${nicheText} empresa brasileira site OR aplicativo OR sistema OR automação OR "precisa de" OR "busca desenvolvedor"`);
-        
-        let firecrawlContext = "";
+        console.log("Niche detected or remembered - running deterministic lead search");
+
+        const nicheText = rememberedNiche || stripLeadRequestPrefix(lastUserText) || "";
+        const serviceText = extractLeadService(messages) || "criação de sites, aplicativos e automação";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
-        
-        if (firecrawlApiKey) {
-          try {
-            const searchPromises = searchQueries.map(async (q) => {
-              try {
-                const resp = await fetch("https://api.firecrawl.dev/v1/search", {
-                  method: "POST",
-                  headers: {
-                    "Authorization": `Bearer ${firecrawlApiKey}`,
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    query: q,
-                    limit: 8,
-                  }),
-                });
-                if (resp.ok) {
-                  const data = await resp.json();
-                  return data?.data || [];
-                }
-                console.warn("Firecrawl search failed for query:", q, resp.status);
-                return [];
-              } catch (e) {
-                console.warn("Firecrawl error for query:", q, e);
-                return [];
-              }
-            });
-            
-            const allResults = await Promise.all(searchPromises);
-            const flatResults = allResults.flat();
-            
-            if (flatResults.length > 0) {
-              firecrawlContext = "\n\n[DADOS REAIS DA WEB - RESULTADOS DO FIRECRAWL]\n";
-              for (const result of flatResults) {
-                firecrawlContext += `\n--- Fonte: ${result.url || "N/A"} ---\n`;
-                firecrawlContext += `Título: ${result.title || "N/A"}\n`;
-                firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
-                if (result.markdown) {
-                  firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 800)}\n`;
-                }
-              }
-              console.log(`Firecrawl returned ${flatResults.length} real results`);
-            } else {
-              console.log("Firecrawl returned no results");
-            }
-          } catch (err) {
-            console.warn("Firecrawl search error:", err);
-          }
+
+        if (!firecrawlApiKey) {
+          return createSseTextResponse("A busca real de leads está indisponível no momento porque o conector Firecrawl não está configurado.");
         }
-        
-        systemContent += `\n\nMODO PROSPECÇÃO ATIVADO.
-O usuário quer oferecer: "${serviceContext || 'ainda não especificou o serviço'}"
-Nicho: "${nicheText}"
 
-IMPORTANTE - CONVERSA NATURAL:
-- Se o usuário está só conversando, explorando ideias, trocando nicho — converse naturalmente. NÃO force o formato JSON.
-- Se ele pedir para trocar nicho, troque numa boa ("Beleza, bora pra X então! 🔥").
-- Se ele ainda não disse qual serviço quer oferecer, pergunte de forma natural antes de buscar leads.
-- SÓ inclua o bloco [LEADS_JSON] quando realmente tiver dados para mostrar E o usuário quiser ver leads.
-- Se a conversa é casual (ele tá perguntando, pensando, discutindo), apenas converse.
+        try {
+          const searchPlans = buildLeadSearchPlans(nicheText, serviceText);
+          const rawCandidates = await searchLeadCandidates(searchPlans, firecrawlApiKey);
+          const filteredCandidates = rawCandidates
+            .filter(looksLikeLeadCandidate)
+            .slice(0, 24);
 
-${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
-Extraia nomes de pessoas, empresas, websites, datas de postagem e serviços a partir dos dados reais.
-NUNCA INVENTE dados que não estão nos resultados. Se não encontrar um dado (telefone, email, etc), deixe vazio "".
-Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Workana, 99Freelas, Fiverr, Toptal).
-Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
-${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
+          console.log("Lead candidates before enrichment:", filteredCandidates.length);
 
-REGRA ABSOLUTA: O usuário quer PRESTAR SERVIÇO para essas empresas/pessoas. Ele é o DESENVOLVEDOR/PRESTADOR.
-Os leads são POTENCIAIS CLIENTES — empresas ou pessoas que PUBLICARAM PROJETOS pedindo serviços de desenvolvimento, site, app, automação, etc.
-NÃO mostre freelancers oferecendo serviços. Mostre QUEM ESTÁ CONTRATANDO / QUEM POSTOU O PROJETO.
-DISTRIBUIÇÃO REGIONAL OBRIGATÓRIA — mostre leads de TODAS as 4 regiões quando possível:
-- 🇧🇷 Brasil (empresas brasileiras que postaram projetos)
-- 🇺🇸 EUA (empresas/pessoas que postaram projetos nos EUA)
-- 🇨🇦 Canadá (empresas/pessoas que postaram projetos no Canadá)
-- 🇪🇺 Europa (empresas/pessoas que postaram projetos na Europa)
-Priorize postagens de portais freelance com DATA REAL de publicação.
-São pessoas/empresas que PUBLICARAM projetos pedindo o serviço — são CLIENTES potenciais do usuário.
+          const enrichedCandidates = (await Promise.all(
+            filteredCandidates.map(async (candidate) => {
+              const enriched = await enrichLeadSource(candidate, firecrawlApiKey);
+              return {
+                ...candidate,
+                sourceType: enriched.sourceType,
+                contactDetails: enriched.contactDetails,
+              } as SearchCandidate;
+            })
+          ))
+            .filter((candidate) => {
+              const details = candidate.contactDetails || emptyContactDetails();
+              const hasActionableContact = Boolean(details.website || details.linkedin || details.instagram || details.whatsapp || details.phone || details.email);
+              if (!hasActionableContact) return false;
+              if (candidate.region !== "BR" && !hasBrazilianContext(candidate)) return false;
+              if (isPortalUrl(candidate.url) && !hasDirectContact(details) && (!details.website || isPortalUrl(details.website))) return false;
+              return true;
+            });
 
-INSTRUÇÕES CRÍTICAS DE FORMATO:
-Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
-Depois do bloco JSON, escreva APENAS 1 frase curta.
+          const rankedLeads = dedupeRankedLeads(
+            enrichedCandidates.map((candidate) => {
+              const details = candidate.contactDetails || emptyContactDetails();
+              const combinedText = normalizeWhitespace([candidate.title, candidate.description, candidate.markdown].filter(Boolean).join(" "));
+              const lead = buildLeadFromCandidate(candidate, nicheText, serviceText);
+              const rank =
+                calculateLeadScore(combinedText, details, lead.recent_activity, isPortalUrl(candidate.url)) * 10 +
+                countContactSignals(details) * 4 +
+                (candidate.region !== "BR" ? 3 : 0);
 
-[LEADS_JSON]
-{
-  "leads": [
-    {
-      "name": "Nome da pessoa ou empresa REAL encontrada nos dados.",
-      "company": "Nome da empresa REAL (se disponível)",
-      "country": "País com emoji de bandeira (ex: '🇧🇷 Brasil', '🇺🇸 Estados Unidos', '🇨🇦 Canadá', '🇪🇺 Europa')",
-      "city": "Cidade (REAL, senão vazio)",
-      "sector": "Nicho: ${nicheText}",
-      "service_needed": "Serviço que a pessoa publicou que precisa (extraído da postagem real)",
-      "website": "URL do site OFICIAL ou link direto da postagem no portal freelance. Se não encontrar, deixe vazio.",
-      "linkedin": "(SOMENTE se encontrado nos dados reais, senão vazio)",
-      "instagram": "(SOMENTE se encontrado nos dados reais, senão vazio)",
-      "whatsapp": "(SOMENTE se encontrado nos dados reais, senão vazio)",
-      "phone": "(SOMENTE se encontrado nos dados reais, senão vazio)",
-      "email": "(SOMENTE se encontrado nos dados reais, senão vazio)",
-      "score": 9,
-      "search_query": "O que a pessoa PUBLICOU/PEDIU. Ex: 'Need developer to build e-commerce website'. Extraia da postagem real.",
-      "search_query_pt": "Tradução para português do pedido",
-      "recent_activity": "Data e portal onde publicou. Ex: 'Publicado em Upwork em 05/04/2026'. REAL, extraído dos dados.",
-      "problem": "Descrição do que a pessoa precisa baseado na postagem real",
-      "solution": "Como você pode resolver com seu serviço de desenvolvimento",
-      "outreach_message": "Mensagem pronta para enviar",
-      "fair_price": "Orçamento indicado na postagem OU estimativa com moeda local + R$"
-    }
-  ],
-  "strategies": [
-    "Estratégia específica de prospecção 1",
-    "Estratégia específica de prospecção 2"
-  ]
-}
-[/LEADS_JSON]
+              return {
+                region: candidate.region,
+                lead,
+                rank,
+              };
+            })
+          );
 
-REGRAS ABSOLUTAS - NADA FICTÍCIO:
-1) TUDO deve vir dos dados reais do Firecrawl. Se não encontrou, NÃO inclua.
-2) NUNCA invente: nomes, empresas, contatos, pesquisas, atividades, datas. NADA.
-3) search_query: O que a pessoa REALMENTE publicou/pediu. Extraia do conteúdo real.
-4) recent_activity: Data e fonte REAL da postagem. NUNCA invente datas.
-5) Contatos: SOMENTE se encontrados nos dados reais. Senão "".
-6) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS.
-7) fair_price: Se a postagem tem budget, mostre. Senão, estime com moeda local + R$.
-8) Score de 1-10 baseado no potencial real.
-9) APÓS o JSON, escreva APENAS 1 frase curta.
-10) Se não encontrar NENHUM lead real, diga honestamente e sugira termos melhores.`;
+          const finalLeadItems = selectBalancedLeads(rankedLeads, 10);
+          const finalLeads = finalLeadItems.map((item) => item.lead);
+          const directContactCount = finalLeads.filter((lead) => Boolean(lead.email || lead.phone || lead.whatsapp || lead.linkedin || lead.instagram)).length;
+          const outsideBrazilCount = finalLeads.filter((lead) => lead.country !== LEAD_REGION_LABELS.BR).length;
+          const payload = {
+            leads: finalLeads,
+            strategies: buildLeadStrategies(finalLeads, serviceText),
+          };
+
+          console.log("Final real leads returned:", finalLeads.length, "outside BR:", outsideBrazilCount, "direct contacts:", directContactCount);
+
+          if (finalLeads.length === 0) {
+            const emptyPayload = {
+              leads: [],
+              strategies: [
+                "Tente manter o nicho e especificar se quer vender site, app ou automação.",
+                "Vale pedir uma nova rodada focada em uma região específica, como EUA ou Canadá.",
+              ],
+            };
+
+            return createSseTextResponse(`[LEADS_JSON]\n${JSON.stringify(emptyPayload, null, 2)}\n[/LEADS_JSON]\n\nNão achei leads reais com contato público nessa rodada — me diga outro nicho ou serviço e eu amplio a busca.`);
+          }
+
+          return createSseTextResponse(`[LEADS_JSON]\n${JSON.stringify(payload, null, 2)}\n[/LEADS_JSON]\n\nEncontrei ${finalLeads.length} leads reais, sendo ${outsideBrazilCount} fora do Brasil e ${directContactCount} com contato direto público.`);
+        } catch (error) {
+          console.error("Deterministic lead search error:", error);
+          return createSseTextResponse("Tive um problema ao montar os leads reais agora — tenta de novo que eu refaço a busca com outro recorte.");
+        }
       }
     }
 
