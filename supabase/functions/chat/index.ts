@@ -25,6 +25,10 @@ const LEAD_KEYWORDS = [
   "desenvolvimento de aplicativo", "app developer", "web developer",
   "buscar clientes", "encontrar empresas", "prospectar clientes",
   "empreendedores brasileiros", "brasileiros no exterior",
+  "empresas que buscam", "pessoas que buscam", "quem precisa de",
+  "serviço de", "mostre empresas", "mostre pessoas", "nicho", "nichos",
+  "clientes potenciais", "marketing digital", "design", "consultoria",
+  "contabilidade", "advocacia", "freelancer", "agência",
 ];
 
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
