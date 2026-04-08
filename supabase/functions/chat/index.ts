@@ -672,13 +672,17 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
         
         const searchQueries: string[] = [];
         const nicheText = lastUserText;
-        const serviceText = serviceContext || "desenvolvimento web aplicativo automação";
+        const serviceText = serviceContext || "website app development automation";
         
-        // 4 focused queries without scrapeOptions to stay fast
-        searchQueries.push(`brasileiro ${nicheText} precisa ${serviceText} freelancer site:upwork.com OR site:workana.com OR site:99freelas.com.br`);
-        searchQueries.push(`Brazilian ${nicheText} needs ${serviceText} freelancer site:freelancer.com OR site:fiverr.com OR site:toptal.com`);
-        searchQueries.push(`empreendedor brasileiro ${nicheText} exterior EUA Canadá Europa precisa ${serviceText}`);
-        searchQueries.push(`${nicheText} ${serviceText} hire developer freelance Brazil Portuguese`);
+        // 4 queries — each focused on a DIFFERENT region for maximum coverage
+        // Query 1: Brazilian entrepreneurs in USA needing services
+        searchQueries.push(`Brazilian entrepreneur ${nicheText} USA needs ${serviceText} site:upwork.com OR site:freelancer.com`);
+        // Query 2: Brazilian entrepreneurs in Canada & Europe
+        searchQueries.push(`Brazilian ${nicheText} Canada Europe needs ${serviceText} site:workana.com OR site:fiverr.com OR site:toptal.com`);
+        // Query 3: Brasileiros no exterior buscando serviços
+        searchQueries.push(`brasileiro ${nicheText} Estados Unidos Canadá Europa precisa ${serviceText} freelancer desenvolvedor`);
+        // Query 4: Brazil-based businesses needing the service
+        searchQueries.push(`${nicheText} Brasil precisa ${serviceText} freelancer site:99freelas.com.br OR site:workana.com OR site:upwork.com`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
@@ -695,7 +699,7 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
                   },
                   body: JSON.stringify({
                     query: q,
-                    limit: 5,
+                    limit: 8,
                   }),
                 });
                 if (resp.ok) {
