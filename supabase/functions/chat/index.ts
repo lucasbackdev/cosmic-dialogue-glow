@@ -754,12 +754,15 @@ Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Worka
 Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
 ${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
-REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS.
-- Busque em TODAS as regiões: Brasil, Estados Unidos, Canadá e Europa
-- Mas os leads devem ser de BRASILEIROS (nomes brasileiros, empresas de brasileiros)
-- Priorize postagens de portais freelance com DATA REAL de publicação
-- São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado
-- Organize por região: 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá, 🇪🇺 Europa
+REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS (ou empresas de brasileiros).
+DISTRIBUIÇÃO REGIONAL OBRIGATÓRIA — mostre leads de TODAS as 4 regiões:
+- 🇧🇷 Brasil (brasileiros no Brasil)
+- 🇺🇸 EUA (brasileiros com empresas nos Estados Unidos)
+- 🇨🇦 Canadá (brasileiros com empresas no Canadá)
+- 🇪🇺 Europa (brasileiros com empresas na Europa)
+NÃO foque apenas no Brasil. Distribua leads entre as 4 regiões.
+Priorize postagens de portais freelance com DATA REAL de publicação.
+São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado.
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
 Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
