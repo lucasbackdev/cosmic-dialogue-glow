@@ -5,20 +5,24 @@ import {
   ShoppingBag, ShoppingCart, PawPrint, Pill, Glasses, Gem,
   Building2, Landmark, Home, Wrench, Zap, HardHat,
   Scale, Calculator, GraduationCap, BookOpen, Brain, Users,
-  Package, Ship, TruckIcon, Warehouse,
+  Package, Ship, Warehouse,
   Monitor, Megaphone, Rocket, Code,
   Camera, Palette, Music, Shirt, Sparkles, MapPin, Leaf, Baby,
   Search
 } from "lucide-react";
 
-export interface NicheCategory {
+interface NicheItem {
+  name: string;
+  icon: string;
+}
+
+interface NicheCategory {
   category: string;
   emoji: string;
-  niches: { name: string; icon: string }[];
+  niches: NicheItem[];
 }
 
 interface NicheSelectorDashboardProps {
-  categories: NicheCategory[];
   onSelect: (niche: string) => void;
 }
 
@@ -42,30 +46,181 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Alimentação": "from-orange-500/20 to-amber-500/20 border-orange-500/30",
   "Comércio & Varejo": "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
   "Serviços & Construção": "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
+  "Imobiliário": "from-teal-500/20 to-emerald-500/20 border-teal-500/30",
   "Profissionais & Escritórios": "from-purple-500/20 to-violet-500/20 border-purple-500/30",
+  "Educação & Treinamento": "from-indigo-500/20 to-purple-500/20 border-indigo-500/30",
   "Logística & Indústria": "from-emerald-500/20 to-green-500/20 border-emerald-500/30",
   "Tecnologia": "from-cyan-500/20 to-blue-500/20 border-cyan-500/30",
-  "Educação & Treinamento": "from-indigo-500/20 to-purple-500/20 border-indigo-500/30",
   "Entretenimento & Lifestyle": "from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/30",
-  "Pet & Animais": "from-amber-500/20 to-yellow-500/20 border-amber-500/30",
   "Automotivo": "from-slate-500/20 to-gray-500/20 border-slate-500/30",
-  "Imobiliário": "from-teal-500/20 to-emerald-500/20 border-teal-500/30",
+  "Pet & Animais": "from-amber-500/20 to-yellow-500/20 border-amber-500/30",
 };
 
-const NicheSelectorDashboard = ({ categories, onSelect }: NicheSelectorDashboardProps) => {
+const DEFAULT_CATEGORIES: NicheCategory[] = [
+  {
+    category: "Saúde & Beleza", emoji: "🏥",
+    niches: [
+      { name: "Clínica de Estética", icon: "sparkles" },
+      { name: "Consultório Médico", icon: "stethoscope" },
+      { name: "Dentista / Odontologia", icon: "smile" },
+      { name: "Academia / CrossFit", icon: "dumbbell" },
+      { name: "Salão de Beleza", icon: "scissors" },
+      { name: "Barbearia", icon: "scissors" },
+      { name: "Nutricionista", icon: "apple" },
+      { name: "Psicologia / Terapia", icon: "brain" },
+      { name: "Farmácia", icon: "pill" },
+      { name: "Spa / Massagem", icon: "heart" },
+      { name: "Ótica", icon: "glasses" },
+    ],
+  },
+  {
+    category: "Alimentação", emoji: "🍔",
+    niches: [
+      { name: "Restaurante", icon: "utensils" },
+      { name: "Pizzaria", icon: "pizza" },
+      { name: "Hamburgueria", icon: "utensils" },
+      { name: "Food Truck", icon: "truck" },
+      { name: "Padaria / Confeitaria", icon: "cake" },
+      { name: "Cafeteria", icon: "coffee" },
+      { name: "Bar / Pub", icon: "beer" },
+      { name: "Açaíteria", icon: "leaf" },
+      { name: "Sorveteria", icon: "sparkles" },
+      { name: "Marmitaria / Delivery", icon: "package" },
+    ],
+  },
+  {
+    category: "Comércio & Varejo", emoji: "🏪",
+    niches: [
+      { name: "Loja de Roupas", icon: "shirt" },
+      { name: "E-commerce", icon: "shopping-cart" },
+      { name: "Pet Shop", icon: "paw" },
+      { name: "Joalheria / Acessórios", icon: "gem" },
+      { name: "Loja de Cosméticos", icon: "sparkles" },
+      { name: "Supermercado / Mercearia", icon: "shopping-cart" },
+      { name: "Papelaria", icon: "book" },
+      { name: "Loja de Celulares", icon: "monitor" },
+      { name: "Floricultura", icon: "leaf" },
+      { name: "Sex Shop", icon: "heart" },
+      { name: "Loja Infantil", icon: "baby" },
+    ],
+  },
+  {
+    category: "Serviços & Construção", emoji: "🏗️",
+    niches: [
+      { name: "Construtora", icon: "hardhat" },
+      { name: "Arquitetura / Design Interior", icon: "home" },
+      { name: "Oficina Mecânica", icon: "wrench" },
+      { name: "Lavanderia", icon: "sparkles" },
+      { name: "Energia Solar", icon: "zap" },
+      { name: "Segurança / Monitoramento", icon: "monitor" },
+      { name: "Dedetizadora", icon: "sparkles" },
+      { name: "Marido de Aluguel", icon: "wrench" },
+      { name: "Serralheria / Vidraçaria", icon: "hardhat" },
+      { name: "Elétrica / Hidráulica", icon: "zap" },
+    ],
+  },
+  {
+    category: "Imobiliário", emoji: "🏠",
+    niches: [
+      { name: "Imobiliária", icon: "home" },
+      { name: "Corretor de Imóveis", icon: "landmark" },
+      { name: "Administradora de Condomínio", icon: "building" },
+      { name: "Airbnb / Aluguel por Temporada", icon: "home" },
+      { name: "Hotel / Pousada", icon: "building" },
+    ],
+  },
+  {
+    category: "Profissionais & Escritórios", emoji: "💼",
+    niches: [
+      { name: "Advocacia / Escritório Jurídico", icon: "scale" },
+      { name: "Contabilidade", icon: "calculator" },
+      { name: "Consultoria Empresarial", icon: "users" },
+      { name: "Coaching / Mentoria", icon: "brain" },
+      { name: "Despachante", icon: "book" },
+      { name: "Recursos Humanos", icon: "users" },
+      { name: "Seguros", icon: "landmark" },
+    ],
+  },
+  {
+    category: "Educação & Treinamento", emoji: "🎓",
+    niches: [
+      { name: "Escola / Colégio", icon: "graduation" },
+      { name: "Curso de Idiomas", icon: "book" },
+      { name: "Escola de Música", icon: "music" },
+      { name: "Autoescola / CFC", icon: "map" },
+      { name: "Curso Online / EAD", icon: "monitor" },
+      { name: "Escola Infantil / Creche", icon: "baby" },
+      { name: "Curso Técnico / Profissionalizante", icon: "graduation" },
+    ],
+  },
+  {
+    category: "Logística & Indústria", emoji: "📦",
+    niches: [
+      { name: "Distribuidora", icon: "warehouse" },
+      { name: "Importação / Exportação", icon: "ship" },
+      { name: "Transportadora / Frete", icon: "truck" },
+      { name: "Atacado", icon: "package" },
+      { name: "Fábrica / Indústria", icon: "building" },
+      { name: "Gráfica", icon: "palette" },
+    ],
+  },
+  {
+    category: "Tecnologia", emoji: "💻",
+    niches: [
+      { name: "Agência de Marketing Digital", icon: "megaphone" },
+      { name: "Software House", icon: "code" },
+      { name: "Startup", icon: "rocket" },
+      { name: "Assistência Técnica", icon: "monitor" },
+      { name: "Provedor de Internet", icon: "zap" },
+      { name: "Agência de Design", icon: "palette" },
+    ],
+  },
+  {
+    category: "Entretenimento & Lifestyle", emoji: "🎉",
+    niches: [
+      { name: "Fotografia / Vídeo", icon: "camera" },
+      { name: "Estúdio de Tatuagem", icon: "palette" },
+      { name: "Casa de Festas / Buffet", icon: "cake" },
+      { name: "Espaço de Eventos", icon: "sparkles" },
+      { name: "Loja de Games", icon: "monitor" },
+      { name: "Studio de Pilates / Yoga", icon: "heart" },
+    ],
+  },
+  {
+    category: "Automotivo", emoji: "🚗",
+    niches: [
+      { name: "Concessionária / Revenda", icon: "building" },
+      { name: "Lava-Jato / Estética Automotiva", icon: "sparkles" },
+      { name: "Autopeças", icon: "wrench" },
+      { name: "Funilaria / Pintura", icon: "palette" },
+      { name: "Locadora de Veículos", icon: "truck" },
+    ],
+  },
+  {
+    category: "Pet & Animais", emoji: "🐾",
+    niches: [
+      { name: "Pet Shop", icon: "paw" },
+      { name: "Clínica Veterinária", icon: "stethoscope" },
+      { name: "Hotel / Creche para Pets", icon: "home" },
+      { name: "Banho & Tosa", icon: "scissors" },
+      { name: "Adestramento", icon: "paw" },
+    ],
+  },
+];
+
+const NicheSelectorDashboard = ({ onSelect }: NicheSelectorDashboardProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [hoveredNiche, setHoveredNiche] = useState<string | null>(null);
 
   const filteredCategories = searchTerm
-    ? categories.map(cat => ({
+    ? DEFAULT_CATEGORIES.map(cat => ({
         ...cat,
         niches: cat.niches.filter(n => n.name.toLowerCase().includes(searchTerm.toLowerCase()))
       })).filter(cat => cat.niches.length > 0)
-    : categories;
+    : DEFAULT_CATEGORIES;
 
   return (
     <div className="w-full animate-[float-up_0.4s_ease-out_forwards] space-y-3">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-1">
         <Sparkles className="w-4 h-4 text-primary" />
         <span className="text-xs font-bold text-foreground">Escolha o Nicho para Prospectar</span>
@@ -75,7 +230,6 @@ const NicheSelectorDashboard = ({ categories, onSelect }: NicheSelectorDashboard
         🇧🇷 Brasil • 🇺🇸 EUA • 🇨🇦 Canadá • 🇪🇺 Europa — Apenas brasileiros
       </p>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
         <input
@@ -87,11 +241,9 @@ const NicheSelectorDashboard = ({ categories, onSelect }: NicheSelectorDashboard
         />
       </div>
 
-      {/* Categories grid */}
       <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-3" style={{ scrollbarWidth: "thin" }}>
         {filteredCategories.map((cat) => {
           const colorClass = CATEGORY_COLORS[cat.category] || "from-primary/20 to-primary/10 border-primary/30";
-          
           return (
             <div key={cat.category} className="space-y-1.5">
               <div className="flex items-center gap-1.5">
@@ -102,7 +254,6 @@ const NicheSelectorDashboard = ({ categories, onSelect }: NicheSelectorDashboard
                 {cat.niches.map((niche) => {
                   const IconComp = ICON_MAP[niche.icon] || Building2;
                   const isHovered = hoveredNiche === niche.name;
-                  
                   return (
                     <button
                       key={niche.name}
