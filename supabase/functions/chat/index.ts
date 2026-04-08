@@ -672,17 +672,18 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
         
         const searchQueries: string[] = [];
         const nicheText = lastUserText;
-        const serviceText = serviceContext || "website app development automation";
+        const serviceText = serviceContext || "website aplicativo automação desenvolvimento";
         
-        // 4 queries — each focused on a DIFFERENT region for maximum coverage
-        // Query 1: Brazilian entrepreneurs in USA needing services
-        searchQueries.push(`Brazilian entrepreneur ${nicheText} USA needs ${serviceText} site:upwork.com OR site:freelancer.com`);
-        // Query 2: Brazilian entrepreneurs in Canada & Europe
-        searchQueries.push(`Brazilian ${nicheText} Canada Europe needs ${serviceText} site:workana.com OR site:fiverr.com OR site:toptal.com`);
-        // Query 3: Brasileiros no exterior buscando serviços
-        searchQueries.push(`brasileiro ${nicheText} Estados Unidos Canadá Europa precisa ${serviceText} freelancer desenvolvedor`);
-        // Query 4: Brazil-based businesses needing the service
-        searchQueries.push(`${nicheText} Brasil precisa ${serviceText} freelancer site:99freelas.com.br OR site:workana.com OR site:upwork.com`);
+        // 4 queries — focused on finding COMPANIES/PEOPLE who POSTED PROJECTS needing developers
+        // These are potential CLIENTS, not freelancers offering services
+        // Query 1: Projects posted by businesses needing development (Brazil)
+        searchQueries.push(`"preciso de" OR "procuro" OR "orçamento para" ${nicheText} ${serviceText} site:99freelas.com.br OR site:workana.com`);
+        // Query 2: Businesses posting jobs/projects needing developers (USA)
+        searchQueries.push(`"looking for" OR "need developer" OR "need a website" ${nicheText} site:upwork.com OR site:freelancer.com`);
+        // Query 3: Brazilian business owners abroad posting projects  
+        searchQueries.push(`${nicheText} "need" OR "looking for" OR "hiring" developer website app Brazil OR Brazilian site:upwork.com OR site:toptal.com`);
+        // Query 4: Direct company searches - businesses in the niche that likely need digital services
+        searchQueries.push(`${nicheText} empresa brasileira site OR aplicativo OR sistema OR automação OR "precisa de" OR "busca desenvolvedor"`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
@@ -754,15 +755,16 @@ Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Worka
 Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
 ${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
-REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS (ou empresas de brasileiros).
-DISTRIBUIÇÃO REGIONAL OBRIGATÓRIA — mostre leads de TODAS as 4 regiões:
-- 🇧🇷 Brasil (brasileiros no Brasil)
-- 🇺🇸 EUA (brasileiros com empresas nos Estados Unidos)
-- 🇨🇦 Canadá (brasileiros com empresas no Canadá)
-- 🇪🇺 Europa (brasileiros com empresas na Europa)
-NÃO foque apenas no Brasil. Distribua leads entre as 4 regiões.
+REGRA ABSOLUTA: O usuário quer PRESTAR SERVIÇO para essas empresas/pessoas. Ele é o DESENVOLVEDOR/PRESTADOR.
+Os leads são POTENCIAIS CLIENTES — empresas ou pessoas que PUBLICARAM PROJETOS pedindo serviços de desenvolvimento, site, app, automação, etc.
+NÃO mostre freelancers oferecendo serviços. Mostre QUEM ESTÁ CONTRATANDO / QUEM POSTOU O PROJETO.
+DISTRIBUIÇÃO REGIONAL OBRIGATÓRIA — mostre leads de TODAS as 4 regiões quando possível:
+- 🇧🇷 Brasil (empresas brasileiras que postaram projetos)
+- 🇺🇸 EUA (empresas/pessoas que postaram projetos nos EUA)
+- 🇨🇦 Canadá (empresas/pessoas que postaram projetos no Canadá)
+- 🇪🇺 Europa (empresas/pessoas que postaram projetos na Europa)
 Priorize postagens de portais freelance com DATA REAL de publicação.
-São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado.
+São pessoas/empresas que PUBLICARAM projetos pedindo o serviço — são CLIENTES potenciais do usuário.
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
 Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
