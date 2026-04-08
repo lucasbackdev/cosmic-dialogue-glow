@@ -757,15 +757,17 @@ Se o usuário NÃO especificou o serviço, use nichos:
 REGRAS:
 1) Gere pelo menos 5-10 leads por nicho. USE dados reais do Firecrawl quando disponíveis.
 2) Organize por score (maior primeiro) e atividade mais recente
-3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email)
-4) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
-5) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
-6) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
-7) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
-8) Score de 1-10 baseado no potencial e urgência
-9) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
-10) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
-11) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web`;
+3) NUNCA INVENTE dados de contato. Se NÃO encontrar telefone, email, whatsapp, linkedin ou instagram REAIS nos dados do Firecrawl, DEIXE O CAMPO VAZIO ("") ou OMITA. Contatos inventados são PROIBIDOS.
+4) Use APENAS websites, emails, telefones e redes sociais que aparecem nos resultados reais do Firecrawl.
+5) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
+6) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
+7) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
+8) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
+9) Score de 1-10 baseado no potencial e urgência
+10) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
+11) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
+12) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web
+13) Se um campo de contato não foi encontrado nos dados reais, coloque "" (string vazia). NUNCA invente.
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
