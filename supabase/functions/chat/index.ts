@@ -633,52 +633,196 @@ Seja breve, máximo 2 frases.`;
       
       // Also check if this is a follow-up where user chose a niche from the previous AI message
       const previousAiMsg = [...messages].reverse().find((m: {role:string}) => m.role === "assistant");
-      const isNicheFollowUp = previousAiMsg?.content?.includes("Qual nicho") || previousAiMsg?.content?.includes("qual nicho") || previousAiMsg?.content?.includes("escolha") || previousAiMsg?.content?.includes("Escolha");
+      const isNicheFollowUp = previousAiMsg?.content?.includes("[NICHE_SELECT]") || previousAiMsg?.content?.includes("Qual nicho") || previousAiMsg?.content?.includes("qual nicho") || previousAiMsg?.content?.includes("escolha") || previousAiMsg?.content?.includes("Escolha");
       
       if (!userHasNiche && !isNicheFollowUp) {
-        // User hasn't specified a niche yet → ASK FIRST, don't search
-        console.log("No niche specified - asking user to choose");
+        // User hasn't specified a niche yet → output niche selector JSON
+        console.log("No niche specified - showing niche dashboard");
         systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS - PERGUNTAR NICHO PRIMEIRO]
-Você é uma ESPECIALISTA em prospecção de leads B2B.
+O usuário quer buscar leads mas NÃO especificou o nicho/setor.
 
-O usuário quer buscar leads mas NÃO especificou o nicho/setor. Você DEVE perguntar ANTES de buscar.
+Você DEVE responder com EXATAMENTE este formato:
+1) Uma frase curta e amigável (máx 2 linhas)
+2) O bloco [NICHE_SELECT] com TODAS as categorias abaixo
 
-Responda com uma mensagem amigável perguntando qual nicho ele quer prospectar.
-Dê exemplos organizados por categoria. Use emojis e formatação bonita.
+Responda EXATAMENTE assim (copie o JSON inteiro):
 
-Exemplo de resposta:
-"Ótimo! Para encontrar os melhores leads brasileiros, me diga qual nicho você quer prospectar! 🎯
+Ótimo! Escolha o nicho que deseja prospectar 🎯 Vou buscar leads REAIS de brasileiros no 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá e 🇪🇺 Europa!
 
-**🏥 Saúde & Beleza**
-Clínica de Estética, Consultório Médico, Dentista, Academia, Salão de Beleza, Barbearia, Nutricionista
-
-**🍔 Alimentação**
-Restaurante, Pizzaria, Hamburgueria, Food Truck, Padaria, Cafeteria, Bar
-
-**🏪 Comércio & Varejo**
-Loja de Roupas, E-commerce, Pet Shop, Farmácia, Ótica, Joalheria, Supermercado
-
-**🏗️ Serviços & Construção**
-Construtora, Arquitetura, Imobiliária, Oficina Mecânica, Lavanderia, Energia Solar
-
-**💼 Profissionais & Escritórios**
-Advocacia, Contabilidade, Consultoria, Coaching, Escola/Cursos
-
-**📦 Logística & Indústria**
-Distribuidora, Importação/Exportação, Transportadora, Atacado
-
-**💻 Tecnologia**
-Agência de Marketing, Software House, Startup
-
-Ou me diga outro nicho específico! Vou buscar leads REAIS em portais freelance e na web 🔍"
+[NICHE_SELECT]
+{
+  "categories": [
+    {
+      "category": "Saúde & Beleza",
+      "emoji": "🏥",
+      "niches": [
+        {"name": "Clínica de Estética", "icon": "sparkles"},
+        {"name": "Consultório Médico", "icon": "stethoscope"},
+        {"name": "Dentista / Odontologia", "icon": "smile"},
+        {"name": "Academia / CrossFit", "icon": "dumbbell"},
+        {"name": "Salão de Beleza", "icon": "scissors"},
+        {"name": "Barbearia", "icon": "scissors"},
+        {"name": "Nutricionista", "icon": "apple"},
+        {"name": "Psicologia / Terapia", "icon": "brain"},
+        {"name": "Farmácia", "icon": "pill"},
+        {"name": "Spa / Massagem", "icon": "heart"},
+        {"name": "Ótica", "icon": "glasses"}
+      ]
+    },
+    {
+      "category": "Alimentação",
+      "emoji": "🍔",
+      "niches": [
+        {"name": "Restaurante", "icon": "utensils"},
+        {"name": "Pizzaria", "icon": "pizza"},
+        {"name": "Hamburgueria", "icon": "utensils"},
+        {"name": "Food Truck", "icon": "truck"},
+        {"name": "Padaria / Confeitaria", "icon": "cake"},
+        {"name": "Cafeteria", "icon": "coffee"},
+        {"name": "Bar / Pub", "icon": "beer"},
+        {"name": "Açaíteria", "icon": "leaf"},
+        {"name": "Sorveteria", "icon": "sparkles"},
+        {"name": "Marmitaria / Delivery", "icon": "package"}
+      ]
+    },
+    {
+      "category": "Comércio & Varejo",
+      "emoji": "🏪",
+      "niches": [
+        {"name": "Loja de Roupas", "icon": "shirt"},
+        {"name": "E-commerce", "icon": "shopping-cart"},
+        {"name": "Pet Shop", "icon": "paw"},
+        {"name": "Joalheria / Acessórios", "icon": "gem"},
+        {"name": "Loja de Cosméticos", "icon": "sparkles"},
+        {"name": "Supermercado / Mercearia", "icon": "shopping-cart"},
+        {"name": "Papelaria", "icon": "book"},
+        {"name": "Loja de Celulares", "icon": "monitor"},
+        {"name": "Floricultura", "icon": "leaf"},
+        {"name": "Sex Shop", "icon": "heart"},
+        {"name": "Loja Infantil", "icon": "baby"}
+      ]
+    },
+    {
+      "category": "Serviços & Construção",
+      "emoji": "🏗️",
+      "niches": [
+        {"name": "Construtora", "icon": "hardhat"},
+        {"name": "Arquitetura / Design Interior", "icon": "home"},
+        {"name": "Oficina Mecânica", "icon": "wrench"},
+        {"name": "Lavanderia", "icon": "sparkles"},
+        {"name": "Energia Solar", "icon": "zap"},
+        {"name": "Segurança / Monitoramento", "icon": "monitor"},
+        {"name": "Dedetizadora", "icon": "sparkles"},
+        {"name": "Marido de Aluguel", "icon": "wrench"},
+        {"name": "Serralheria / Vidraçaria", "icon": "hardhat"},
+        {"name": "Elétrica / Hidráulica", "icon": "zap"}
+      ]
+    },
+    {
+      "category": "Imobiliário",
+      "emoji": "🏠",
+      "niches": [
+        {"name": "Imobiliária", "icon": "home"},
+        {"name": "Corretor de Imóveis", "icon": "landmark"},
+        {"name": "Administradora de Condomínio", "icon": "building"},
+        {"name": "Airbnb / Aluguel por Temporada", "icon": "home"},
+        {"name": "Hotel / Pousada", "icon": "building"}
+      ]
+    },
+    {
+      "category": "Profissionais & Escritórios",
+      "emoji": "💼",
+      "niches": [
+        {"name": "Advocacia / Escritório Jurídico", "icon": "scale"},
+        {"name": "Contabilidade", "icon": "calculator"},
+        {"name": "Consultoria Empresarial", "icon": "users"},
+        {"name": "Coaching / Mentoria", "icon": "brain"},
+        {"name": "Despachante", "icon": "book"},
+        {"name": "Recursos Humanos", "icon": "users"},
+        {"name": "Seguros", "icon": "landmark"}
+      ]
+    },
+    {
+      "category": "Educação & Treinamento",
+      "emoji": "🎓",
+      "niches": [
+        {"name": "Escola / Colégio", "icon": "graduation"},
+        {"name": "Curso de Idiomas", "icon": "book"},
+        {"name": "Escola de Música", "icon": "music"},
+        {"name": "Autoescola / CFC", "icon": "map"},
+        {"name": "Curso Online / EAD", "icon": "monitor"},
+        {"name": "Escola Infantil / Creche", "icon": "baby"},
+        {"name": "Curso Técnico / Profissionalizante", "icon": "graduation"}
+      ]
+    },
+    {
+      "category": "Logística & Indústria",
+      "emoji": "📦",
+      "niches": [
+        {"name": "Distribuidora", "icon": "warehouse"},
+        {"name": "Importação / Exportação", "icon": "ship"},
+        {"name": "Transportadora / Frete", "icon": "truck"},
+        {"name": "Atacado", "icon": "package"},
+        {"name": "Fábrica / Indústria", "icon": "building"},
+        {"name": "Gráfica", "icon": "palette"}
+      ]
+    },
+    {
+      "category": "Tecnologia",
+      "emoji": "💻",
+      "niches": [
+        {"name": "Agência de Marketing Digital", "icon": "megaphone"},
+        {"name": "Software House", "icon": "code"},
+        {"name": "Startup", "icon": "rocket"},
+        {"name": "Assistência Técnica", "icon": "monitor"},
+        {"name": "Provedor de Internet", "icon": "zap"},
+        {"name": "Agência de Design", "icon": "palette"}
+      ]
+    },
+    {
+      "category": "Entretenimento & Lifestyle",
+      "emoji": "🎉",
+      "niches": [
+        {"name": "Fotografia / Vídeo", "icon": "camera"},
+        {"name": "Estúdio de Tatuagem", "icon": "palette"},
+        {"name": "Casa de Festas / Buffet", "icon": "cake"},
+        {"name": "Espaço de Eventos", "icon": "sparkles"},
+        {"name": "Loja de Games", "icon": "monitor"},
+        {"name": "Studio de Pilates / Yoga", "icon": "heart"}
+      ]
+    },
+    {
+      "category": "Automotivo",
+      "emoji": "🚗",
+      "niches": [
+        {"name": "Concessionária / Revenda", "icon": "building"},
+        {"name": "Lava-Jato / Estética Automotiva", "icon": "sparkles"},
+        {"name": "Autopeças", "icon": "wrench"},
+        {"name": "Funilaria / Pintura", "icon": "palette"},
+        {"name": "Locadora de Veículos", "icon": "truck"}
+      ]
+    },
+    {
+      "category": "Pet & Animais",
+      "emoji": "🐾",
+      "niches": [
+        {"name": "Pet Shop", "icon": "paw"},
+        {"name": "Clínica Veterinária", "icon": "stethoscope"},
+        {"name": "Hotel / Creche para Pets", "icon": "home"},
+        {"name": "Banho & Tosa", "icon": "scissors"},
+        {"name": "Adestramento", "icon": "paw"}
+      ]
+    }
+  ]
+}
+[/NICHE_SELECT]
 
 REGRAS:
 1) NÃO faça busca no Firecrawl ainda
 2) NÃO gere leads ainda
 3) NÃO inclua [LEADS_JSON]
-4) APENAS pergunte o nicho de forma bonita e organizada
-5) Mencione que vai buscar em Brasil, EUA, Canadá e Europa
-6) Lembre que serão APENAS brasileiros`;
+4) Inclua o [NICHE_SELECT] JSON EXATAMENTE como acima
+5) Antes do JSON, escreva APENAS 1-2 frases curtas e amigáveis`;
       } else {
         // User specified a niche OR is following up with a choice → SEARCH
         console.log("Niche detected or follow-up - searching Firecrawl");
