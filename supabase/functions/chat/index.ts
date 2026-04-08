@@ -610,8 +610,10 @@ Seja breve, máximo 2 frases.`;
       systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
 
-ANALISE o prompt do usuário:
-- Se ele mencionar "brasileiros", foque em brasileiros. Senão, busque QUALQUER pessoa/empresa que busca o serviço.
+REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no exterior (EUA, Canadá, Europa).
+- Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
+- São empreendedores brasileiros que emigraram e abriram negócios fora do Brasil
+- NUNCA gere leads de outras nacionalidades. APENAS brasileiros.
 - Se ele especificar um serviço (ex: "desenvolvimento web"), mostre leads diretos desse nicho
 - Se ele NÃO especificar, mostre uma LISTA DE NICHOS para ele escolher
 
