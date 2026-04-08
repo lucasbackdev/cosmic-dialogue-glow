@@ -6,8 +6,11 @@ interface ChatBubbleProps {
   content: string;
 }
 
-const ChatBubble = ({ role, content }: ChatBubbleProps) => (
-  <div
+const ChatBubble = ({ role, content }: ChatBubbleProps) => {
+  // Strip JSON data blocks from display
+  const displayContent = content.replace(/\[LEADS_JSON\][\s\S]*?\[\/LEADS_JSON\]/g, "").trim();
+  
+  return (
     className={cn(
       "w-full animate-[float-up_0.4s_ease-out_forwards]",
       role === "user" ? "text-right" : "text-left"
