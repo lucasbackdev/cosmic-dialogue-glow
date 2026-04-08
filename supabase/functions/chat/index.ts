@@ -75,6 +75,274 @@ function detectConsultTypes(text: string): string[] {
   return detected;
 }
 
+const PORTAL_HOSTS = [
+  "upwork.com",
+  "freelancer.com",
+  "workana.com",
+  "99freelas.com.br",
+  "fiverr.com",
+  "toptal.com",
+];
+
+type ContactDetails = {
+  website: string;
+  linkedin: string;
+  instagram: string;
+  whatsapp: string;
+  phone: string;
+  email: string;
+};
+
+type LeadSearchResult = {
+  url?: string;
+  title?: string;
+  description?: string;
+  markdown?: string;
+  sourceType?: string;
+  contactDetails?: ContactDetails;
+};
+
+function emptyContactDetails(): ContactDetails {
+  return {
+    website: "",
+    linkedin: "",
+    instagram: "",
+    whatsapp: "",
+    phone: "",
+    email: "",
+  };
+}
+
+function getHostname(url?: string): string {
+  if (!url) return "";
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function isPortalUrl(url?: string): boolean {
+  const host = getHostname(url);
+  return PORTAL_HOSTS.some((portalHost) => host === portalHost || host.endsWith(`.${portalHost}`));
+}
+
+function isSocialUrl(url?: string): boolean {
+  const host = getHostname(url);
+  return ["linkedin.com", "instagram.com", "facebook.com", "wa.me", "whatsapp.com", "t.me"]
+    .some((socialHost) => host === socialHost || host.endsWith(`.${socialHost}`));
+}
+
+function toAbsoluteUrl(rawUrl: string, baseUrl?: string): string | null {
+  try {
+    return new URL(rawUrl, baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+function extractUrlsFromText(text: string, baseUrl?: string): string[] {
+  const directMatches = text.match(/https?:\/\/[^\s<>"')\]]+/gi) || [];
+  const markdownMatches = Array.from(text.matchAll(/\]\((https?:\/\/[^)\s]+)\)/gi), (match) => match[1]);
+  const wwwMatches = (text.match(/\bwww\.[^\s<>"')\]]+/gi) || []).map((value) => `https://${value}`);
+
+  return Array.from(
+    new Set(
+      [...directMatches, ...markdownMatches, ...wwwMatches]
+        .map((value) => value.replace(/[),.;]+$/g, ""))
+        .map((value) => toAbsoluteUrl(value, baseUrl))
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+}
+
+function normalizePhoneNumber(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function mergeContactDetails(base: ContactDetails, extra: Partial<ContactDetails>): ContactDetails {
+  return {
+    website: base.website || extra.website || "",
+    linkedin: base.linkedin || extra.linkedin || "",
+    instagram: base.instagram || extra.instagram || "",
+    whatsapp: base.whatsapp || extra.whatsapp || "",
+    phone: base.phone || extra.phone || "",
+    email: base.email || extra.email || "",
+  };
+}
+
+function hasPublicContact(details: ContactDetails): boolean {
+  return Boolean(
+    details.website || details.linkedin || details.instagram || details.whatsapp || details.phone || details.email
+  );
+}
+
+function classifyLeadSource(result: LeadSearchResult): string {
+  const combined = `${result.title || ""} ${result.description || ""}`.toLowerCase();
+
+  if (isPortalUrl(result.url)) {
+    try {
+      const pathname = new URL(result.url!).pathname.toLowerCase();
+      if (/(job-search|search|browse|category|categories|freelance-jobs)/.test(pathname)) {
+        return "portal_listing";
+      }
+    } catch {
+      return "unknown";
+    }
+    return "project_posting";
+  }
+
+  if (/(criação de sites|criacao de sites|desenvolvimento web|desenvolvimento de sites|marketing digital|agência digital|agencia digital|software house|landing page|tráfego pago|trafego pago)/.test(combined)) {
+    return "service_provider";
+  }
+
+  return "company_or_other";
+}
+
+function extractContactDetailsFromText(text: string, baseUrl?: string): ContactDetails {
+  let details = emptyContactDetails();
+
+  const emailMatches = [
+    ...(text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) || []),
+    ...Array.from(text.matchAll(/mailto:([^\s"')>]+)/gi), (match) => match[1]),
+  ];
+  if (emailMatches[0]) {
+    details.email = emailMatches[0].replace(/^mailto:/i, "").trim();
+  }
+
+  const whatsappLink = text.match(/https?:\/\/(?:wa\.me|api\.whatsapp\.com)\/[^\s<>"')\]]+/i);
+  if (whatsappLink?.[0]) {
+    details.whatsapp = whatsappLink[0];
+  }
+
+  const whatsappText = text.match(/whatsapp[:\s]*([+\d()\s.-]{8,})/i);
+  if (!details.whatsapp && whatsappText?.[1]) {
+    details.whatsapp = normalizePhoneNumber(whatsappText[1]);
+  }
+
+  const telLink = text.match(/tel:([+\d()\s.-]{8,})/i);
+  if (telLink?.[1]) {
+    details.phone = normalizePhoneNumber(telLink[1]);
+  }
+
+  const validPhones = Array.from(text.matchAll(/(?:\+?\d[\d\s().-]{7,}\d)/g), (match) => normalizePhoneNumber(match[0]))
+    .filter((value) => {
+      const digits = value.replace(/\D/g, "");
+      return digits.length >= 8 && digits.length <= 15;
+    });
+  if (!details.phone && validPhones[0]) {
+    details.phone = validPhones[0];
+  }
+
+  for (const url of extractUrlsFromText(text, baseUrl)) {
+    const host = getHostname(url);
+    if (!details.linkedin && (host === "linkedin.com" || host.endsWith(".linkedin.com"))) {
+      details.linkedin = url;
+      continue;
+    }
+    if (!details.instagram && (host === "instagram.com" || host.endsWith(".instagram.com"))) {
+      details.instagram = url;
+      continue;
+    }
+    if (!details.whatsapp && (host === "wa.me" || host.endsWith(".wa.me") || host === "whatsapp.com" || host.endsWith(".whatsapp.com"))) {
+      details.whatsapp = url;
+      continue;
+    }
+    if (!details.website && !isPortalUrl(url) && !isSocialUrl(url)) {
+      details.website = new URL(url).origin;
+    }
+  }
+
+  if (!details.website && baseUrl && !isPortalUrl(baseUrl) && !isSocialUrl(baseUrl)) {
+    details.website = new URL(baseUrl).origin;
+  }
+
+  return details;
+}
+
+function buildContactPageUrls(url: string): string[] {
+  try {
+    const origin = new URL(url).origin;
+    return Array.from(new Set([
+      origin,
+      `${origin}/contato`,
+      `${origin}/contact`,
+      `${origin}/fale-conosco`,
+      `${origin}/sobre`,
+      `${origin}/about`,
+    ]));
+  } catch {
+    return [url];
+  }
+}
+
+async function scrapeContactDetails(url: string, firecrawlApiKey: string): Promise<ContactDetails> {
+  try {
+    const resp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${firecrawlApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown"],
+        onlyMainContent: false,
+      }),
+    });
+
+    if (!resp.ok) {
+      console.warn("Firecrawl scrape failed for url:", url, resp.status);
+      return emptyContactDetails();
+    }
+
+    const data = await resp.json();
+    const markdown = data?.data?.markdown || data?.markdown || "";
+    const sourceUrl = data?.data?.metadata?.sourceURL || data?.metadata?.sourceURL || url;
+    return extractContactDetailsFromText(markdown, sourceUrl);
+  } catch (error) {
+    console.warn("Error scraping contact details for url:", url, error);
+    return emptyContactDetails();
+  }
+}
+
+async function enrichLeadSource(result: LeadSearchResult, firecrawlApiKey: string): Promise<LeadSearchResult> {
+  let contactDetails = extractContactDetailsFromText(
+    [result.title, result.description, result.markdown].filter(Boolean).join("\n"),
+    result.url
+  );
+  const candidateUrls = new Set<string>();
+
+  if (result.url && !isPortalUrl(result.url) && !isSocialUrl(result.url)) {
+    candidateUrls.add(result.url);
+  }
+
+  if (contactDetails.website) {
+    for (const candidateUrl of buildContactPageUrls(contactDetails.website)) {
+      candidateUrls.add(candidateUrl);
+    }
+  }
+
+  for (const extractedUrl of extractUrlsFromText([result.title, result.description, result.markdown].filter(Boolean).join("\n"), result.url)) {
+    if (!isPortalUrl(extractedUrl) && !isSocialUrl(extractedUrl)) {
+      candidateUrls.add(extractedUrl);
+    }
+  }
+
+  const urlsToScrape = Array.from(candidateUrls).slice(0, 3);
+  const scrapedContacts = await Promise.all(urlsToScrape.map((candidateUrl) => scrapeContactDetails(candidateUrl, firecrawlApiKey)));
+
+  for (const scrapedContact of scrapedContacts) {
+    contactDetails = mergeContactDetails(contactDetails, scrapedContact);
+  }
+
+  return {
+    ...result,
+    sourceType: classifyLeadSource(result),
+    contactDetails,
+  };
+}
+
 function isLeadProspectingQuestion(messages: { role: string; content: string }[]): boolean {
   const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
   if (!lastUserMsg) return false;
