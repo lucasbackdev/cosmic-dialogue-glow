@@ -17,6 +17,16 @@ const CAMPAIGN_KEYWORDS = [
   "como estão", "relatório", "report", "análise", "analyze", "budget",
 ];
 
+const LEAD_KEYWORDS = [
+  "lead", "leads", "prospecção", "prospeccao", "prospectar", "encontrar clientes",
+  "brasileiros", "brasileiro", "empresas nos estados unidos", "empresas nos eua",
+  "empresas no canadá", "empresas no canada", "empresas na europa",
+  "tráfego pago", "trafego pago", "desenvolvedor web", "desenvolvimento web",
+  "desenvolvimento de aplicativo", "app developer", "web developer",
+  "buscar clientes", "encontrar empresas", "prospectar clientes",
+  "empreendedores brasileiros", "brasileiros no exterior",
+];
+
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
 const VEHICLE_CONSULT_TYPES: Record<string, { keywords: string[]; label: string; price: string }> = {
