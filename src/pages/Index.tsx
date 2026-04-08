@@ -39,17 +39,6 @@ function parseLeadData(text: string): { leads: LeadData[]; niches?: NicheGroup[]
   return null;
 }
 
-function parseNicheSelect(text: string): NicheCategory[] | null {
-  const match = text.match(/\[NICHE_SELECT\]([\s\S]*?)\[\/NICHE_SELECT\]/);
-  if (!match) return null;
-  try {
-    const parsed = JSON.parse(match[1].trim());
-    if (parsed.categories && Array.isArray(parsed.categories)) {
-      return parsed.categories;
-    }
-  } catch { /* ignore */ }
-  return null;
-}
 
 const Index = () => {
   const { t } = useLanguage();
