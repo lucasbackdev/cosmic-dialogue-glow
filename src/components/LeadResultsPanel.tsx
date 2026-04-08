@@ -14,6 +14,7 @@ export interface LeadData {
   whatsapp?: string;
   phone?: string;
   email?: string;
+  search_query_pt?: string;
   score: number;
   recent_activity?: string;
   search_query?: string;
@@ -96,6 +97,9 @@ const LeadCard = ({ lead }: { lead: LeadData }) => {
         <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
           <p className="text-[10px] text-muted-foreground mb-0.5 font-medium">Pesquisou por:</p>
           <p className="text-[11px] text-primary font-medium">"{lead.search_query}"</p>
+          {lead.search_query_pt && (
+            <p className="text-[10px] text-muted-foreground mt-0.5 italic">Tradução: "{lead.search_query_pt}"</p>
+          )}
           {lead.recent_activity && (
             <p className="text-[9px] text-muted-foreground mt-0.5">{lead.recent_activity}</p>
           )}
