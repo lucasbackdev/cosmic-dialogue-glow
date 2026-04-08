@@ -685,7 +685,7 @@ REGRAS:
 10) Score de 1-10 baseado no potencial e urgência
 11) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
 12) As strategies devem ser acionáveis e específicas
-13) Após o JSON, escreva apenas 2-3 frases de análise
+13) APÓS o JSON, escreva APENAS 1 frase curta e direta como "Encontrei X leads no nicho Y. Os dados estão no painel." NÃO escreva parágrafos, NÃO repita dados do JSON, NÃO faça análise longa.
 14) Seja honesto que os dados são baseados em tendências e análise de mercado`;
     }
 
