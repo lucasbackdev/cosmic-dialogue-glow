@@ -120,6 +120,12 @@ const Index = () => {
             (lower.includes("fipe") || lower.includes("sinistro"))));
   }, [messages, detectedPlate]);
 
+  // Parse lead data from assistant messages
+  const parsedLeads = useMemo(() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
+    if (!lastAssistant) return null;
+    return parseLeadData(lastAssistant.content);
+  }, [messages]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
