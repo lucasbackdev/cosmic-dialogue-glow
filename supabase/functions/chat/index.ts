@@ -754,20 +754,19 @@ Se o usuário NÃO especificou o serviço, use nichos:
 }
 [/LEADS_JSON]
 
-REGRAS:
-1) Gere pelo menos 5-10 leads por nicho. USE dados reais do Firecrawl quando disponíveis.
-2) Organize por score (maior primeiro) e atividade mais recente
-3) NUNCA INVENTE dados de contato. Se NÃO encontrar telefone, email, whatsapp, linkedin ou instagram REAIS nos dados do Firecrawl, DEIXE O CAMPO VAZIO ("") ou OMITA. Contatos inventados são PROIBIDOS.
-4) Use APENAS websites, emails, telefones e redes sociais que aparecem nos resultados reais do Firecrawl.
-5) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
-6) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
-7) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
-8) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
-9) Score de 1-10 baseado no potencial e urgência
-10) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
-11) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
-12) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web
-13) Se um campo de contato não foi encontrado nos dados reais, coloque "" (string vazia). NUNCA invente.`;
+REGRAS ABSOLUTAS - NADA FICTÍCIO:
+1) TUDO deve vir dos dados reais do Firecrawl. Se não encontrou, NÃO inclua.
+2) NUNCA invente: nomes, empresas, contatos, pesquisas, atividades. NADA.
+3) website: SOMENTE o site oficial da empresa (ex: empresa.com). NUNCA links de artigos, listas, diretórios ou sites de terceiros.
+4) search_query: SOMENTE se os dados reais mostrarem o que a empresa pesquisou. Se não, deixe "".
+5) recent_activity: SOMENTE atividades reais documentadas nos dados. Se não encontrou, deixe "".
+6) Contatos (phone, email, whatsapp, linkedin, instagram): SOMENTE se encontrados nos dados reais. Senão "".
+7) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS. Qualidade > quantidade.
+8) problem e solution: baseie-se em dados reais sobre a empresa, não invente cenários.
+9) fair_price: valor NA MOEDA LOCAL + conversão em R$
+10) Score de 1-10 baseado no potencial real
+11) APÓS o JSON, escreva APENAS 1 frase curta.
+12) Se não encontrar NENHUM lead real, diga honestamente que não encontrou e sugira termos de busca melhores.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
