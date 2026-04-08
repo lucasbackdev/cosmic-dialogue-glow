@@ -689,10 +689,10 @@ Seja breve, máximo 2 frases.`;
       systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
 
-${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use esses dados para criar leads BASEADOS EM INFORMAÇÕES REAIS.
-Extraia nomes de pessoas, empresas, contatos, websites, serviços que buscam a partir dos dados reais.
-Se os dados reais não forem suficientes, complemente com análise de mercado, mas PRIORIZE dados reais.
-${firecrawlContext}` : "Os dados vêm de análise de mercado e tendências reais de 2026."}
+${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
+Extraia nomes de pessoas, empresas, websites e serviços a partir dos dados reais.
+NUNCA INVENTE dados que não estão nos resultados. Se não encontrar um dado (telefone, email, etc), deixe vazio "".
+${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
 REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no exterior (EUA, Canadá, Europa).
 - Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
@@ -716,12 +716,12 @@ Se o usuário especificou o serviço, use este formato:
       "city": "Cidade",
       "sector": "Nicho de atuação",
       "service_needed": "Serviço que busca",
-      "website": "https://... (use dados REAIS dos resultados quando disponíveis)",
-      "linkedin": "https://linkedin.com/in/...",
-      "instagram": "https://instagram.com/...",
-      "whatsapp": "+1 (555) 123-4567",
-      "phone": "+1 (555) 123-4567",
-      "email": "contato@empresa.com",
+      "website": "https://... (SOMENTE se encontrado nos dados reais, senão deixe vazio)",
+      "linkedin": "(SOMENTE se encontrado nos dados reais, senão deixe vazio)",
+      "instagram": "(SOMENTE se encontrado nos dados reais, senão deixe vazio)",
+      "whatsapp": "(SOMENTE se encontrado nos dados reais, senão deixe vazio)",
+      "phone": "(SOMENTE se encontrado nos dados reais, senão deixe vazio)",
+      "email": "(SOMENTE se encontrado nos dados reais, senão deixe vazio)",
       "score": 9,
       "search_query": "Exatamente o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL",
       "search_query_pt": "Tradução da pesquisa para português",
@@ -757,15 +757,17 @@ Se o usuário NÃO especificou o serviço, use nichos:
 REGRAS:
 1) Gere pelo menos 5-10 leads por nicho. USE dados reais do Firecrawl quando disponíveis.
 2) Organize por score (maior primeiro) e atividade mais recente
-3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email)
-4) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
-5) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
-6) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
-7) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
-8) Score de 1-10 baseado no potencial e urgência
-9) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
-10) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
-11) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web`;
+3) NUNCA INVENTE dados de contato. Se NÃO encontrar telefone, email, whatsapp, linkedin ou instagram REAIS nos dados do Firecrawl, DEIXE O CAMPO VAZIO ("") ou OMITA. Contatos inventados são PROIBIDOS.
+4) Use APENAS websites, emails, telefones e redes sociais que aparecem nos resultados reais do Firecrawl.
+5) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
+6) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
+7) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
+8) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
+9) Score de 1-10 baseado no potencial e urgência
+10) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
+11) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
+12) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web
+13) Se um campo de contato não foi encontrado nos dados reais, coloque "" (string vazia). NUNCA invente.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
