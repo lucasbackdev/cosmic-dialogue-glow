@@ -767,7 +767,7 @@ REGRAS:
 10) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
 11) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
 12) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web
-13) Se um campo de contato não foi encontrado nos dados reais, coloque "" (string vazia). NUNCA invente.
+13) Se um campo de contato não foi encontrado nos dados reais, coloque "" (string vazia). NUNCA invente.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
