@@ -636,12 +636,13 @@ Se o usuário especificou o serviço, use este formato:
       "phone": "+1 (555) 123-4567",
       "email": "contato@empresa.com",
       "score": 9,
-      "search_query": "O que a pessoa pesquisou no Google (ex: 'web developer for small business near me')",
+      "search_query": "Exatamente o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL (ex: 'web developer for small business near me')",
+      "search_query_pt": "Tradução da pesquisa para português (ex: 'desenvolvedor web para pequena empresa perto de mim')",
       "recent_activity": "Abril 2026 - pesquisou por agência de marketing digital",
       "problem": "Descrição detalhada do problema que a empresa/pessoa enfrenta",
       "solution": "Como você pode resolver o problema dela com seu serviço",
       "outreach_message": "Mensagem pronta para enviar no WhatsApp/email para esta pessoa, personalizada e profissional",
-      "fair_price": "R$ 3.000 a R$ 8.000 (valor justo de mercado para este tipo de serviço)"
+      "fair_price": "USD $3,000 - $8,000 (~R$ 15.000 - R$ 40.000) - SEMPRE coloque o valor na moeda local do país do lead E a conversão em reais"
     }
   ],
   "strategies": [
