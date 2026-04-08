@@ -17,6 +17,16 @@ const CAMPAIGN_KEYWORDS = [
   "como estão", "relatório", "report", "análise", "analyze", "budget",
 ];
 
+const LEAD_KEYWORDS = [
+  "lead", "leads", "prospecção", "prospeccao", "prospectar", "encontrar clientes",
+  "brasileiros", "brasileiro", "empresas nos estados unidos", "empresas nos eua",
+  "empresas no canadá", "empresas no canada", "empresas na europa",
+  "tráfego pago", "trafego pago", "desenvolvedor web", "desenvolvimento web",
+  "desenvolvimento de aplicativo", "app developer", "web developer",
+  "buscar clientes", "encontrar empresas", "prospectar clientes",
+  "empreendedores brasileiros", "brasileiros no exterior",
+];
+
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
 const VEHICLE_CONSULT_TYPES: Record<string, { keywords: string[]; label: string; price: string }> = {
@@ -59,6 +69,13 @@ function detectConsultTypes(text: string): string[] {
     }
   }
   return detected;
+}
+
+function isLeadProspectingQuestion(messages: { role: string; content: string }[]): boolean {
+  const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+  if (!lastUserMsg) return false;
+  const lower = lastUserMsg.content.toLowerCase();
+  return LEAD_KEYWORDS.some(kw => lower.includes(kw));
 }
 
 function isCampaignQuestion(messages: { role: string; content: string }[]): boolean {
@@ -581,6 +598,42 @@ ${vehicleData}`;
 Responda APENAS com uma frase curta e amigável como: "Identifiquei a placa ${detectedPlate}! Selecione as consultas que deseja no painel ao lado e clique em Consultar."
 NÃO liste as opções de consulta no texto — o menu visual já está sendo exibido no frontend automaticamente.
 Seja breve, máximo 2 frases.`;
+    }
+
+    // Lead prospecting detection
+    if (isLeadProspectingQuestion(messages)) {
+      console.log("Lead prospecting question detected");
+      systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO]
+Você agora é uma ESPECIALISTA em prospecção de leads B2B focada em brasileiros com empresas no exterior (EUA, Canadá, Europa).
+
+PERFIL ALVO:
+- Brasileiros que abriram empresas nos EUA, Canadá ou Europa
+- Que buscam serviços de tráfego pago (Google Ads, Meta Ads, TikTok Ads)
+- Que buscam desenvolvedores web, criadores de aplicativos ou sites
+
+INSTRUÇÕES:
+1) Apresente uma LISTA DE LEADS/OPORTUNIDADES com o máximo de informações:
+   - Nome da empresa ou pessoa (se possível)
+   - País/cidade onde atua
+   - Nicho/setor de atuação
+   - Site ou rede social (LinkedIn, Instagram)
+   - Tipo de serviço que provavelmente precisam
+   - Data estimada de atividade recente (baseado no seu conhecimento)
+   - Score de potencial (1-10)
+
+2) Organize por MAIS RECENTES primeiro (baseado no seu conhecimento de tendências)
+
+3) Dê ESTRATÉGIAS PRÁTICAS de onde encontrar esses leads:
+   - Grupos do Facebook/LinkedIn de brasileiros no exterior
+   - Diretórios de empresas brasileiras nos EUA (Brazilian-American Chamber of Commerce, etc.)
+   - Hashtags do Instagram (#brasileirosnoseua, #brasileirosnocanada, etc.)
+   - Plataformas como Clutch, Upwork, G2 para encontrar empresas brasileiras
+
+4) Sugira MENSAGENS DE ABORDAGEM personalizadas para cada tipo de lead
+
+5) Use formatação markdown bonita com headers, tabelas e emojis profissionais
+
+IMPORTANTE: Seja honesto que os dados são baseados em tendências e conhecimento geral. Para dados em tempo real, sugira ao usuário conectar uma API de busca como Perplexity.`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
