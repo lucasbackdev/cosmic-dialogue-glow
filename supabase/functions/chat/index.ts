@@ -732,14 +732,16 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
           }
         }
         
-        systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
-Você agora é uma ESPECIALISTA em prospecção de leads B2B.
-O usuário quer oferecer o serviço: "${serviceContext || 'desenvolvimento web / aplicativo / automação'}"
-Nicho escolhido: "${nicheText}"
+        systemContent += `\n\nMODO PROSPECÇÃO ATIVADO.
+O usuário quer oferecer: "${serviceContext || 'ainda não especificou o serviço'}"
+Nicho: "${nicheText}"
 
-CONVERSA NATURAL: Se o usuário está trocando ideia sobre qual serviço prestar, converse naturalmente.
-Se ele especificar o serviço (ex: "quero oferecer criação de sites"), adapte a busca e as soluções para esse serviço.
-Se ainda não especificou, pergunte qual serviço ele quer oferecer antes de buscar.
+IMPORTANTE - CONVERSA NATURAL:
+- Se o usuário está só conversando, explorando ideias, trocando nicho — converse naturalmente. NÃO force o formato JSON.
+- Se ele pedir para trocar nicho, troque numa boa ("Beleza, bora pra X então! 🔥").
+- Se ele ainda não disse qual serviço quer oferecer, pergunte de forma natural antes de buscar leads.
+- SÓ inclua o bloco [LEADS_JSON] quando realmente tiver dados para mostrar E o usuário quiser ver leads.
+- Se a conversa é casual (ele tá perguntando, pensando, discutindo), apenas converse.
 
 ${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
 Extraia nomes de pessoas, empresas, websites, datas de postagem e serviços a partir dos dados reais.
