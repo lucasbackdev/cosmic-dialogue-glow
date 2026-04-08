@@ -6,7 +6,7 @@ import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
-import NicheSelectorDashboard, { type NicheCategory } from "@/components/NicheSelectorDashboard";
+import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -39,17 +39,6 @@ function parseLeadData(text: string): { leads: LeadData[]; niches?: NicheGroup[]
   return null;
 }
 
-function parseNicheSelect(text: string): NicheCategory[] | null {
-  const match = text.match(/\[NICHE_SELECT\]([\s\S]*?)\[\/NICHE_SELECT\]/);
-  if (!match) return null;
-  try {
-    const parsed = JSON.parse(match[1].trim());
-    if (parsed.categories && Array.isArray(parsed.categories)) {
-      return parsed.categories;
-    }
-  } catch { /* ignore */ }
-  return null;
-}
 
 const Index = () => {
   const { t } = useLanguage();
@@ -144,12 +133,19 @@ const Index = () => {
     return parseLeadData(lastAssistant.content);
   }, [messages]);
 
-  // Parse niche selector from assistant messages
-  const nicheCategories = useMemo(() => {
+  // Detect if AI is asking user to choose a niche (show hardcoded dashboard)
+  const showNicheDashboard = useMemo(() => {
+    if (parsedLeads) return false; // Don't show if leads are already displayed
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
-    if (!lastAssistant) return null;
-    return parseNicheSelect(lastAssistant.content);
-  }, [messages]);
+    if (!lastAssistant) return false;
+    const lower = lastAssistant.content.toLowerCase();
+    // Detect niche question patterns
+    return (
+      (lower.includes("nicho") && (lower.includes("escolha") || lower.includes("escolher") || lower.includes("prospectar") || lower.includes("painel"))) ||
+      lower.includes("[niche_select]") ||
+      (lower.includes("qual nicho") || lower.includes("qual setor"))
+    );
+  }, [messages, parsedLeads]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
@@ -461,9 +457,8 @@ const Index = () => {
               loading={vehicleLoading}
             />
           )}
-          {nicheCategories && !parsedLeads && (
+          {showNicheDashboard && (
             <NicheSelectorDashboard
-              categories={nicheCategories}
               onSelect={(niche) => sendMessage(`Buscar leads de ${niche}`)}
             />
           )}
