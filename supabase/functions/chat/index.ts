@@ -674,8 +674,7 @@ Seja breve, máximo 2 frases.`;
               firecrawlContext += `Título: ${result.title || "N/A"}\n`;
               firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
               if (result.markdown) {
-                // Limit markdown to first 500 chars to save tokens
-                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 500)}\n`;
+                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 800)}\n`;
               }
             }
             console.log(`Firecrawl returned ${flatResults.length} real results`);
