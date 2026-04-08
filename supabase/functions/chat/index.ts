@@ -689,10 +689,10 @@ Seja breve, máximo 2 frases.`;
       systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
 
-${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use esses dados para criar leads BASEADOS EM INFORMAÇÕES REAIS.
-Extraia nomes de pessoas, empresas, contatos, websites, serviços que buscam a partir dos dados reais.
-Se os dados reais não forem suficientes, complemente com análise de mercado, mas PRIORIZE dados reais.
-${firecrawlContext}` : "Os dados vêm de análise de mercado e tendências reais de 2026."}
+${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
+Extraia nomes de pessoas, empresas, websites e serviços a partir dos dados reais.
+NUNCA INVENTE dados que não estão nos resultados. Se não encontrar um dado (telefone, email, etc), deixe vazio "".
+${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
 REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no exterior (EUA, Canadá, Europa).
 - Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
