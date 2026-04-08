@@ -14,7 +14,7 @@ export interface LeadData {
   whatsapp?: string;
   phone?: string;
   email?: string;
-  score: number;
+  search_query_pt?: string;
   recent_activity?: string;
   search_query?: string;
   problem?: string;
