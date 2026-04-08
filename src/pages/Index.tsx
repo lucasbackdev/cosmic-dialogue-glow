@@ -22,13 +22,17 @@ const CRM_KEYWORDS = ["campanha", "campanhas", "google ads", "impressões", "ctr
 const LEAD_KEYWORDS = ["lead", "leads", "prospecção", "prospectar", "encontrar clientes", "brasileiros", "tráfego pago", "trafego pago", "desenvolvedor web", "empreendedores", "empresas nos eua", "empresas no canadá", "empresas na europa", "brasileiros no exterior", "empresas que buscam", "pessoas que buscam", "quem precisa de", "serviço de", "desenvolvimento web", "aplicativo", "marketing digital", "design", "consultoria", "contabilidade", "advocacia", "freelancer", "agência", "clientes potenciais", "nicho", "nichos", "mostre empresas", "mostre pessoas"];
 const PLATE_REGEX = /\b([A-Za-z]{3}[-\s]?\d[A-Za-z0-9]\d{2})\b/;
 
-function parseLeadData(text: string): { leads: LeadData[]; strategies: string[] } | null {
+function parseLeadData(text: string): { leads: LeadData[]; niches?: NicheGroup[]; strategies: string[] } | null {
   const match = text.match(/\[LEADS_JSON\]([\s\S]*?)\[\/LEADS_JSON\]/);
   if (!match) return null;
   try {
     const parsed = JSON.parse(match[1].trim());
     if (parsed.leads && Array.isArray(parsed.leads)) {
-      return { leads: parsed.leads, strategies: parsed.strategies || [] };
+      return { leads: parsed.leads, niches: parsed.niches || undefined, strategies: parsed.strategies || [] };
+    }
+    if (parsed.niches && Array.isArray(parsed.niches)) {
+      const allLeads = parsed.niches.flatMap((n: NicheGroup) => n.leads);
+      return { leads: allLeads, niches: parsed.niches, strategies: parsed.strategies || [] };
     }
   } catch { /* ignore */ }
   return null;
