@@ -26,7 +26,7 @@ const ChatBubble = ({ role, content }: ChatBubbleProps) => {
     >
       {role === "assistant" ? (
         <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
-          <ReactMarkdown>{content}</ReactMarkdown>
+          <ReactMarkdown>{displayContent}</ReactMarkdown>
         </div>
       ) : (
         <span>{content}</span>
