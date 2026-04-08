@@ -606,89 +606,149 @@ Seja breve, máximo 2 frases.`;
 
     // Lead prospecting detection - now with REAL data from Firecrawl
     if (isLeadProspectingQuestion(messages)) {
-      console.log("Lead prospecting question detected - fetching real data via Firecrawl");
+      console.log("Lead prospecting question detected");
       
-      // Build search queries based on user's request
       const userQuery = lastUserText.toLowerCase();
-      const searchQueries: string[] = [];
       
-      // Extract the service/niche the user is looking for
-      const serviceMatches = userQuery.match(/(?:serviço de|busca[mnr]? (?:por)?|precis[ao]m? de|procur[ao]m?|querem?)\s+(.+?)(?:\.|$|,|\s+(?:nos?|na|em|para))/i);
-      const serviceKeyword = serviceMatches?.[1] || "";
+      // Check if user already specified a niche/sector
+      const nicheKeywords = [
+        "clínica", "clinica", "estética", "estetica", "distribuidora", "restaurante",
+        "loja", "e-commerce", "ecommerce", "imobiliária", "imobiliaria", "contabilidade",
+        "advocacia", "escritório", "escritorio", "consultório", "consultorio", "academia",
+        "salão", "salao", "barbearia", "padaria", "pizzaria", "hamburgueria",
+        "pet shop", "petshop", "oficina", "mecânica", "mecanica", "construtora",
+        "arquitetura", "dentista", "odontologia", "psicologia", "nutrição", "nutricao",
+        "fotografia", "marketing", "agência", "agencia", "farmácia", "farmacia",
+        "escola", "curso", "treinamento", "coaching", "consultoria", "saúde", "saude",
+        "beleza", "moda", "roupa", "calçado", "calcado", "joalheria", "ótica", "otica",
+        "supermercado", "mercado", "atacado", "varejo", "importação", "importacao",
+        "exportação", "exportacao", "logística", "logistica", "transporte", "frete",
+        "tecnologia", "software", "app", "aplicativo", "site", "web", "automação", "automacao",
+        "food truck", "cafeteria", "bar", "pub", "hotel", "pousada", "airbnb",
+        "lavanderia", "limpeza", "segurança", "seguranca", "energia solar",
+        "desenvolvimento", "developer", "web developer", "freelancer",
+      ];
       
-      // Build targeted search queries - include freelance portals for real postings with dates
-      const freelancePortals = ["site:upwork.com", "site:freelancer.com", "site:workana.com", "site:fiverr.com", "site:99freelas.com.br", "site:toptal.com"];
+      const userHasNiche = nicheKeywords.some(kw => userQuery.includes(kw));
       
-      if (serviceKeyword) {
-        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} ${serviceKeyword} developer needed`);
-        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} ${serviceKeyword} freelancer`);
-        searchQueries.push(`Brazilian business owner hiring freelance ${serviceKeyword} build app website automation`);
+      // Also check if this is a follow-up where user chose a niche from the previous AI message
+      const previousAiMsg = [...messages].reverse().find((m: {role:string}) => m.role === "assistant");
+      const isNicheFollowUp = previousAiMsg?.content?.includes("Qual nicho") || previousAiMsg?.content?.includes("qual nicho") || previousAiMsg?.content?.includes("escolha") || previousAiMsg?.content?.includes("Escolha");
+      
+      if (!userHasNiche && !isNicheFollowUp) {
+        // User hasn't specified a niche yet → ASK FIRST, don't search
+        console.log("No niche specified - asking user to choose");
+        systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS - PERGUNTAR NICHO PRIMEIRO]
+Você é uma ESPECIALISTA em prospecção de leads B2B.
+
+O usuário quer buscar leads mas NÃO especificou o nicho/setor. Você DEVE perguntar ANTES de buscar.
+
+Responda com uma mensagem amigável perguntando qual nicho ele quer prospectar.
+Dê exemplos organizados por categoria. Use emojis e formatação bonita.
+
+Exemplo de resposta:
+"Ótimo! Para encontrar os melhores leads brasileiros, me diga qual nicho você quer prospectar! 🎯
+
+**🏥 Saúde & Beleza**
+Clínica de Estética, Consultório Médico, Dentista, Academia, Salão de Beleza, Barbearia, Nutricionista
+
+**🍔 Alimentação**
+Restaurante, Pizzaria, Hamburgueria, Food Truck, Padaria, Cafeteria, Bar
+
+**🏪 Comércio & Varejo**
+Loja de Roupas, E-commerce, Pet Shop, Farmácia, Ótica, Joalheria, Supermercado
+
+**🏗️ Serviços & Construção**
+Construtora, Arquitetura, Imobiliária, Oficina Mecânica, Lavanderia, Energia Solar
+
+**💼 Profissionais & Escritórios**
+Advocacia, Contabilidade, Consultoria, Coaching, Escola/Cursos
+
+**📦 Logística & Indústria**
+Distribuidora, Importação/Exportação, Transportadora, Atacado
+
+**💻 Tecnologia**
+Agência de Marketing, Software House, Startup
+
+Ou me diga outro nicho específico! Vou buscar leads REAIS em portais freelance e na web 🔍"
+
+REGRAS:
+1) NÃO faça busca no Firecrawl ainda
+2) NÃO gere leads ainda
+3) NÃO inclua [LEADS_JSON]
+4) APENAS pergunte o nicho de forma bonita e organizada
+5) Mencione que vai buscar em Brasil, EUA, Canadá e Europa
+6) Lembre que serão APENAS brasileiros`;
       } else {
-        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} web developer needed build website app 2025 2026`);
-        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} freelance developer app automation`);
-        searchQueries.push(`Brazilian entrepreneur hiring freelance developer build website app automation`);
-      }
-      
-      // Also search for the raw user query
-      searchQueries.push(lastUserText);
-      
-      let firecrawlContext = "";
-      const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
-      
-      if (firecrawlApiKey) {
-        try {
-          // Run searches in parallel
-          const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
-            try {
-              const resp = await fetch("https://api.firecrawl.dev/v1/search", {
-                method: "POST",
-                headers: {
-                  "Authorization": `Bearer ${firecrawlApiKey}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  query: q,
-                  limit: 8,
-                  scrapeOptions: { formats: ["markdown"] },
-                }),
-              });
-              if (resp.ok) {
-                const data = await resp.json();
-                return data?.data || [];
+        // User specified a niche OR is following up with a choice → SEARCH
+        console.log("Niche detected or follow-up - searching Firecrawl");
+        
+        const searchQueries: string[] = [];
+        const freelancePortals = ["site:upwork.com", "site:freelancer.com", "site:workana.com", "site:fiverr.com", "site:99freelas.com.br", "site:toptal.com"];
+        
+        // Use the user's text as the niche keyword
+        const nicheText = lastUserText;
+        
+        // Search across regions: Brazil, USA, Canada, Europe
+        searchQueries.push(`${freelancePortals[0]} OR ${freelancePortals[1]} OR ${freelancePortals[2]} Brazilian ${nicheText} developer website app`);
+        searchQueries.push(`${freelancePortals[3]} OR ${freelancePortals[4]} OR ${freelancePortals[5]} ${nicheText} freelance developer needed`);
+        searchQueries.push(`Brazilian ${nicheText} business owner USA Canada Europe needs website app developer freelancer`);
+        searchQueries.push(`empreendedor brasileiro ${nicheText} exterior precisa desenvolvedor site aplicativo`);
+        
+        let firecrawlContext = "";
+        const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
+        
+        if (firecrawlApiKey) {
+          try {
+            const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
+              try {
+                const resp = await fetch("https://api.firecrawl.dev/v1/search", {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Bearer ${firecrawlApiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    query: q,
+                    limit: 8,
+                    scrapeOptions: { formats: ["markdown"] },
+                  }),
+                });
+                if (resp.ok) {
+                  const data = await resp.json();
+                  return data?.data || [];
+                }
+                console.warn("Firecrawl search failed for query:", q, resp.status);
+                return [];
+              } catch (e) {
+                console.warn("Firecrawl error for query:", q, e);
+                return [];
               }
-              console.warn("Firecrawl search failed for query:", q, resp.status);
-              return [];
-            } catch (e) {
-              console.warn("Firecrawl error for query:", q, e);
-              return [];
-            }
-          });
-          
-          const allResults = await Promise.all(searchPromises);
-          const flatResults = allResults.flat();
-          
-          if (flatResults.length > 0) {
-            firecrawlContext = "\n\n[DADOS REAIS DA WEB - RESULTADOS DO FIRECRAWL]\n";
-            for (const result of flatResults) {
-              firecrawlContext += `\n--- Fonte: ${result.url || "N/A"} ---\n`;
-              firecrawlContext += `Título: ${result.title || "N/A"}\n`;
-              firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
-              if (result.markdown) {
-                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 800)}\n`;
+            });
+            
+            const allResults = await Promise.all(searchPromises);
+            const flatResults = allResults.flat();
+            
+            if (flatResults.length > 0) {
+              firecrawlContext = "\n\n[DADOS REAIS DA WEB - RESULTADOS DO FIRECRAWL]\n";
+              for (const result of flatResults) {
+                firecrawlContext += `\n--- Fonte: ${result.url || "N/A"} ---\n`;
+                firecrawlContext += `Título: ${result.title || "N/A"}\n`;
+                firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
+                if (result.markdown) {
+                  firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 800)}\n`;
+                }
               }
+              console.log(`Firecrawl returned ${flatResults.length} real results`);
+            } else {
+              console.log("Firecrawl returned no results");
             }
-            console.log(`Firecrawl returned ${flatResults.length} real results`);
-          } else {
-            console.log("Firecrawl returned no results");
+          } catch (err) {
+            console.warn("Firecrawl search error:", err);
           }
-        } catch (err) {
-          console.warn("Firecrawl search error:", err);
         }
-      } else {
-        console.warn("FIRECRAWL_API_KEY not available");
-      }
-      
-      systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
+        
+        systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
 
 ${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
@@ -698,43 +758,41 @@ Os dados incluem postagens REAIS de portais freelance (Upwork, Freelancer, Worka
 Extraia a DATA da postagem/busca e o CONTATO da pessoa/empresa quando disponível.
 ${firecrawlContext}` : "Não foi possível buscar dados reais no momento. Informe ao usuário que a busca não retornou resultados e peça para tentar novamente com termos mais específicos."}
 
-REGRA ABSOLUTA: Foque em leads REAIS de portais freelance e da web.
-- Priorize postagens de portais freelance (Upwork, Freelancer, Workana, 99Freelas, Fiverr, Toptal)
-- Extraia a DATA REAL em que a pessoa postou o projeto/pedido
-- Se encontrar brasileiros, destaque. Mas mostre QUALQUER lead real encontrado nos dados.
-- IMPORTANTE: São pessoas/empresas que PUBLICARAM projetos pedindo desenvolvedores freelancers.
-- Se ele especificar um serviço (ex: "desenvolvimento web"), mostre leads diretos desse nicho
-- Se ele NÃO especificar, mostre uma LISTA DE NICHOS para ele escolher
+REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS.
+- Busque em TODAS as regiões: Brasil, Estados Unidos, Canadá e Europa
+- Mas os leads devem ser de BRASILEIROS (nomes brasileiros, empresas de brasileiros)
+- Priorize postagens de portais freelance com DATA REAL de publicação
+- São pessoas/empresas que PUBLICARAM projetos pedindo desenvolvedores freelancers
+- Organize por região: 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá, 🇪🇺 Europa
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
 Você DEVE incluir no início da sua resposta um bloco JSON entre as tags [LEADS_JSON] e [/LEADS_JSON].
 Depois do bloco JSON, escreva APENAS 1 frase curta.
 
-Se o usuário especificou o serviço, use este formato:
 [LEADS_JSON]
 {
   "leads": [
     {
       "name": "Nome da pessoa ou empresa REAL encontrada nos dados.",
       "company": "Nome da empresa REAL (se disponível)",
-      "country": "País (REAL, extraído dos dados)",
+      "country": "País com emoji de bandeira (ex: '🇧🇷 Brasil', '🇺🇸 Estados Unidos', '🇨🇦 Canadá', '🇪🇺 Europa')",
       "city": "Cidade (REAL, senão vazio)",
-      "sector": "Nicho de atuação (REAL)",
+      "sector": "Nicho: ${nicheText}",
       "service_needed": "Serviço que a pessoa publicou que precisa (extraído da postagem real)",
-      "website": "URL do site OFICIAL da empresa. Se for link do portal freelance (upwork.com/job/xxx), use como source. Se não encontrar site oficial, deixe vazio.",
+      "website": "URL do site OFICIAL ou link direto da postagem no portal freelance. Se não encontrar, deixe vazio.",
       "linkedin": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "instagram": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "whatsapp": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "phone": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "email": "(SOMENTE se encontrado nos dados reais, senão vazio)",
       "score": 9,
-      "search_query": "O que a pessoa PUBLICOU/PEDIU no portal freelance. Ex: 'Need developer to build e-commerce website'. Extraia da postagem real.",
+      "search_query": "O que a pessoa PUBLICOU/PEDIU. Ex: 'Need developer to build e-commerce website'. Extraia da postagem real.",
       "search_query_pt": "Tradução para português do pedido",
       "recent_activity": "Data e portal onde publicou. Ex: 'Publicado em Upwork em 05/04/2026'. REAL, extraído dos dados.",
       "problem": "Descrição do que a pessoa precisa baseado na postagem real",
       "solution": "Como você pode resolver com seu serviço de desenvolvimento",
       "outreach_message": "Mensagem pronta para enviar",
-      "fair_price": "Orçamento que a pessoa indicou (se disponível) OU estimativa de mercado com moeda local + R$"
+      "fair_price": "Orçamento indicado na postagem OU estimativa com moeda local + R$"
     }
   ],
   "strategies": [
@@ -744,34 +802,18 @@ Se o usuário especificou o serviço, use este formato:
 }
 [/LEADS_JSON]
 
-Se o usuário NÃO especificou o serviço, use nichos:
-[LEADS_JSON]
-{
-  "niches": [
-    {
-      "niche": "Desenvolvimento Web e Aplicativos",
-      "leads": [
-        { ... mesmo formato acima ... }
-      ]
-    }
-  ],
-  "strategies": [...]
-}
-[/LEADS_JSON]
-
 REGRAS ABSOLUTAS - NADA FICTÍCIO:
 1) TUDO deve vir dos dados reais do Firecrawl. Se não encontrou, NÃO inclua.
 2) NUNCA invente: nomes, empresas, contatos, pesquisas, atividades, datas. NADA.
-3) website: Site oficial da empresa OU link direto da postagem no portal freelance.
-4) search_query: O que a pessoa REALMENTE publicou/pediu. Extraia do conteúdo real.
-5) recent_activity: Data e fonte REAL da postagem (ex: "Publicado em Upwork em 03/2026"). NUNCA invente datas.
-6) Contatos (phone, email, whatsapp, linkedin, instagram): SOMENTE se encontrados nos dados reais. Senão "".
-7) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS.
-8) problem e solution: baseie-se na postagem real da pessoa.
-9) fair_price: Se a postagem tem budget, mostre. Senão, estime com moeda local + R$.
-10) Score de 1-10 baseado no potencial real.
-11) APÓS o JSON, escreva APENAS 1 frase curta.
-12) Se não encontrar NENHUM lead real, diga honestamente e sugira termos melhores.`;
+3) search_query: O que a pessoa REALMENTE publicou/pediu. Extraia do conteúdo real.
+4) recent_activity: Data e fonte REAL da postagem. NUNCA invente datas.
+5) Contatos: SOMENTE se encontrados nos dados reais. Senão "".
+6) Se os dados reais não tiverem leads suficientes, mostre MENOS leads mas REAIS.
+7) fair_price: Se a postagem tem budget, mostre. Senão, estime com moeda local + R$.
+8) Score de 1-10 baseado no potencial real.
+9) APÓS o JSON, escreva APENAS 1 frase curta.
+10) Se não encontrar NENHUM lead real, diga honestamente e sugira termos melhores.`;
+      }
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
