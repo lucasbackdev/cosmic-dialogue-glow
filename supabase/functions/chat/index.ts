@@ -672,17 +672,18 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
         
         const searchQueries: string[] = [];
         const nicheText = lastUserText;
-        const serviceText = serviceContext || "website app development automation";
+        const serviceText = serviceContext || "website aplicativo automação desenvolvimento";
         
-        // 4 queries — each focused on a DIFFERENT region for maximum coverage
-        // Query 1: Brazilian entrepreneurs in USA needing services
-        searchQueries.push(`Brazilian entrepreneur ${nicheText} USA needs ${serviceText} site:upwork.com OR site:freelancer.com`);
-        // Query 2: Brazilian entrepreneurs in Canada & Europe
-        searchQueries.push(`Brazilian ${nicheText} Canada Europe needs ${serviceText} site:workana.com OR site:fiverr.com OR site:toptal.com`);
-        // Query 3: Brasileiros no exterior buscando serviços
-        searchQueries.push(`brasileiro ${nicheText} Estados Unidos Canadá Europa precisa ${serviceText} freelancer desenvolvedor`);
-        // Query 4: Brazil-based businesses needing the service
-        searchQueries.push(`${nicheText} Brasil precisa ${serviceText} freelancer site:99freelas.com.br OR site:workana.com OR site:upwork.com`);
+        // 4 queries — focused on finding COMPANIES/PEOPLE who POSTED PROJECTS needing developers
+        // These are potential CLIENTS, not freelancers offering services
+        // Query 1: Projects posted by businesses needing development (Brazil)
+        searchQueries.push(`"preciso de" OR "procuro" OR "orçamento para" ${nicheText} ${serviceText} site:99freelas.com.br OR site:workana.com`);
+        // Query 2: Businesses posting jobs/projects needing developers (USA)
+        searchQueries.push(`"looking for" OR "need developer" OR "need a website" ${nicheText} site:upwork.com OR site:freelancer.com`);
+        // Query 3: Brazilian business owners abroad posting projects  
+        searchQueries.push(`${nicheText} "need" OR "looking for" OR "hiring" developer website app Brazil OR Brazilian site:upwork.com OR site:toptal.com`);
+        // Query 4: Direct company searches - businesses in the niche that likely need digital services
+        searchQueries.push(`${nicheText} empresa brasileira site OR aplicativo OR sistema OR automação OR "precisa de" OR "busca desenvolvedor"`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
