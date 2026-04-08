@@ -468,9 +468,8 @@ const Index = () => {
               loading={vehicleLoading}
             />
           )}
-          {nicheCategories && !parsedLeads && (
+          {showNicheDashboard && (
             <NicheSelectorDashboard
-              categories={nicheCategories}
               onSelect={(niche) => sendMessage(`Buscar leads de ${niche}`)}
             />
           )}
