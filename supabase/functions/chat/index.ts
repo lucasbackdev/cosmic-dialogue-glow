@@ -668,7 +668,7 @@ REGRAS:
         
         if (firecrawlApiKey) {
           try {
-            const searchPromises = searchQueries.slice(0, 4).map(async (q) => {
+            const searchPromises = searchQueries.map(async (q) => {
               try {
                 const resp = await fetch("https://api.firecrawl.dev/v1/search", {
                   method: "POST",
@@ -678,8 +678,7 @@ REGRAS:
                   },
                   body: JSON.stringify({
                     query: q,
-                    limit: 8,
-                    scrapeOptions: { formats: ["markdown"] },
+                    limit: 5,
                   }),
                 });
                 if (resp.ok) {
