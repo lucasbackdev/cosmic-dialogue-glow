@@ -5,7 +5,7 @@ import CampaignMetricsInline from "@/components/CampaignMetricsInline";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
-import LeadResultsPanel, { type LeadData } from "@/components/LeadResultsPanel";
+import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
