@@ -616,14 +616,15 @@ Seja breve, máximo 2 frases.`;
       const serviceMatches = userQuery.match(/(?:serviço de|busca[mnr]? (?:por)?|precis[ao]m? de|procur[ao]m?|querem?)\s+(.+?)(?:\.|$|,|\s+(?:nos?|na|em|para))/i);
       const serviceKeyword = serviceMatches?.[1] || "";
       
-      // Build targeted search queries for real Brazilian entrepreneurs abroad
+      // Build targeted search queries - freelance developers for apps/sites/automation (NOT job postings)
       if (serviceKeyword) {
-        searchQueries.push(`Brazilian entrepreneur USA needs ${serviceKeyword} 2026`);
-        searchQueries.push(`Brazilian business owner Europe looking for ${serviceKeyword}`);
-        searchQueries.push(`empreendedor brasileiro exterior precisa ${serviceKeyword}`);
+        searchQueries.push(`Brazilian business owner USA hiring freelance ${serviceKeyword} -jobs -vacancy -career`);
+        searchQueries.push(`empreendedor brasileiro exterior contratando freelancer ${serviceKeyword} -vaga -emprego`);
+        searchQueries.push(`Brazilian entrepreneur Europe Canada needs freelance ${serviceKeyword} for company`);
       } else {
-        searchQueries.push(`Brazilian entrepreneurs USA Canada Europe looking for services 2026`);
-        searchQueries.push(`empreendedores brasileiros no exterior buscando serviços`);
+        searchQueries.push(`Brazilian business owner USA hiring freelance developer build website app -jobs -vacancy`);
+        searchQueries.push(`empreendedor brasileiro exterior precisa freelancer desenvolver site aplicativo automação -vaga -emprego`);
+        searchQueries.push(`Brazilian entrepreneur looking freelance web developer build app automation 2026`);
       }
       
       // Also search for the raw user query
