@@ -34,5 +34,6 @@ const ChatBubble = ({ role, content }: ChatBubbleProps) => {
     </div>
   </div>
 );
+};
 
 export default ChatBubble;
