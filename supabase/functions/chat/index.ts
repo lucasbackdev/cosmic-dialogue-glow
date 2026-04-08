@@ -649,19 +649,30 @@ REGRAS:
 2) NÃO gere leads ainda
 3) NÃO inclua [LEADS_JSON]
 4) Responda APENAS 1-2 frases curtas
-5) Mencione "painel ao lado" para o usuário saber onde clicar`;
+5) Mencione "painel ao lado" para o usuário saber onde clicar
+6) Pergunte também qual SERVIÇO o usuário quer oferecer para esse nicho (ex: criação de site, app, automação, tráfego pago, etc.)`;
       } else {
         // User specified a niche OR is following up with a choice → SEARCH
         console.log("Niche detected or follow-up - searching Firecrawl");
         
+        // Extract service context from conversation history
+        let serviceContext = "";
+        for (const m of messages) {
+          const lower = m.content.toLowerCase();
+          if (m.role === "user" && (lower.includes("serviço") || lower.includes("oferecer") || lower.includes("prestar") || lower.includes("vender") || lower.includes("desenvolvimento") || lower.includes("automação") || lower.includes("tráfego") || lower.includes("design") || lower.includes("marketing"))) {
+            serviceContext = m.content;
+          }
+        }
+        
         const searchQueries: string[] = [];
-        
-        // Use the user's text as the niche keyword
         const nicheText = lastUserText;
+        const serviceText = serviceContext || "desenvolvimento web aplicativo automação";
         
-        // Only 2 focused queries to avoid timeout
-        searchQueries.push(`brasileiro ${nicheText} precisa desenvolvedor site aplicativo freelancer upwork workana 99freelas`);
-        searchQueries.push(`Brazilian ${nicheText} needs developer website app freelancer USA Canada Europe`);
+        // 4 focused queries without scrapeOptions to stay fast
+        searchQueries.push(`brasileiro ${nicheText} precisa ${serviceText} freelancer site:upwork.com OR site:workana.com OR site:99freelas.com.br`);
+        searchQueries.push(`Brazilian ${nicheText} needs ${serviceText} freelancer site:freelancer.com OR site:fiverr.com OR site:toptal.com`);
+        searchQueries.push(`empreendedor brasileiro ${nicheText} exterior EUA Canadá Europa precisa ${serviceText}`);
+        searchQueries.push(`${nicheText} ${serviceText} hire developer freelance Brazil Portuguese`);
         
         let firecrawlContext = "";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
