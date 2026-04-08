@@ -71,6 +71,13 @@ function detectConsultTypes(text: string): string[] {
   return detected;
 }
 
+function isLeadProspectingQuestion(messages: { role: string; content: string }[]): boolean {
+  const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+  if (!lastUserMsg) return false;
+  const lower = lastUserMsg.content.toLowerCase();
+  return LEAD_KEYWORDS.some(kw => lower.includes(kw));
+}
+
 function isCampaignQuestion(messages: { role: string; content: string }[]): boolean {
   const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
   if (!lastUserMsg) return false;
