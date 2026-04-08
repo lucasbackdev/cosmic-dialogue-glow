@@ -604,11 +604,95 @@ NÃO liste as opções de consulta no texto — o menu visual já está sendo ex
 Seja breve, máximo 2 frases.`;
     }
 
-    // Lead prospecting detection
+    // Lead prospecting detection - now with REAL data from Firecrawl
     if (isLeadProspectingQuestion(messages)) {
-      console.log("Lead prospecting question detected");
-      systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO]
+      console.log("Lead prospecting question detected - fetching real data via Firecrawl");
+      
+      // Build search queries based on user's request
+      const userQuery = lastUserText.toLowerCase();
+      const searchQueries: string[] = [];
+      
+      // Extract the service/niche the user is looking for
+      const serviceMatches = userQuery.match(/(?:serviço de|busca[mnr]? (?:por)?|precis[ao]m? de|procur[ao]m?|querem?)\s+(.+?)(?:\.|$|,|\s+(?:nos?|na|em|para))/i);
+      const serviceKeyword = serviceMatches?.[1] || "";
+      
+      // Build targeted search queries for real Brazilian entrepreneurs abroad
+      if (serviceKeyword) {
+        searchQueries.push(`Brazilian entrepreneur USA needs ${serviceKeyword} 2026`);
+        searchQueries.push(`Brazilian business owner Europe looking for ${serviceKeyword}`);
+        searchQueries.push(`empreendedor brasileiro exterior precisa ${serviceKeyword}`);
+      } else {
+        searchQueries.push(`Brazilian entrepreneurs USA Canada Europe looking for services 2026`);
+        searchQueries.push(`empreendedores brasileiros no exterior buscando serviços`);
+      }
+      
+      // Also search for the raw user query
+      searchQueries.push(lastUserText);
+      
+      let firecrawlContext = "";
+      const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
+      
+      if (firecrawlApiKey) {
+        try {
+          // Run searches in parallel
+          const searchPromises = searchQueries.slice(0, 3).map(async (q) => {
+            try {
+              const resp = await fetch("https://api.firecrawl.dev/v1/search", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${firecrawlApiKey}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  query: q,
+                  limit: 5,
+                  scrapeOptions: { formats: ["markdown"] },
+                }),
+              });
+              if (resp.ok) {
+                const data = await resp.json();
+                return data?.data || [];
+              }
+              console.warn("Firecrawl search failed for query:", q, resp.status);
+              return [];
+            } catch (e) {
+              console.warn("Firecrawl error for query:", q, e);
+              return [];
+            }
+          });
+          
+          const allResults = await Promise.all(searchPromises);
+          const flatResults = allResults.flat();
+          
+          if (flatResults.length > 0) {
+            firecrawlContext = "\n\n[DADOS REAIS DA WEB - RESULTADOS DO FIRECRAWL]\n";
+            for (const result of flatResults) {
+              firecrawlContext += `\n--- Fonte: ${result.url || "N/A"} ---\n`;
+              firecrawlContext += `Título: ${result.title || "N/A"}\n`;
+              firecrawlContext += `Descrição: ${result.description || "N/A"}\n`;
+              if (result.markdown) {
+                // Limit markdown to first 500 chars to save tokens
+                firecrawlContext += `Conteúdo: ${result.markdown.slice(0, 500)}\n`;
+              }
+            }
+            console.log(`Firecrawl returned ${flatResults.length} real results`);
+          } else {
+            console.log("Firecrawl returned no results");
+          }
+        } catch (err) {
+          console.warn("Firecrawl search error:", err);
+        }
+      } else {
+        console.warn("FIRECRAWL_API_KEY not available");
+      }
+      
+      systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
+
+${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use esses dados para criar leads BASEADOS EM INFORMAÇÕES REAIS.
+Extraia nomes de pessoas, empresas, contatos, websites, serviços que buscam a partir dos dados reais.
+Se os dados reais não forem suficientes, complemente com análise de mercado, mas PRIORIZE dados reais.
+${firecrawlContext}` : "Os dados vêm de análise de mercado e tendências reais de 2026."}
 
 REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS que possuem empresas no exterior (EUA, Canadá, Europa).
 - Nomes brasileiros (ex: João Silva, Maria Santos, Rafael Oliveira, Ana Costa, etc.)
@@ -626,26 +710,26 @@ Se o usuário especificou o serviço, use este formato:
 {
   "leads": [
     {
-      "name": "Nome COMPLETO da pessoa responsável (ex: John Smith, Maria Oliveira). SEMPRE coloque o nome da pessoa, não apenas da empresa.",
+      "name": "Nome COMPLETO da pessoa responsável. SEMPRE coloque o nome da pessoa, não apenas da empresa.",
       "company": "Nome da empresa",
       "country": "País",
       "city": "Cidade",
       "sector": "Nicho de atuação",
       "service_needed": "Serviço que busca",
-      "website": "https://...",
+      "website": "https://... (use dados REAIS dos resultados quando disponíveis)",
       "linkedin": "https://linkedin.com/in/...",
       "instagram": "https://instagram.com/...",
       "whatsapp": "+1 (555) 123-4567",
       "phone": "+1 (555) 123-4567",
       "email": "contato@empresa.com",
       "score": 9,
-      "search_query": "Exatamente o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL (ex: 'web developer for small business near me')",
-      "search_query_pt": "Tradução da pesquisa para português (ex: 'desenvolvedor web para pequena empresa perto de mim')",
+      "search_query": "Exatamente o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL",
+      "search_query_pt": "Tradução da pesquisa para português",
       "recent_activity": "Abril 2026 - pesquisou por agência de marketing digital",
       "problem": "Descrição detalhada do problema que a empresa/pessoa enfrenta",
       "solution": "Como você pode resolver o problema dela com seu serviço",
-      "outreach_message": "Mensagem pronta para enviar no WhatsApp/email para esta pessoa, personalizada e profissional",
-      "fair_price": "USD $3,000 - $8,000 (~R$ 15.000 - R$ 40.000) - SEMPRE coloque o valor na moeda local do país do lead E a conversão em reais"
+      "outreach_message": "Mensagem pronta para enviar no WhatsApp/email para esta pessoa",
+      "fair_price": "USD $3,000 - $8,000 (~R$ 15.000 - R$ 40.000) - SEMPRE coloque o valor na moeda local E conversão em reais"
     }
   ],
   "strategies": [
@@ -664,10 +748,6 @@ Se o usuário NÃO especificou o serviço, use nichos:
       "leads": [
         { ... mesmo formato acima ... }
       ]
-    },
-    {
-      "niche": "Tráfego Pago e Marketing Digital",
-      "leads": [...]
     }
   ],
   "strategies": [...]
@@ -675,21 +755,17 @@ Se o usuário NÃO especificou o serviço, use nichos:
 [/LEADS_JSON]
 
 REGRAS:
-1) Gere pelo menos 5-10 leads realistas por nicho baseados em tendências reais do mercado
+1) Gere pelo menos 5-10 leads por nicho. USE dados reais do Firecrawl quando disponíveis.
 2) Organize por score (maior primeiro) e atividade mais recente
-3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email) - mesmo que estimados com base no perfil
-4) OBRIGATÓRIO: search_query deve mostrar EXATAMENTE o que a pessoa pesquisou no Google NO IDIOMA ORIGINAL dela
-5) OBRIGATÓRIO: search_query_pt deve ser a TRADUÇÃO para português da pesquisa
-6) OBRIGATÓRIO: problem deve descrever o problema real que a empresa enfrenta
-7) OBRIGATÓRIO: solution deve mostrar como resolver com o serviço oferecido
-8) OBRIGATÓRIO: outreach_message deve ser uma mensagem pronta, personalizada, profissional para copiar e enviar
-9) OBRIGATÓRIO: fair_price deve ter o valor NA MOEDA LOCAL do país do lead (USD, EUR, CAD) E a conversão em reais (R$)
-10) OBRIGATÓRIO: recent_activity deve ser SEMPRE de 2026 (janeiro a abril de 2026). NUNCA use datas de 2025 ou anos anteriores.
-11) Score de 1-10 baseado no potencial e urgência
-11) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
-12) As strategies devem ser acionáveis e específicas
-13) APÓS o JSON, escreva APENAS 1 frase curta e direta como "Encontrei X leads no nicho Y. Os dados estão no painel." NÃO escreva parágrafos, NÃO repita dados do JSON, NÃO faça análise longa.
-14) Seja honesto que os dados são baseados em tendências e análise de mercado`;
+3) OBRIGATÓRIO: inclua contato (whatsapp, telefone, email)
+4) OBRIGATÓRIO: search_query no idioma original + search_query_pt com tradução
+5) OBRIGATÓRIO: problem, solution, outreach_message e fair_price
+6) OBRIGATÓRIO: fair_price com valor NA MOEDA LOCAL + conversão em R$
+7) OBRIGATÓRIO: recent_activity SEMPRE de 2026 (janeiro a abril de 2026)
+8) Score de 1-10 baseado no potencial e urgência
+9) Se o prompt não especificar serviço, crie pelo menos 5 nichos diferentes
+10) APÓS o JSON, escreva APENAS 1 frase curta. NÃO escreva parágrafos.
+11) Quando tiver dados reais do Firecrawl, mencione que os dados são baseados em pesquisa real da web`;
     }
 
     // If a specific campaign is selected, fetch its creatives and do deep analysis
