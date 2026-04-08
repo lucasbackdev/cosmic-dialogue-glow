@@ -144,12 +144,19 @@ const Index = () => {
     return parseLeadData(lastAssistant.content);
   }, [messages]);
 
-  // Parse niche selector from assistant messages
-  const nicheCategories = useMemo(() => {
+  // Detect if AI is asking user to choose a niche (show hardcoded dashboard)
+  const showNicheDashboard = useMemo(() => {
+    if (parsedLeads) return false; // Don't show if leads are already displayed
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant");
-    if (!lastAssistant) return null;
-    return parseNicheSelect(lastAssistant.content);
-  }, [messages]);
+    if (!lastAssistant) return false;
+    const lower = lastAssistant.content.toLowerCase();
+    // Detect niche question patterns
+    return (
+      (lower.includes("nicho") && (lower.includes("escolha") || lower.includes("escolher") || lower.includes("prospectar") || lower.includes("painel"))) ||
+      lower.includes("[niche_select]") ||
+      (lower.includes("qual nicho") || lower.includes("qual setor"))
+    );
+  }, [messages, parsedLeads]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     setShowChat(true); // Always show chat when sending
