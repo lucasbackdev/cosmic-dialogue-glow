@@ -728,6 +728,12 @@ REGRAS:
         
         systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO - COM DADOS REAIS]
 Você agora é uma ESPECIALISTA em prospecção de leads B2B.
+O usuário quer oferecer o serviço: "${serviceContext || 'desenvolvimento web / aplicativo / automação'}"
+Nicho escolhido: "${nicheText}"
+
+CONVERSA NATURAL: Se o usuário está trocando ideia sobre qual serviço prestar, converse naturalmente.
+Se ele especificar o serviço (ex: "quero oferecer criação de sites"), adapte a busca e as soluções para esse serviço.
+Se ainda não especificou, pergunte qual serviço ele quer oferecer antes de buscar.
 
 ${firecrawlContext ? `VOCÊ TEM DADOS REAIS DA WEB abaixo. Use SOMENTE esses dados para criar leads.
 Extraia nomes de pessoas, empresas, websites, datas de postagem e serviços a partir dos dados reais.
@@ -740,7 +746,7 @@ REGRA ABSOLUTA: Todos os leads DEVEM ser BRASILEIROS.
 - Busque em TODAS as regiões: Brasil, Estados Unidos, Canadá e Europa
 - Mas os leads devem ser de BRASILEIROS (nomes brasileiros, empresas de brasileiros)
 - Priorize postagens de portais freelance com DATA REAL de publicação
-- São pessoas/empresas que PUBLICARAM projetos pedindo desenvolvedores freelancers
+- São pessoas/empresas que PUBLICARAM projetos pedindo o serviço especificado
 - Organize por região: 🇧🇷 Brasil, 🇺🇸 EUA, 🇨🇦 Canadá, 🇪🇺 Europa
 
 INSTRUÇÕES CRÍTICAS DE FORMATO:
