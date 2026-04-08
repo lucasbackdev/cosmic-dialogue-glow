@@ -600,6 +600,42 @@ NÃO liste as opções de consulta no texto — o menu visual já está sendo ex
 Seja breve, máximo 2 frases.`;
     }
 
+    // Lead prospecting detection
+    if (isLeadProspectingQuestion(messages)) {
+      console.log("Lead prospecting question detected");
+      systemContent += `\n\n[MODO PROSPECÇÃO DE LEADS ATIVADO]
+Você agora é uma ESPECIALISTA em prospecção de leads B2B focada em brasileiros com empresas no exterior (EUA, Canadá, Europa).
+
+PERFIL ALVO:
+- Brasileiros que abriram empresas nos EUA, Canadá ou Europa
+- Que buscam serviços de tráfego pago (Google Ads, Meta Ads, TikTok Ads)
+- Que buscam desenvolvedores web, criadores de aplicativos ou sites
+
+INSTRUÇÕES:
+1) Apresente uma LISTA DE LEADS/OPORTUNIDADES com o máximo de informações:
+   - Nome da empresa ou pessoa (se possível)
+   - País/cidade onde atua
+   - Nicho/setor de atuação
+   - Site ou rede social (LinkedIn, Instagram)
+   - Tipo de serviço que provavelmente precisam
+   - Data estimada de atividade recente (baseado no seu conhecimento)
+   - Score de potencial (1-10)
+
+2) Organize por MAIS RECENTES primeiro (baseado no seu conhecimento de tendências)
+
+3) Dê ESTRATÉGIAS PRÁTICAS de onde encontrar esses leads:
+   - Grupos do Facebook/LinkedIn de brasileiros no exterior
+   - Diretórios de empresas brasileiras nos EUA (Brazilian-American Chamber of Commerce, etc.)
+   - Hashtags do Instagram (#brasileirosnoseua, #brasileirosnocanada, etc.)
+   - Plataformas como Clutch, Upwork, G2 para encontrar empresas brasileiras
+
+4) Sugira MENSAGENS DE ABORDAGEM personalizadas para cada tipo de lead
+
+5) Use formatação markdown bonita com headers, tabelas e emojis profissionais
+
+IMPORTANTE: Seja honesto que os dados são baseados em tendências e conhecimento geral. Para dados em tempo real, sugira ao usuário conectar uma API de busca como Perplexity.`;
+    }
+
     // If a specific campaign is selected, fetch its creatives and do deep analysis
     if (googleAdsCustomerId && selectedCampaign) {
       console.log("Deep analysis requested for campaign:", selectedCampaign);
