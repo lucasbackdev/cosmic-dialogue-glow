@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     // Validate webhook signature if KIWIFY_WEBHOOK_SECRET is set
     const webhookSecret = Deno.env.get("KIWIFY_WEBHOOK_SECRET");
     if (webhookSecret) {
-      const signature = req.headers.get("x-kiwify-signature") || req.headers.get("signature");
+      const signature = req.headers.get("x-kiwify-signature") || req.headers.get("signature") || new URL(req.url).searchParams.get("token");
       if (signature !== webhookSecret) {
         console.error("Invalid webhook signature");
         return new Response(JSON.stringify({ error: "Invalid signature" }), {
