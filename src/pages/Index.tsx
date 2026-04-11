@@ -7,9 +7,11 @@ import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
+import PaywallCard from "@/components/PaywallCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Send, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
@@ -56,6 +58,7 @@ const Index = () => {
   } = useConversations(user?.id);
 
   const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
+  const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -67,6 +70,7 @@ const Index = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [vehicleLoading, setVehicleLoading] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -148,6 +152,10 @@ const Index = () => {
   }, [messages, parsedLeads]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
+    if (!hasSubscription) {
+      setShowPaywall(true);
+      return;
+    }
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
@@ -540,6 +548,10 @@ const Index = () => {
       <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
         {t("orionAI")}
       </h1>
+      {/* Paywall */}
+      {showPaywall && (
+        <PaywallCard onClose={() => setShowPaywall(false)} />
+      )}
     </div>
   );
 };

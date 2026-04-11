@@ -20,6 +20,18 @@ export function useSubscription(userId: string | undefined) {
       return;
     }
 
+    // First try to link any unlinked subscriptions by email
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await supabase.functions.invoke("link-subscription", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+      }
+    } catch (e) {
+      console.log("Link subscription check:", e);
+    }
+
     const { data, error } = await supabase
       .from("subscriptions")
       .select("id, status, plan, started_at, expires_at")
