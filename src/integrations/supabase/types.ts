@@ -94,6 +94,51 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          kiwify_order_id: string | null
+          kiwify_subscription_id: string | null
+          plan: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          id?: string
+          kiwify_order_id?: string | null
+          kiwify_subscription_id?: string | null
+          plan?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          kiwify_order_id?: string | null
+          kiwify_subscription_id?: string | null
+          plan?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -102,7 +147,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      subscription_status:
+        | "active"
+        | "cancelled"
+        | "expired"
+        | "refunded"
+        | "past_due"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -229,6 +279,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_status: [
+        "active",
+        "cancelled",
+        "expired",
+        "refunded",
+        "past_due",
+      ],
+    },
   },
 } as const
