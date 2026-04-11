@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { MessageCircle, Zap, Shield, BarChart3, Globe, Check } from "lucide-react";
+import { MessageCircle, Shield, BarChart3, Check } from "lucide-react";
 
 const PLANS = [
   {
@@ -13,7 +13,6 @@ const PLANS = [
     features: [
       "500 pontos/mês",
       "Chat IA com limite",
-      "Prospecção de leads básica",
       "1 conta Google Ads",
       "Suporte por email",
     ],
@@ -26,7 +25,6 @@ const PLANS = [
     features: [
       "2.000 pontos/mês",
       "Chat IA avançado",
-      "Prospecção de leads completa",
       "1 conta Google Ads",
       "Suporte por email",
     ],
@@ -38,8 +36,6 @@ const PLANS = [
     period: "/mês",
     features: [
       "5.000 pontos/mês",
-      "Leads com contatos completos",
-      "Consulta veicular completa",
       "Compliance Google Ads",
       "3 contas Google Ads",
       "Suporte prioritário",
@@ -54,7 +50,6 @@ const PLANS = [
       "15.000 pontos/mês",
       "API dedicada",
       "Contas Google Ads ilimitadas",
-      "Consultoria estratégica IA",
       "Relatórios avançados",
       "Suporte 24/7",
     ],
@@ -68,7 +63,6 @@ const PLANS = [
       "Pontos ILIMITADOS",
       "Acesso total a todos os recursos",
       "Contas Google Ads ilimitadas",
-      "Consultoria estratégica IA",
       "API dedicada + Relatórios",
       "Suporte 24/7 com gerente dedicado",
     ],
@@ -83,11 +77,6 @@ const FEATURES = [
     desc: "Consultoria em tempo real com IA especialista em tráfego pago e marketing digital.",
   },
   {
-    icon: Zap,
-    title: "Prospecção de Leads",
-    desc: "Encontre clientes ideais no mundo todo com dados de contato completos.",
-  },
-  {
     icon: Shield,
     title: "Compliance Google Ads",
     desc: "Análise automática de políticas do Google Ads para evitar suspensões.",
@@ -96,11 +85,6 @@ const FEATURES = [
     icon: BarChart3,
     title: "Dashboard Google Ads",
     desc: "Métricas, campanhas e otimizações direto no chat.",
-  },
-  {
-    icon: Globe,
-    title: "Leads Globais",
-    desc: "Prospecção em qualquer país — EUA, Canadá, Europa e mais.",
   },
 ];
 
