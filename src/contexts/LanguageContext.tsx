@@ -11,7 +11,7 @@ const translations = {
     typeQuestion: "Digite sua pergunta...",
     hideChat: "Ocultar chat",
     showChat: "Mostrar chat",
-    orionAI: "Orion AI",
+    orionAI: "KahlChat",
     // Settings
     googleAds: "Google Ads",
     googleAdsDesc: "Insira o ID da conta Google Ads (formato: 123-456-7890) para buscar métricas e campanhas.",
@@ -69,7 +69,7 @@ const translations = {
     typeQuestion: "Type your question...",
     hideChat: "Hide chat",
     showChat: "Show chat",
-    orionAI: "Orion AI",
+    orionAI: "KahlChat",
     // Settings
     googleAds: "Google Ads",
     googleAdsDesc: "Enter your Google Ads account ID (format: 123-456-7890) to fetch metrics and campaigns.",
