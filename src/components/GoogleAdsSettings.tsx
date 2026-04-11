@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings, X, Loader2, CheckCircle, AlertCircle, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, X, Loader2, CheckCircle, AlertCircle, Globe, Moon, Sun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
@@ -17,6 +17,22 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
   const [inputValue, setInputValue] = useState(customerId || "");
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  }, []);
 
   const handleSave = async () => {
     if (!inputValue.trim()) return;
@@ -71,6 +87,27 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
               </div>
             </div>
 
+            {/* Dark mode toggle */}
+            <div className="mb-5 pb-4 border-b border-border/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {darkMode ? <Moon className="w-3.5 h-3.5 text-muted-foreground" /> : <Sun className="w-3.5 h-3.5 text-muted-foreground" />}
+                  <span className="text-xs font-medium text-foreground">{language === "pt-BR" ? "Modo escuro" : "Dark mode"}</span>
+                </div>
+                <button
+                  onClick={toggleDarkMode}
+                  className={cn(
+                    "relative w-10 h-5 rounded-full transition-colors",
+                    darkMode ? "bg-primary" : "bg-border"
+                  )}
+                >
+                  <span className={cn(
+                    "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background transition-transform",
+                    darkMode && "translate-x-5"
+                  )} />
+                </button>
+              </div>
+            </div>
             {/* Google Ads section */}
             <h3 className="text-foreground font-medium text-xs mb-2">{t("googleAds")}</h3>
             <p className="text-muted-foreground text-xs mb-3">{t("googleAdsDesc")}</p>
