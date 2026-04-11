@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings, X, Loader2, CheckCircle, AlertCircle, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, X, Loader2, CheckCircle, AlertCircle, Globe, Moon, Sun } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
