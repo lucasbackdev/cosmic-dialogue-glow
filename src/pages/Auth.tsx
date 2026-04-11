@@ -175,7 +175,7 @@ const Auth = () => {
 
       {/* Features */}
       <section className="py-20 px-6 bg-card">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Tudo que você precisa</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {FEATURES.map((f) => (
