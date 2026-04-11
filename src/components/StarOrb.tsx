@@ -1,242 +1,143 @@
-import { useMemo, useRef, useCallback, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 
 type OrbState = "idle" | "listening" | "speaking";
 
 interface StarOrbProps {
   state: OrbState;
   onClick: () => void;
-  /** 0-1 audio intensity for voice-reactive pulsing */
   audioLevel?: number;
 }
 
-const ORB_SIZE = 320;
+const ORB_SIZE = 280;
 const CENTER = ORB_SIZE / 2;
-const SPHERE_RADIUS = 110;
-const STAR_COUNT = 300;
+const RADIUS = 120;
 const DPR = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 2) : 1;
-
-interface Star {
-  px: number; py: number; pz: number;
-  size: number;
-  twinkleOffset: number;
-  twinkleSpeed: number;
-  // idle drift parameters
-  driftAngle: number;
-  driftSpeed: number;
-  driftAmount: number;
-}
 
 const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rotRef = useRef({ x: 0, y: 0 });
-  const velRef = useRef({ x: 0, y: 0 });
-  const isDragging = useRef(false);
-  const lastPos = useRef({ x: 0, y: 0 });
-  const lastTime = useRef(0);
-  const dragStarted = useRef(false);
   const stateRef = useRef(state);
-  const audioLevelRef = useRef(audioLevel);
+  const audioRef = useRef(audioLevel);
   stateRef.current = state;
-  audioLevelRef.current = audioLevel;
-
-  const stars = useMemo<Star[]>(() => {
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-    return Array.from({ length: STAR_COUNT }, (_, i) => {
-      const y = 1 - (i / (STAR_COUNT - 1)) * 2;
-      const r = Math.sqrt(1 - y * y);
-      const theta = goldenAngle * i;
-      return {
-        px: Math.cos(theta) * r * SPHERE_RADIUS,
-        py: y * SPHERE_RADIUS,
-        pz: Math.sin(theta) * r * SPHERE_RADIUS,
-        size: 1 + Math.random() * 2,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        twinkleSpeed: 0.5 + Math.random() * 1.5,
-        driftAngle: Math.random() * Math.PI * 2,
-        driftSpeed: 0.3 + Math.random() * 0.7,
-        driftAmount: 3 + Math.random() * 6,
-      };
-    });
-  }, []);
+  audioRef.current = audioLevel;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
+    const ctx = canvas.getContext("2d")!;
     canvas.width = ORB_SIZE * DPR;
     canvas.height = ORB_SIZE * DPR;
     ctx.scale(DPR, DPR);
 
+    // Pre-generate cloud noise offsets
+    const clouds = Array.from({ length: 8 }, (_, i) => ({
+      cx: Math.random() * 0.6 - 0.3,
+      cy: Math.random() * 0.6 - 0.3,
+      r: 0.3 + Math.random() * 0.4,
+      speed: 0.0003 + Math.random() * 0.0005,
+      phase: Math.random() * Math.PI * 2,
+      hue: 200 + Math.random() * 20,
+      sat: 60 + Math.random() * 30,
+      light: 75 + Math.random() * 15,
+    }));
+
     let frameId = 0;
-    const friction = 0.97;
-    const perspective = 500;
 
     const draw = (time: number) => {
       const currentState = stateRef.current;
-      const level = audioLevelRef.current;
-
-      // Inertia
-      if (!isDragging.current) {
-        if (Math.abs(velRef.current.x) > 0.1 || Math.abs(velRef.current.y) > 0.1) {
-          velRef.current.x *= friction;
-          velRef.current.y *= friction;
-          rotRef.current.x += velRef.current.x * (1 / 60);
-          rotRef.current.y += velRef.current.y * (1 / 60);
-        }
-      }
-
-      const toRad = Math.PI / 180;
-      const cosRx = Math.cos(rotRef.current.x * toRad);
-      const sinRx = Math.sin(rotRef.current.x * toRad);
-      const cosRy = Math.cos(rotRef.current.y * toRad);
-      const sinRy = Math.sin(rotRef.current.y * toRad);
+      const level = audioRef.current;
 
       ctx.clearRect(0, 0, ORB_SIZE, ORB_SIZE);
 
-      const isSpeaking = currentState === "speaking";
-      const isListening = currentState === "listening";
-      const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [0, 120, 255] : [30, 100, 255];
-      const glowColor = isSpeaking ? "59,130,246" : isListening ? "0,120,255" : "30,100,255";
+      // Pulse effect
+      const pulse = currentState === "speaking"
+        ? 1 + level * 0.08 + Math.sin(time * 0.006) * 0.02
+        : currentState === "listening"
+          ? 1 + Math.sin(time * 0.003) * 0.03
+          : 1 + Math.sin(time * 0.002) * 0.01;
 
-      // Voice-reactive pulse: combine audio level with multi-freq sine for organic feel
-      const voicePulse = isSpeaking
-        ? 0.3 + level * 0.7 * (0.6 + 0.4 * Math.sin(time * 0.008 + 1.3))
-        : 0;
+      const r = RADIUS * pulse;
 
-      // Listening: gentle breathing
-      const listenPulse = isListening
-        ? 0.5 + 0.5 * Math.sin(time * 0.003)
-        : 0;
+      // Outer glow
+      const glowAlpha = currentState === "speaking" ? 0.15 + level * 0.1 : 0.1;
+      const glow = ctx.createRadialGradient(CENTER, CENTER, r * 0.8, CENTER, CENTER, r * 1.5);
+      glow.addColorStop(0, `hsla(210, 80%, 85%, ${glowAlpha})`);
+      glow.addColorStop(1, "hsla(210, 80%, 85%, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, ORB_SIZE, ORB_SIZE);
 
-      const projected: { sx: number; sy: number; depth: number; size: number; alpha: number }[] = [];
+      // Clip to circle
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, r, 0, Math.PI * 2);
+      ctx.clip();
 
-      for (const star of stars) {
-        let spx = star.px;
-        let spy = star.py;
-        let spz = star.pz;
+      // Base gradient — soft white-blue
+      const base = ctx.createRadialGradient(
+        CENTER - r * 0.3, CENTER - r * 0.3, 0,
+        CENTER, CENTER, r
+      );
+      base.addColorStop(0, "hsl(200, 30%, 97%)");
+      base.addColorStop(0.5, "hsl(205, 60%, 88%)");
+      base.addColorStop(1, "hsl(215, 70%, 75%)");
+      ctx.fillStyle = base;
+      ctx.fillRect(CENTER - r, CENTER - r, r * 2, r * 2);
 
-        // Idle: gentle drift animation
-        if (!isSpeaking) {
-          const driftT = time * 0.001 * star.driftSpeed;
-          const dx = Math.cos(star.driftAngle) * Math.sin(driftT) * star.driftAmount;
-          const dy = Math.sin(star.driftAngle) * Math.cos(driftT * 0.7) * star.driftAmount;
-          const dz = Math.sin(driftT * 0.5 + star.twinkleOffset) * star.driftAmount * 0.5;
-          spx += dx;
-          spy += dy;
-          spz += dz;
-        }
+      // Cloud layers
+      for (const c of clouds) {
+        const t = time * c.speed + c.phase;
+        const cx = CENTER + (c.cx + Math.sin(t) * 0.1) * r;
+        const cy = CENTER + (c.cy + Math.cos(t * 0.7) * 0.1) * r;
+        const cr = c.r * r;
 
-        // Speaking: radial pulse based on audio level
-        if (isSpeaking) {
-          const len = Math.sqrt(spx * spx + spy * spy + spz * spz) || 1;
-          const nx = spx / len, ny = spy / len, nz = spz / len;
-          const pulseAmount = voicePulse * 15 * (0.5 + 0.5 * Math.sin(time * 0.005 + star.twinkleOffset));
-          spx += nx * pulseAmount;
-          spy += ny * pulseAmount;
-          spz += nz * pulseAmount;
-        }
-
-        // Listening: subtle breathing
-        if (isListening) {
-          const len = Math.sqrt(spx * spx + spy * spy + spz * spz) || 1;
-          const nx = spx / len, ny = spy / len, nz = spz / len;
-          spx += nx * listenPulse * 5;
-          spy += ny * listenPulse * 5;
-          spz += nz * listenPulse * 5;
-        }
-
-        // Rotate Y then X
-        const x1 = spx * cosRy + spz * sinRy;
-        const z1 = -spx * sinRy + spz * cosRy;
-        const y2 = spy * cosRx - z1 * sinRx;
-        const z2 = spy * sinRx + z1 * cosRx;
-
-        const scale = perspective / (perspective + z2);
-        const screenX = CENTER + x1 * scale;
-        const screenY = CENTER + y2 * scale;
-        const depth = (z2 + SPHERE_RADIUS) / (2 * SPHERE_RADIUS);
-        const twinkle = 0.6 + 0.4 * Math.sin(time * 0.001 * star.twinkleSpeed + star.twinkleOffset);
-        const alpha = (0.1 + depth * 0.9) * twinkle;
-
-        // Speaking: boost brightness with audio
-        const finalAlpha = isSpeaking ? Math.min(1, alpha + voicePulse * 0.4) : alpha;
-
-        projected.push({ sx: screenX, sy: screenY, depth, size: star.size * scale, alpha: finalAlpha });
-      }
-
-      projected.sort((a, b) => a.depth - b.depth);
-
-      for (const p of projected) {
-        const r = isSpeaking ? p.size * (1 + voicePulse * 0.5) : p.size;
-        const glowR = r * (isSpeaking ? 4 : 3);
-
-        // Glow
-        const grad = ctx.createRadialGradient(p.sx, p.sy, 0, p.sx, p.sy, glowR);
-        grad.addColorStop(0, `rgba(${glowColor},${p.alpha * 0.5})`);
-        grad.addColorStop(1, `rgba(${glowColor},0)`);
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr);
+        const alpha = currentState === "speaking"
+          ? 0.35 + level * 0.2
+          : 0.3 + Math.sin(t * 2) * 0.05;
+        grad.addColorStop(0, `hsla(${c.hue}, ${c.sat}%, ${c.light}%, ${alpha})`);
+        grad.addColorStop(0.6, `hsla(${c.hue}, ${c.sat}%, ${c.light}%, ${alpha * 0.3})`);
+        grad.addColorStop(1, `hsla(${c.hue}, ${c.sat}%, ${c.light}%, 0)`);
         ctx.fillStyle = grad;
-        ctx.fillRect(p.sx - glowR, p.sy - glowR, glowR * 2, glowR * 2);
-
-        // Star dot
-        ctx.beginPath();
-        ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${baseColor[0]},${baseColor[1]},${baseColor[2]},${p.alpha})`;
-        ctx.fill();
+        ctx.fillRect(cx - cr, cy - cr, cr * 2, cr * 2);
       }
+
+      // Inner highlight — top-left shine
+      const shine = ctx.createRadialGradient(
+        CENTER - r * 0.35, CENTER - r * 0.35, 0,
+        CENTER - r * 0.2, CENTER - r * 0.2, r * 0.7
+      );
+      shine.addColorStop(0, "hsla(0, 0%, 100%, 0.6)");
+      shine.addColorStop(0.5, "hsla(0, 0%, 100%, 0.15)");
+      shine.addColorStop(1, "hsla(0, 0%, 100%, 0)");
+      ctx.fillStyle = shine;
+      ctx.fillRect(CENTER - r, CENTER - r, r * 2, r * 2);
+
+      ctx.restore();
+
+      // Subtle border
+      ctx.beginPath();
+      ctx.arc(CENTER, CENTER, r, 0, Math.PI * 2);
+      ctx.strokeStyle = "hsla(210, 40%, 80%, 0.3)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
       frameId = requestAnimationFrame(draw);
     };
 
     frameId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(frameId);
-  }, [stars]);
-
-  // Mouse handlers
-  const handlePointerDown = useCallback((e: React.MouseEvent) => {
-    isDragging.current = true;
-    dragStarted.current = false;
-    lastPos.current = { x: e.clientX, y: e.clientY };
-    lastTime.current = performance.now();
-    velRef.current = { x: 0, y: 0 };
   }, []);
 
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      const dx = e.clientX - lastPos.current.x;
-      const dy = e.clientY - lastPos.current.y;
-      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragStarted.current = true;
-      const now = performance.now();
-      const dt = Math.max(now - lastTime.current, 1);
-      velRef.current = { x: (-dy / dt) * 300, y: (dx / dt) * 300 };
-      rotRef.current.x += -dy * 0.3;
-      rotRef.current.y += dx * 0.3;
-      lastPos.current = { x: e.clientX, y: e.clientY };
-      lastTime.current = now;
-    };
-    const handleUp = () => { isDragging.current = false; };
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
-    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
-  }, []);
-
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (dragStarted.current) { e.preventDefault(); return; }
-    onClick();
-  }, [onClick]);
+  const handleClick = useCallback(() => onClick(), [onClick]);
 
   return (
     <div className="relative" style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}>
       <canvas
         ref={canvasRef}
-        onMouseDown={handlePointerDown}
         onClick={handleClick}
-        className="cursor-grab active:cursor-grabbing"
+        className="cursor-pointer"
         style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
       />
-      <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
+      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
         {state === "idle" && "Toque para falar"}
         {state === "listening" && "Ouvindo..."}
         {state === "speaking" && "Respondendo..."}
