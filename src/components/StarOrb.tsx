@@ -97,8 +97,8 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
 
       const isSpeaking = currentState === "speaking";
       const isListening = currentState === "listening";
-      const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [100, 200, 255] : [210, 220, 240];
-      const glowColor = isSpeaking ? "59,130,246" : isListening ? "100,200,255" : "150,170,220";
+      const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [30, 30, 30] : [20, 20, 20];
+      const glowColor = isSpeaking ? "59,130,246" : isListening ? "30,30,30" : "40,40,40";
 
       // Voice-reactive pulse: combine audio level with multi-freq sine for organic feel
       const voicePulse = isSpeaking
