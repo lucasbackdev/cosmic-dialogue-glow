@@ -58,6 +58,7 @@ const Index = () => {
   } = useConversations(user?.id);
 
   const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
+  const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -69,6 +70,7 @@ const Index = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [vehicleLoading, setVehicleLoading] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
