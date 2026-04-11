@@ -17,6 +17,22 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
   const [inputValue, setInputValue] = useState(customerId || "");
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  }, []);
 
   const handleSave = async () => {
     if (!inputValue.trim()) return;
