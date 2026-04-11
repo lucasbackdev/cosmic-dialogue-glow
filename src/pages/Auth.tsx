@@ -194,7 +194,7 @@ const Auth = () => {
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Planos e preços</h2>
           <p className="text-muted-foreground text-center mb-12">Escolha o plano ideal para o seu negócio</p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {PLANS.map((plan) => (
               <div
                 key={plan.name}
