@@ -597,6 +597,7 @@ const Index = () => {
             <>
               <ChatBubble role="user" content={freeUserInput} />
               <WorkSimulation
+                userMessage={freeUserInput}
                 onComplete={() => {
                   setShowSimulation(false);
                   setShowPaywall(true);
