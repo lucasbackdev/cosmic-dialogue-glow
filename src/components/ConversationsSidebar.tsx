@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare, LogOut } from "lucide-react";
+import { Plus, Trash2, MessageSquare, LogOut, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/hooks/useConversations";
 import GoogleAdsSettings from "./GoogleAdsSettings";
@@ -13,6 +13,7 @@ interface ConversationsSidebarProps {
   onSignOut: () => void;
   open: boolean;
   onToggle: () => void;
+  credits?: { total_credits: number; used_credits: number; remaining: number } | null;
   googleAds?: {
     customerId: string | null;
     onSave: (id: string) => Promise<{ success: boolean; message: string } | undefined>;
