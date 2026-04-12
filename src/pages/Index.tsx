@@ -420,23 +420,25 @@ const Index = () => {
         />
       )}
 
-      {/* Toggle buttons */}
-      <div className="fixed top-4 right-4 z-30 flex gap-2">
-        <button
-          onClick={() => setShowInput(!showInput)}
-          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-          title={showInput ? "Ocultar campo de texto" : "Mostrar campo de texto"}
-        >
-          <Keyboard className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setShowChat(!showChat)}
-          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-          title={showChat ? t("hideChat") : t("showChat")}
-        >
-          {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
+      {/* Toggle buttons - only for logged users */}
+      {user && (
+        <div className="fixed top-4 right-4 z-30 flex gap-2">
+          <button
+            onClick={() => setShowInput(!showInput)}
+            className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+            title={showInput ? "Ocultar campo de texto" : "Mostrar campo de texto"}
+          >
+            <Keyboard className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+            title={showChat ? t("hideChat") : t("showChat")}
+          >
+            {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
 
       {/* Unified chat */}
       {showChat && (
