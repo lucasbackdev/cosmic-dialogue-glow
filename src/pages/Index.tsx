@@ -3,6 +3,7 @@ import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import AIThinkingIndicator from "@/components/AIThinkingIndicator";
 import CampaignMetricsInline from "@/components/CampaignMetricsInline";
+import GoogleAdsOnboarding from "@/components/GoogleAdsOnboarding";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
