@@ -45,10 +45,13 @@ const PaywallCard = ({ onClose }: PaywallCardProps) => {
               <span className="text-primary">✓</span> Monitoramento em tempo real
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-primary">✓</span> Prospecção de leads
+              <span className="text-primary">✓</span> Créditos mensais para todas as funções
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-primary">✓</span> Consulta veicular
+              <span className="text-primary">✓</span> Suporte prioritário
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-primary">✓</span> Acesso antecipado a novidades
             </li>
           </ul>
 
