@@ -560,6 +560,17 @@ const Index = () => {
               </div>
             );
           })}
+          {freeUserInput && showSimulation && (
+            <>
+              <ChatBubble role="user" content={freeUserInput} />
+              <WorkSimulation
+                onComplete={() => {
+                  setShowSimulation(false);
+                  setShowPaywall(true);
+                }}
+              />
+            </>
+          )}
         </div>
       )}
 
