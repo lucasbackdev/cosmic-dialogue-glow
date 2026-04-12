@@ -8,6 +8,7 @@ import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
+import WorkSimulation from "@/components/WorkSimulation";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
