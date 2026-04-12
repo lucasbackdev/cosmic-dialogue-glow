@@ -26,7 +26,7 @@ const PaywallCard = ({ onClose }: PaywallCardProps) => {
 
           {/* Description */}
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Para usar a IA e todas as funcionalidades, assine o plano essencial.
+            Sua campanha foi criada com sucesso! Para publicá-la e acessar todas as funcionalidades, assine o plano essencial.
           </p>
 
           {/* Price */}
