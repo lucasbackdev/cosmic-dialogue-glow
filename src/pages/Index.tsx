@@ -389,6 +389,7 @@ const Index = () => {
         onSignOut={signOut}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        credits={credits}
         googleAds={{
           customerId,
           onSave: saveCustomerId,
