@@ -8,6 +8,7 @@ import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
+import WorkSimulation from "@/components/WorkSimulation";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -73,6 +74,8 @@ const Index = () => {
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [vehicleLoading, setVehicleLoading] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const [freeUserInput, setFreeUserInput] = useState<string | null>(null);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -155,7 +158,9 @@ const Index = () => {
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     if (!hasSubscription) {
-      setShowPaywall(true);
+      setFreeUserInput(text);
+      setShowChat(true);
+      setShowSimulation(true);
       return;
     }
     setShowChat(true); // Always show chat when sending
@@ -425,6 +430,14 @@ const Index = () => {
           {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
+          {showSimulation && (
+            <WorkSimulation
+              onComplete={() => {
+                setShowSimulation(false);
+                setShowPaywall(true);
+              }}
+            />
+          )}
           {showMetricsInChat && adsData?.campaigns && adsData.campaigns.length > 0 && (
             <CampaignSelector
               campaigns={adsData.campaigns as Campaign[]}
@@ -498,6 +511,9 @@ const Index = () => {
           {messages.filter(m => m.role === "user").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
+          {freeUserInput && showSimulation && (
+            <ChatBubble role="user" content={freeUserInput} />
+          )}
         </div>
       )}
 
