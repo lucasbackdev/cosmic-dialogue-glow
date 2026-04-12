@@ -468,10 +468,16 @@ const Index = () => {
           {messages.map((msg, i) => {
             const isLastCRMTrigger = (() => {
               if (!showMetricsInChat) return false;
-              // Find the last message that contains CRM keywords
-              for (let j = messages.length - 1; j >= 0; j--) {
-                const lower = messages[j].content.toLowerCase();
-                if (CRM_KEYWORDS.some(kw => lower.includes(kw))) return j === i;
+              // Find the FIRST user message that triggered CRM, show dashboard after its AI response
+              for (let j = 0; j < messages.length; j++) {
+                if (messages[j].role === "user") {
+                  const lower = messages[j].content.toLowerCase();
+                  if (CRM_KEYWORDS.some(kw => lower.includes(kw))) {
+                    // Attach dashboard to the assistant response right after this user message
+                    const assistantIdx = messages.findIndex((m, k) => k > j && m.role === "assistant");
+                    return assistantIdx === i;
+                  }
+                }
               }
               return false;
             })();
