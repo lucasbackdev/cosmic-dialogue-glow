@@ -511,6 +511,9 @@ const Index = () => {
           {messages.filter(m => m.role === "user").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
+          {freeUserInput && showSimulation && (
+            <ChatBubble role="user" content={freeUserInput} />
+          )}
         </div>
       )}
 
