@@ -1444,13 +1444,29 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Determine action type and credit cost
+    // Determine action type and credit cost based on token consumption
     const lastUserText = ([...messages].reverse().find((m: {role:string}) => m.role === "user")?.content || "").toLowerCase();
     let actionType = "chat";
-    let creditCost = 1;
-    if (isLeadProspectingQuestion(messages)) { actionType = "lead_search"; creditCost = 5; }
-    else if (extractPlate(messages)) { actionType = "vehicle_consult"; creditCost = 3; }
-    else if (isCampaignRelated(messages)) { actionType = "campaign_analysis"; creditCost = 3; }
+    let creditCost = 1; // default: simple chat (~800 tokens)
+
+    const CREATE_KEYWORDS = ["criar campanha", "crie uma campanha", "nova campanha", "create campaign", "montar campanha", "criar do zero"];
+    const EDIT_KEYWORDS = ["editar campanha", "alterar lance", "mudar orçamento", "ajustar lance", "pausar campanha", "ativar campanha", "alterar palavras", "mudar estratégia", "edit campaign"];
+    const ANALYZE_KEYWORDS = ["analisar campanha", "análise", "analise", "como está", "performance", "desempenho", "relatório", "métricas"];
+    const LIST_KEYWORDS = ["listar campanhas", "minhas campanhas", "mostrar campanhas", "quais campanhas", "list campaigns"];
+
+    if (isLeadProspectingQuestion(messages)) {
+      actionType = "lead_search"; creditCost = 15; // ~12k tokens + Firecrawl API
+    } else if (extractPlate(messages)) {
+      actionType = "vehicle_consult"; creditCost = 8; // ~3k tokens + external API
+    } else if (CREATE_KEYWORDS.some(kw => lastUserText.includes(kw))) {
+      actionType = "campaign_create"; creditCost = 10; // ~8k tokens
+    } else if (EDIT_KEYWORDS.some(kw => lastUserText.includes(kw))) {
+      actionType = "campaign_edit"; creditCost = 6; // ~5k tokens
+    } else if (ANALYZE_KEYWORDS.some(kw => lastUserText.includes(kw))) {
+      actionType = "campaign_analysis"; creditCost = 5; // ~4k tokens
+    } else if (LIST_KEYWORDS.some(kw => lastUserText.includes(kw))) {
+      actionType = "campaign_list"; creditCost = 2; // ~2k tokens
+    }
 
     // Consume credits if userId provided
     if (userId) {
