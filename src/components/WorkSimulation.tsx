@@ -1,77 +1,90 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 interface WorkSimulationProps {
   onComplete: () => void;
 }
 
 const STEPS = [
-  { label: "Analisando solicitação", file: "request.ts" },
-  { label: "Configurando estrutura da campanha", file: "campaign.ts" },
-  { label: "Definindo público-alvo e segmentação", file: "audience.ts" },
-  { label: "Gerando palavras-chave otimizadas", file: "keywords.ts" },
-  { label: "Criando anúncios e extensões", file: "ads.tsx" },
-  { label: "Configurando lances e orçamento", file: "budget.ts" },
-  { label: "Revisando e finalizando campanha", file: "campaign.ts" },
+  "Analisando sua solicitação...",
+  "Configurando estrutura da campanha...",
+  "Definindo público-alvo e segmentação...",
+  "Gerando palavras-chave otimizadas...",
+  "Criando anúncios e extensões...",
+  "Configurando lances e orçamento...",
+  "Finalizando campanha...",
 ];
 
-const STEP_DURATION = 1600;
+const STEP_DURATION = 1800;
 
 const WorkSimulation = ({ onComplete }: WorkSimulationProps) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<typeof STEPS>([]);
+  const [transitioning, setTransitioning] = useState(false);
+  const finished = currentStep >= STEPS.length;
 
   useEffect(() => {
-    if (currentStep >= STEPS.length) {
-      const timeout = setTimeout(onComplete, 600);
+    if (finished) {
+      const timeout = setTimeout(onComplete, 800);
       return () => clearTimeout(timeout);
     }
 
     const timeout = setTimeout(() => {
-      setCompletedSteps((prev) => [...prev, STEPS[currentStep]]);
-      setCurrentStep((prev) => prev + 1);
+      setTransitioning(true);
+      setTimeout(() => {
+        setCurrentStep((prev) => prev + 1);
+        setTransitioning(false);
+      }, 300);
     }, STEP_DURATION);
 
     return () => clearTimeout(timeout);
-  }, [currentStep, onComplete]);
+  }, [currentStep, finished, onComplete]);
 
-  const activeStep = currentStep < STEPS.length ? STEPS[currentStep] : null;
+  const progress = finished ? 100 : Math.round((currentStep / STEPS.length) * 100);
 
   return (
-    <div className="w-full flex justify-start animate-[float-up_0.4s_ease-out_forwards]">
-      <div className="w-full max-w-[85%] md:max-w-[35%] space-y-2">
-        {/* Completed steps */}
-        {completedSteps.map((step, i) => (
+    <div className="w-full flex justify-start animate-fade-in">
+      <div className="w-full max-w-[85%] md:max-w-[35%]">
+        <div className="relative overflow-hidden rounded-xl bg-card/50 border border-border/30 px-4 py-3.5">
+          {/* Shimmer sweep */}
           <div
-            key={i}
-            className="flex items-center justify-between px-4 py-3 rounded-xl bg-card/40 border border-border/30 cursor-default"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-xs text-muted-foreground shrink-0">Edited</span>
-              <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-muted/40 text-muted-foreground shrink-0">
-                {step.file}
-              </span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
-          </div>
-        ))}
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: "linear-gradient(90deg, transparent 0%, hsl(var(--primary) / 0.08) 40%, hsl(var(--primary) / 0.15) 50%, hsl(var(--primary) / 0.08) 60%, transparent 100%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 2s ease-in-out infinite",
+            }}
+          />
 
-        {/* Active step */}
-        {activeStep && (
-          <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-card/60 border border-primary/20 cursor-default">
-            <div className="flex flex-col gap-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground shrink-0">Editing</span>
-                <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
-                  {activeStep.file}
-                </span>
-              </div>
-              <span className="text-xs text-muted-foreground truncate">{activeStep.label}</span>
+          {/* Content */}
+          <div className="relative flex items-center gap-3">
+            {finished ? (
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+            ) : (
+              <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+            )}
+
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-sm text-foreground font-medium transition-all duration-300"
+                style={{ opacity: transitioning ? 0 : 1, transform: transitioning ? "translateY(6px)" : "translateY(0)" }}
+              >
+                {finished ? "Campanha criada com sucesso!" : STEPS[currentStep]}
+              </p>
             </div>
-            <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+
+            <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+              {progress}%
+            </span>
           </div>
-        )}
+
+          {/* Progress bar */}
+          <div className="relative mt-3 h-1 rounded-full bg-muted/30 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
