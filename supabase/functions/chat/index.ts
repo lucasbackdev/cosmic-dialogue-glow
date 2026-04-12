@@ -1721,7 +1721,7 @@ REGRAS GERAIS:
     const detectedPlate = extractPlate(messages);
     const plateFromHistory = extractPlateFromHistory(messages);
     const lastUserMsg = [...messages].reverse().find((m: {role:string}) => m.role === "user");
-    const lastUserText = lastUserMsg?.content || "";
+    const lastUserTextPlate = lastUserMsg?.content || "";
 
     // Check if user is responding with consultation type choices (plate was in previous messages)
     const userConsultTypes = detectConsultTypes(lastUserText);
