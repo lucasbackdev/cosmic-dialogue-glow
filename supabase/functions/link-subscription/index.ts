@@ -60,6 +60,29 @@ Deno.serve(async (req) => {
 
     console.log(`Linked ${updated?.length || 0} subscriptions for ${email}`);
 
+    // If subscriptions were linked, also create credits if not existing
+    if (updated && updated.length > 0) {
+      const { data: existingCredits } = await supabaseAdmin
+        .from("user_credits")
+        .select("id")
+        .eq("user_id", userId)
+        .gte("period_end", new Date().toISOString())
+        .limit(1)
+        .maybeSingle();
+      if (!existingCredits) {
+        const periodEnd = new Date();
+        periodEnd.setDate(periodEnd.getDate() + 30);
+        await supabaseAdmin.from("user_credits").insert({
+          user_id: userId,
+          total_credits: 1500,
+          used_credits: 0,
+          period_start: new Date().toISOString(),
+          period_end: periodEnd.toISOString(),
+        });
+        console.log(`Created 1500 credits for user ${userId}`);
+      }
+    }
+
     return new Response(JSON.stringify({ linked: updated?.length || 0 }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
