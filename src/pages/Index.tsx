@@ -575,6 +575,7 @@ const Index = () => {
                   setShowSimulation(false);
                   setShowPaywall(true);
                 }}
+                onOpenSettings={() => setSidebarOpen(true)}
               />
             </>
           )}
