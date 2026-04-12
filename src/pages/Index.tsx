@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo, createRef } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import AIThinkingIndicator from "@/components/AIThinkingIndicator";
@@ -11,7 +11,7 @@ import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/L
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
-import AuthButton from "@/components/AuthButton";
+import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -19,6 +19,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useCredits } from "@/hooks/useCredits";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Send, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
 
 const SpeechRecognition =
@@ -85,6 +86,7 @@ const Index = () => {
   const abortRef = useRef<AbortController | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const sentViaVoiceRef = useRef(false);
+  const authButtonRef = useRef<AuthButtonHandle>(null);
 
   // Preload voices
   useEffect(() => {
@@ -169,6 +171,11 @@ const Index = () => {
   }, [messages, parsedLeads]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
+    if (!user) {
+      toast("Crie uma conta para começar a usar o KahlChat", { description: "É rápido e gratuito!" });
+      authButtonRef.current?.openSignUp();
+      return;
+    }
     if (!hasSubscription) {
       setFreeUserInput(text);
       setShowChat(true);
@@ -402,7 +409,7 @@ const Index = () => {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
       {/* Auth button for non-logged users */}
-      {!user && <AuthButton />}
+      {!user && <AuthButton ref={authButtonRef} />}
 
       {/* Conversations sidebar - only for logged users */}
       {user && (
