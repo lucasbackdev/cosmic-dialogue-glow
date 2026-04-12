@@ -98,6 +98,11 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
       const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [0, 120, 255] : [30, 100, 255];
       const glowColor = isSpeaking ? "59,130,246" : isListening ? "0,120,255" : "30,100,255";
 
+      // Smooth breathing pulse when speaking/thinking
+      const breathe = isSpeaking
+        ? 0.5 + 0.5 * Math.sin(time * 0.002)
+        : 0;
+
       const voicePulse = isSpeaking
         ? 0.3 + level * 0.7 * (0.6 + 0.4 * Math.sin(time * 0.008 + 1.3))
         : 0;
