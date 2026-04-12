@@ -3,6 +3,7 @@ import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import AIThinkingIndicator from "@/components/AIThinkingIndicator";
 import CampaignMetricsInline from "@/components/CampaignMetricsInline";
+import GoogleAdsOnboarding from "@/components/GoogleAdsOnboarding";
 import CampaignSelector, { type Campaign } from "@/components/CampaignSelector";
 import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
@@ -490,7 +491,11 @@ const Index = () => {
               <div key={msg.id || i}>
                 <ChatBubble role={msg.role} content={msg.content} />
                 
-                {isLastCRMTrigger && adsData?.campaigns && adsData.campaigns.length > 0 && (
+                {isLastCRMTrigger && !customerId && (
+                  <GoogleAdsOnboarding onOpenSettings={() => setSidebarOpen(true)} />
+                )}
+
+                {isLastCRMTrigger && customerId && adsData?.campaigns && adsData.campaigns.length > 0 && (
                   <div className="mt-3">
                     <CampaignSelector
                       campaigns={adsData.campaigns as Campaign[]}
