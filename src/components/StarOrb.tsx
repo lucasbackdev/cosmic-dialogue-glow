@@ -98,6 +98,11 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
       const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [0, 120, 255] : [30, 100, 255];
       const glowColor = isSpeaking ? "59,130,246" : isListening ? "0,120,255" : "30,100,255";
 
+      // Smooth breathing pulse when speaking/thinking
+      const breathe = isSpeaking
+        ? 0.5 + 0.5 * Math.sin(time * 0.002)
+        : 0;
+
       const voicePulse = isSpeaking
         ? 0.3 + level * 0.7 * (0.6 + 0.4 * Math.sin(time * 0.008 + 1.3))
         : 0;
@@ -126,10 +131,12 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
         if (isSpeaking) {
           const len = Math.sqrt(spx * spx + spy * spy + spz * spz) || 1;
           const nx = spx / len, ny = spy / len, nz = spz / len;
-          const pulseAmount = voicePulse * 15 * (0.5 + 0.5 * Math.sin(time * 0.005 + star.twinkleOffset));
-          spx += nx * pulseAmount;
-          spy += ny * pulseAmount;
-          spz += nz * pulseAmount;
+          // Smooth breathing: stars expand and contract together
+          const breatheAmount = breathe * 25;
+          const pulseAmount = voicePulse * 10 * (0.5 + 0.5 * Math.sin(time * 0.005 + star.twinkleOffset));
+          spx += nx * (breatheAmount + pulseAmount);
+          spy += ny * (breatheAmount + pulseAmount);
+          spz += nz * (breatheAmount + pulseAmount);
         }
 
         if (isListening) {
@@ -152,7 +159,7 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
         const twinkle = 0.6 + 0.4 * Math.sin(time * 0.001 * star.twinkleSpeed + star.twinkleOffset);
         const alpha = (0.1 + depth * 0.9) * twinkle;
 
-        const finalAlpha = isSpeaking ? Math.min(1, alpha + voicePulse * 0.4) : alpha;
+        const finalAlpha = isSpeaking ? Math.min(1, alpha + breathe * 0.3 + voicePulse * 0.4) : alpha;
 
         projected.push({ sx: screenX, sy: screenY, depth, size: star.size * scale, alpha: finalAlpha });
       }
