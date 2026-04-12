@@ -17,7 +17,7 @@ const ChatBubble = ({ role, content }: ChatBubbleProps) => {
       )}
     >
       {role === "user" ? (
-        <div className="max-w-[80%] px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/20 text-foreground text-sm">
+        <div className="max-w-[80%] md:max-w-[35%] px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/20 text-foreground text-sm">
           {content}
         </div>
       ) : (
