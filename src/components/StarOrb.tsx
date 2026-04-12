@@ -131,10 +131,12 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
         if (isSpeaking) {
           const len = Math.sqrt(spx * spx + spy * spy + spz * spz) || 1;
           const nx = spx / len, ny = spy / len, nz = spz / len;
-          const pulseAmount = voicePulse * 15 * (0.5 + 0.5 * Math.sin(time * 0.005 + star.twinkleOffset));
-          spx += nx * pulseAmount;
-          spy += ny * pulseAmount;
-          spz += nz * pulseAmount;
+          // Smooth breathing: stars expand and contract together
+          const breatheAmount = breathe * 25;
+          const pulseAmount = voicePulse * 10 * (0.5 + 0.5 * Math.sin(time * 0.005 + star.twinkleOffset));
+          spx += nx * (breatheAmount + pulseAmount);
+          spy += ny * (breatheAmount + pulseAmount);
+          spz += nz * (breatheAmount + pulseAmount);
         }
 
         if (isListening) {
