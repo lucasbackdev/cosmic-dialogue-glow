@@ -72,17 +72,6 @@ const WorkSimulation = ({ onComplete }: WorkSimulationProps) => {
               </p>
             </div>
 
-            <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-              {progress}%
-            </span>
-          </div>
-
-          {/* Progress bar */}
-          <div className="relative mt-3 h-1 rounded-full bg-muted/30 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
           </div>
         </div>
       </div>
