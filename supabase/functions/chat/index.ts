@@ -1724,7 +1724,7 @@ REGRAS GERAIS:
     const lastUserTextPlate = lastUserMsg?.content || "";
 
     // Check if user is responding with consultation type choices (plate was in previous messages)
-    const userConsultTypes = detectConsultTypes(lastUserText);
+    const userConsultTypes = detectConsultTypes(lastUserTextPlate);
     
     // Explicit types passed from frontend (future use)
     const explicitTypes: string[] = Array.isArray(vehicleConsultTypes) ? vehicleConsultTypes : [];
@@ -1772,7 +1772,7 @@ Seja breve, máximo 2 frases.`;
     if (isLeadProspectingQuestion(messages)) {
       console.log("Lead prospecting question detected");
       
-      const userQuery = lastUserText.toLowerCase();
+      const userQuery = lastUserTextPlate.toLowerCase();
       const rememberedNiche = extractLeadNiche(messages);
       const userHasNiche = LEAD_NICHE_KEYWORDS.some((keyword) => userQuery.includes(keyword)) || Boolean(rememberedNiche);
       
@@ -1789,7 +1789,7 @@ NÃO busque leads ainda. NÃO inclua [LEADS_JSON]. Apenas converse naturalmente.
       } else {
         console.log("Niche detected or remembered - running deterministic lead search");
 
-        const nicheText = rememberedNiche || stripLeadRequestPrefix(lastUserText) || "";
+        const nicheText = rememberedNiche || stripLeadRequestPrefix(lastUserTextPlate) || "";
         const serviceText = extractLeadService(messages) || "criação de sites, aplicativos e automação";
         const firecrawlApiKey = Deno.env.get("FIRECRAWL_API_KEY");
 
