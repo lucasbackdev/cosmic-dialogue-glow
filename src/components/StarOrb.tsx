@@ -159,7 +159,7 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
         const twinkle = 0.6 + 0.4 * Math.sin(time * 0.001 * star.twinkleSpeed + star.twinkleOffset);
         const alpha = (0.1 + depth * 0.9) * twinkle;
 
-        const finalAlpha = isSpeaking ? Math.min(1, alpha + voicePulse * 0.4) : alpha;
+        const finalAlpha = isSpeaking ? Math.min(1, alpha + breathe * 0.3 + voicePulse * 0.4) : alpha;
 
         projected.push({ sx: screenX, sy: screenY, depth, size: star.size * scale, alpha: finalAlpha });
       }
