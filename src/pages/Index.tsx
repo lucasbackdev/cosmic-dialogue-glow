@@ -12,6 +12,7 @@ import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton from "@/components/AuthButton";
+import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useSubscription } from "@/hooks/useSubscription";
