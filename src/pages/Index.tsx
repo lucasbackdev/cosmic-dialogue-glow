@@ -407,7 +407,7 @@ const Index = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
       {/* Auth button for non-logged users */}
       {!user && <AuthButton ref={authButtonRef} />}
 
@@ -456,8 +456,7 @@ const Index = () => {
       {showChat && (
         <div
           ref={chatRef}
-          className="fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg md:max-w-none md:w-auto md:left-4 md:right-4 md:translate-x-0 overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10 pointer-events-none [&>*]:pointer-events-auto"
-          style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--border)) transparent" }}
+          className="fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg md:max-w-none md:w-auto md:left-4 md:right-4 md:translate-x-0 overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10 pointer-events-none [&>*]:pointer-events-auto scrollbar-hide"
         >
           {messages.map((msg, i) => {
             const isLastCRMTrigger = (() => {
