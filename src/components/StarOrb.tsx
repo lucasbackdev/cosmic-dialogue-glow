@@ -35,6 +35,7 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
   const dragStarted = useRef(false);
   const stateRef = useRef(state);
   const audioLevelRef = useRef(audioLevel);
+  const speakingBlend = useRef(0);
   stateRef.current = state;
   audioLevelRef.current = audioLevel;
 
