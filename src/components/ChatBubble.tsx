@@ -13,11 +13,11 @@ const ChatBubble = ({ role, content }: ChatBubbleProps) => {
     <div
       className={cn(
         "w-full animate-[float-up_0.4s_ease-out_forwards]",
-        role === "user" ? "flex justify-end" : "flex justify-start"
+        role === "user" ? "flex justify-end md:justify-end" : "flex justify-start md:justify-start"
       )}
     >
       {role === "user" ? (
-        <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md bg-primary text-primary-foreground text-sm">
+        <div className="max-w-[80%] px-4 py-2.5 rounded-xl bg-primary/15 border border-primary/20 text-foreground text-sm">
           {content}
         </div>
       ) : (
