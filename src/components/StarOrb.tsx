@@ -35,6 +35,7 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
   const dragStarted = useRef(false);
   const stateRef = useRef(state);
   const audioLevelRef = useRef(audioLevel);
+  const speakingBlend = useRef(0);
   stateRef.current = state;
   audioLevelRef.current = audioLevel;
 
@@ -95,17 +96,19 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
 
       const isSpeaking = currentState === "speaking";
       const isListening = currentState === "listening";
+
+      // Smooth blend factor: eases in/out over ~1 second
+      const targetBlend = isSpeaking ? 1 : 0;
+      speakingBlend.current += (targetBlend - speakingBlend.current) * 0.02;
+      const blend = speakingBlend.current;
+
       const baseColor = isSpeaking ? [59, 130, 246] : isListening ? [0, 120, 255] : [30, 100, 255];
       const glowColor = isSpeaking ? "59,130,246" : isListening ? "0,120,255" : "30,100,255";
 
-      // Smooth breathing pulse when speaking/thinking
-      const breathe = isSpeaking
-        ? 0.5 + 0.5 * Math.sin(time * 0.002)
-        : 0;
+      // Smooth breathing pulse, scaled by blend
+      const breathe = blend * (0.5 + 0.5 * Math.sin(time * 0.002));
 
-      const voicePulse = isSpeaking
-        ? 0.3 + level * 0.7 * (0.6 + 0.4 * Math.sin(time * 0.008 + 1.3))
-        : 0;
+      const voicePulse = blend * (0.3 + level * 0.7 * (0.6 + 0.4 * Math.sin(time * 0.008 + 1.3)));
 
       const listenPulse = isListening
         ? 0.5 + 0.5 * Math.sin(time * 0.003)
