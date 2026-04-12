@@ -38,6 +38,44 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_transactions: {
+        Row: {
+          action_type: string
+          created_at: string
+          credits_id: string
+          credits_used: number
+          description: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          credits_id: string
+          credits_used: number
+          description?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          credits_id?: string
+          credits_used?: number
+          description?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_credits_id_fkey"
+            columns: ["credits_id"]
+            isOneToOne: false
+            referencedRelation: "user_credits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_ads_accounts: {
         Row: {
           created_at: string
@@ -139,12 +177,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_credits: {
+        Row: {
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          total_credits: number
+          updated_at: string
+          used_credits: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          total_credits?: number
+          updated_at?: string
+          used_credits?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          total_credits?: number
+          updated_at?: string
+          used_credits?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_credits: {
+        Args: {
+          p_action_type: string
+          p_credits: number
+          p_description?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       subscription_status:
