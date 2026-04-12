@@ -396,24 +396,29 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
-      {/* Conversations sidebar */}
-      <ConversationsSidebar
-        conversations={conversations}
-        currentId={currentConversationId}
-        onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
-        onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-        onDelete={deleteConversation}
-        onSignOut={signOut}
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        credits={credits}
-        googleAds={{
-          customerId,
-          onSave: saveCustomerId,
-          loading: !!adsData && !adsData.summary,
-          error: null,
-        }}
-      />
+      {/* Auth button for non-logged users */}
+      {!user && <AuthButton />}
+
+      {/* Conversations sidebar - only for logged users */}
+      {user && (
+        <ConversationsSidebar
+          conversations={conversations}
+          currentId={currentConversationId}
+          onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
+          onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
+          onDelete={deleteConversation}
+          onSignOut={signOut}
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          credits={credits}
+          googleAds={{
+            customerId,
+            onSave: saveCustomerId,
+            loading: !!adsData && !adsData.summary,
+            error: null,
+          }}
+        />
+      )}
 
       {/* Toggle buttons */}
       <div className="fixed top-4 right-4 z-30 flex gap-2">
