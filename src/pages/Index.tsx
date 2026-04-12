@@ -207,6 +207,11 @@ const Index = () => {
 
       if (!resp.ok || !resp.body) {
         const errorData = await resp.json().catch(() => ({}));
+        if (errorData.error === "daily_limit_reached") {
+          await addMessage(convoId!, "assistant", `⚠️ Você atingiu o limite diário de **${errorData.limit || 40} operações**!\n\nVocê já usou **${errorData.used_today || 0}** operações hoje. O limite reseta à meia-noite.\n\nIsso protege a estabilidade do sistema para todos os usuários. Volte amanhã! 🕐`);
+          setState("idle");
+          return;
+        }
         if (errorData.error === "credits_exhausted") {
           await addMessage(convoId!, "assistant", `⚠️ Seus pontos acabaram! Você usou todos os 1.500 pontos deste mês. Seus pontos renovam automaticamente no próximo ciclo da assinatura.\n\nPontos restantes: **${errorData.remaining || 0}**`);
           setState("idle");

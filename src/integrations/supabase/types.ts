@@ -76,6 +76,33 @@ export type Database = {
           },
         ]
       }
+      daily_usage: {
+        Row: {
+          created_at: string
+          id: string
+          operations_count: number
+          updated_at: string
+          usage_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          operations_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          operations_count?: number
+          updated_at?: string
+          usage_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_ads_accounts: {
         Row: {
           created_at: string
@@ -215,6 +242,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_daily_limit: {
+        Args: { p_cost?: number; p_user_id: string }
+        Returns: Json
+      }
       consume_credits: {
         Args: {
           p_action_type: string

@@ -1474,6 +1474,25 @@ serve(async (req) => {
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
+
+      // Check daily limit (40 ops/day) before consuming monthly credits
+      const { data: dailyResult } = await supabaseAdmin.rpc("check_daily_limit", {
+        p_user_id: userId,
+        p_cost: creditCost,
+      });
+      if (dailyResult && !dailyResult.success) {
+        return new Response(
+          JSON.stringify({
+            error: "daily_limit_reached",
+            remaining_daily: dailyResult.remaining || 0,
+            limit: dailyResult.limit,
+            used_today: dailyResult.used,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Consume monthly credits
       const { data: creditResult } = await supabaseAdmin.rpc("consume_credits", {
         p_user_id: userId,
         p_action_type: actionType,
