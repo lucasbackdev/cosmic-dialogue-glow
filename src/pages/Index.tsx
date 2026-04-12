@@ -170,16 +170,28 @@ const Index = () => {
     );
   }, [messages, parsedLeads]);
 
+  const isAdmin = user?.email === "lucascombatplr@gmail.com";
+
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     if (!user) {
       toast("Crie uma conta para começar a usar o KahlChat", { description: "É rápido e gratuito!" });
       authButtonRef.current?.openSignUp();
       return;
     }
-    if (!hasSubscription) {
-      setFreeUserInput(text);
-      setShowChat(true);
-      setShowSimulation(true);
+    // Free users (non-admin, no subscription): simulate only for campaign/metrics keywords
+    if (!hasSubscription && !isAdmin) {
+      const lower = text.toLowerCase();
+      const isCampaignRequest = CRM_KEYWORDS.some(kw => lower.includes(kw)) || 
+        LEAD_KEYWORDS.some(kw => lower.includes(kw)) ||
+        lower.includes("métrica") || lower.includes("metrica") || lower.includes("criar campanha");
+      if (isCampaignRequest) {
+        setFreeUserInput(text);
+        setShowChat(true);
+        setShowSimulation(true);
+        return;
+      }
+      // For normal messages, show paywall after response
+      setShowPaywall(true);
       return;
     }
     setShowChat(true); // Always show chat when sending
