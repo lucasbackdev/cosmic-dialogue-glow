@@ -421,22 +421,26 @@ const Index = () => {
         </button>
       </div>
 
-      {/* AI messages - left side */}
+      {/* Unified chat */}
       {showChat && (
         <div
-          className="fixed left-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10"
+          ref={chatRef}
+          className="fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10"
           style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--border)) transparent" }}
         >
-          {messages.filter(m => m.role === "assistant").map((msg, i) => (
+          {messages.map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
-          {showSimulation && (
-            <WorkSimulation
-              onComplete={() => {
-                setShowSimulation(false);
-                setShowPaywall(true);
-              }}
-            />
+          {freeUserInput && showSimulation && (
+            <>
+              <ChatBubble role="user" content={freeUserInput} />
+              <WorkSimulation
+                onComplete={() => {
+                  setShowSimulation(false);
+                  setShowPaywall(true);
+                }}
+              />
+            </>
           )}
           {showMetricsInChat && adsData?.campaigns && adsData.campaigns.length > 0 && (
             <CampaignSelector
@@ -497,22 +501,6 @@ const Index = () => {
               niches={parsedLeads.niches}
               strategies={parsedLeads.strategies}
             />
-          )}
-        </div>
-      )}
-
-      {/* User messages - right side */}
-      {showChat && (
-        <div
-          ref={chatRef}
-          className="fixed right-4 top-16 bottom-24 w-[40%] max-w-md overflow-y-auto flex flex-col gap-3 px-2 z-10"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {messages.filter(m => m.role === "user").map((msg, i) => (
-            <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
-          ))}
-          {freeUserInput && showSimulation && (
-            <ChatBubble role="user" content={freeUserInput} />
           )}
         </div>
       )}
