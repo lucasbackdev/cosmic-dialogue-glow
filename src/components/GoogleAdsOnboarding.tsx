@@ -1,11 +1,13 @@
-import { Settings } from "lucide-react";
+import { Settings, ArrowRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface GoogleAdsOnboardingProps {
   onOpenSettings: () => void;
+  showResumeButton?: boolean;
+  onResume?: () => void;
 }
 
-const GoogleAdsOnboarding = ({ onOpenSettings }: GoogleAdsOnboardingProps) => {
+const GoogleAdsOnboarding = ({ onOpenSettings, showResumeButton, onResume }: GoogleAdsOnboardingProps) => {
   const { language } = useLanguage();
   const isPt = language === "pt-BR";
 
@@ -36,11 +38,21 @@ const GoogleAdsOnboarding = ({ onOpenSettings }: GoogleAdsOnboardingProps) => {
 
       <button
         onClick={onOpenSettings}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary/20 text-foreground text-sm font-medium hover:bg-primary/30 transition-colors border border-primary/30 mb-2"
       >
         <Settings className="w-4 h-4" />
         {isPt ? "Registrar ID nas Configurações" : "Register ID in Settings"}
       </button>
+
+      {showResumeButton && onResume && (
+        <button
+          onClick={onResume}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          {isPt ? "Vamos lá" : "Let's go"}
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
 };
