@@ -188,6 +188,11 @@ const Index = () => {
 
       if (!resp.ok || !resp.body) {
         const errorData = await resp.json().catch(() => ({}));
+        if (errorData.error === "credits_exhausted") {
+          await addMessage(convoId!, "assistant", `⚠️ Seus pontos acabaram! Você usou todos os 1.500 pontos deste mês. Seus pontos renovam automaticamente no próximo ciclo da assinatura.\n\nPontos restantes: **${errorData.remaining || 0}**`);
+          setState("idle");
+          return;
+        }
         throw new Error(errorData.error || "Erro ao conectar com a IA");
       }
 
