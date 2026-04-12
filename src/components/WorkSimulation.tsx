@@ -1,37 +1,80 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ChevronRight } from "lucide-react";
 import GoogleAdsOnboarding from "./GoogleAdsOnboarding";
 
 interface WorkSimulationProps {
+  userMessage: string;
   onComplete: () => void;
   onOpenSettings: () => void;
 }
 
-const STEPS = [
-  { file: "request.ts", label: "Analisando sua solicitação..." },
-  { file: "campaign.ts", label: "Configurando estrutura da campanha..." },
-  { file: "audience.ts", label: "Definindo público-alvo e segmentação..." },
-  { file: "keywords.ts", label: "Gerando palavras-chave otimizadas..." },
-  { file: "ads.tsx", label: "Criando anúncios e extensões..." },
-  { file: "budget.ts", label: "Configurando lances e orçamento..." },
-  { file: "campaign.ts", label: "Finalizando campanha..." },
-];
+function generateSteps(input: string): { file: string; label: string }[] {
+  const lower = input.toLowerCase();
 
-const PAUSE_AFTER_STEP = 2; // Pause after 3rd step (0-indexed)
+  // Campaign related
+  if (["campanha", "campaign", "google ads", "anúncio", "anuncio"].some(k => lower.includes(k))) {
+    return [
+      { file: "analyze.ts", label: `Analisando: "${input.slice(0, 50)}..."` },
+      { file: "targeting.ts", label: "Definindo segmentação ideal para o público..." },
+      { file: "keywords.ts", label: "Pesquisando palavras-chave com maior potencial..." },
+      { file: "ads.tsx", label: "Criando variações de anúncios otimizados..." },
+      { file: "bidding.ts", label: "Calculando estratégia de lances..." },
+      { file: "campaign.ts", label: "Montando estrutura final da campanha..." },
+    ];
+  }
+
+  // Lead prospecting
+  if (["lead", "prospecção", "prospectar", "clientes", "empresas", "nicho"].some(k => lower.includes(k))) {
+    return [
+      { file: "search.ts", label: `Buscando: "${input.slice(0, 50)}..."` },
+      { file: "scraper.ts", label: "Rastreando fontes de dados públicos..." },
+      { file: "filter.ts", label: "Filtrando resultados por relevância..." },
+      { file: "enrich.ts", label: "Enriquecendo dados de contato..." },
+      { file: "results.ts", label: "Organizando leads qualificados..." },
+    ];
+  }
+
+  // Vehicle
+  if (["placa", "veículo", "veiculo", "carro", "consulta"].some(k => lower.includes(k))) {
+    return [
+      { file: "plate.ts", label: `Consultando: "${input.slice(0, 50)}..."` },
+      { file: "api.ts", label: "Conectando com base de dados veicular..." },
+      { file: "decode.ts", label: "Decodificando informações do veículo..." },
+      { file: "report.ts", label: "Montando relatório completo..." },
+    ];
+  }
+
+  // Metrics / analysis
+  if (["métrica", "metrica", "desempenho", "performance", "relatório", "analise", "análise"].some(k => lower.includes(k))) {
+    return [
+      { file: "fetch.ts", label: `Coletando dados: "${input.slice(0, 50)}..."` },
+      { file: "metrics.ts", label: "Processando métricas de desempenho..." },
+      { file: "insights.ts", label: "Gerando insights e recomendações..." },
+      { file: "report.tsx", label: "Preparando visualização dos dados..." },
+    ];
+  }
+
+  // Generic fallback — still contextual
+  return [
+    { file: "process.ts", label: `Processando: "${input.slice(0, 60)}..."` },
+    { file: "research.ts", label: "Pesquisando informações relevantes..." },
+    { file: "analyze.ts", label: "Analisando dados encontrados..." },
+    { file: "response.ts", label: "Preparando resposta personalizada..." },
+  ];
+}
+
+const PAUSE_AFTER_STEP = 2;
 const STEP_DURATION = 2800;
 
-const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => {
+const WorkSimulation = ({ userMessage, onComplete, onOpenSettings }: WorkSimulationProps) => {
+  const steps = useMemo(() => generateSteps(userMessage), [userMessage]);
   const [currentStep, setCurrentStep] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const [paused, setPaused] = useState(false);
-  const finished = currentStep >= STEPS.length;
+  const finished = currentStep >= steps.length;
 
   useEffect(() => {
     if (paused || finished) return;
-    if (finished) {
-      const timeout = setTimeout(onComplete, 600);
-      return () => clearTimeout(timeout);
-    }
 
     const timeout = setTimeout(() => {
       setTransitioning(true);
@@ -39,7 +82,6 @@ const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => 
         const nextStep = currentStep + 1;
         setCurrentStep(nextStep);
         setTransitioning(false);
-        // Pause after the designated step
         if (currentStep === PAUSE_AFTER_STEP) {
           setPaused(true);
         }
@@ -47,9 +89,8 @@ const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => 
     }, STEP_DURATION);
 
     return () => clearTimeout(timeout);
-  }, [currentStep, finished, onComplete, paused]);
+  }, [currentStep, finished, paused, steps.length]);
 
-  // Handle completion separately
   useEffect(() => {
     if (finished && !paused) {
       const timeout = setTimeout(onComplete, 600);
@@ -61,14 +102,13 @@ const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => 
     setPaused(false);
   };
 
-  const step = finished ? { file: "campaign.ts", label: "Campanha criada com sucesso!" } : STEPS[currentStep];
+  const step = finished ? { file: "done.ts", label: "Concluído! ✅" } : steps[currentStep];
 
   return (
     <div className="w-full flex flex-col gap-3 animate-fade-in">
       <div className="w-full flex justify-start">
         <div className="w-full max-w-[85%] md:max-w-[35%]">
           <div className="relative overflow-hidden rounded-xl bg-card/50 border border-border/30 px-4 py-3">
-            {/* Shimmer */}
             {!paused && (
               <div
                 className="pointer-events-none absolute inset-0"
@@ -81,7 +121,9 @@ const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => 
             )}
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">Edited</span>
+                <span className="text-sm font-medium text-foreground">
+                  {finished ? "Done" : "Working"}
+                </span>
                 <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground">
                   {step.file}
                 </span>
@@ -98,7 +140,6 @@ const WorkSimulation = ({ onComplete, onOpenSettings }: WorkSimulationProps) => 
         </div>
       </div>
 
-      {/* Show onboarding instruction when paused */}
       {paused && (
         <div className="w-full animate-fade-in">
           <GoogleAdsOnboarding
