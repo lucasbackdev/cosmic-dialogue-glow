@@ -31,6 +31,7 @@ const ConversationsSidebar = ({
   onSignOut,
   open,
   onToggle,
+  credits,
   googleAds,
 }: ConversationsSidebarProps) => {
   const { t } = useLanguage();
