@@ -90,6 +90,24 @@ const ConversationsSidebar = ({
             )}
           </div>
 
+          {credits && (
+            <div className="px-3 py-2.5 rounded-lg bg-card/30 border border-border/30 mb-2">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5">
+                <Zap className="w-3.5 h-3.5 text-primary" />
+                <span>Pontos do mês</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all"
+                  style={{ width: `${Math.max(0, (credits.remaining / credits.total_credits) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                <span className="text-foreground font-medium">{credits.remaining.toLocaleString()}</span> / {credits.total_credits.toLocaleString()}
+              </p>
+            </div>
+          )}
+
           {googleAds && (
             <GoogleAdsSettings
               customerId={googleAds.customerId}
