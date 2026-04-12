@@ -97,13 +97,14 @@ const Index = () => {
 
   // Re-check CRM triggers when messages load (e.g. switching conversations)
   useEffect(() => {
+    if (messages.length === 0) return;
     const hasCRM = messages.some(m => {
       const lower = m.content.toLowerCase();
       return CRM_KEYWORDS.some(kw => lower.includes(kw));
     });
     setShowMetricsInChat(hasCRM);
     setSelectedCampaignIndex(null);
-  }, [currentConversationId]);
+  }, [messages]);
 
   useEffect(() => {
     if (chatRef.current) {
