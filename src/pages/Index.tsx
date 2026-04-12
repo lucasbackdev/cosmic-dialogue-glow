@@ -59,6 +59,7 @@ const Index = () => {
 
   const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
   const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
+  const { credits } = useCredits(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
