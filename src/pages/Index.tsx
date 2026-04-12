@@ -158,7 +158,9 @@ const Index = () => {
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
     if (!hasSubscription) {
-      setShowPaywall(true);
+      setFreeUserInput(text);
+      setShowChat(true);
+      setShowSimulation(true);
       return;
     }
     setShowChat(true); // Always show chat when sending
