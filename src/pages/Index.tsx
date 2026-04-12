@@ -561,6 +561,7 @@ const Index = () => {
               </div>
             );
           })}
+          {state === "speaking" && !showSimulation && <AIThinkingIndicator />}
           {freeUserInput && showSimulation && (
             <>
               <ChatBubble role="user" content={freeUserInput} />
