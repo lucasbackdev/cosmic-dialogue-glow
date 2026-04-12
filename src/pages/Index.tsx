@@ -11,6 +11,7 @@ import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/L
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
+import AuthButton from "@/components/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -395,42 +396,49 @@ const Index = () => {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
-      {/* Conversations sidebar */}
-      <ConversationsSidebar
-        conversations={conversations}
-        currentId={currentConversationId}
-        onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
-        onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-        onDelete={deleteConversation}
-        onSignOut={signOut}
-        open={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        credits={credits}
-        googleAds={{
-          customerId,
-          onSave: saveCustomerId,
-          loading: !!adsData && !adsData.summary,
-          error: null,
-        }}
-      />
+      {/* Auth button for non-logged users */}
+      {!user && <AuthButton />}
 
-      {/* Toggle buttons */}
-      <div className="fixed top-4 right-4 z-30 flex gap-2">
-        <button
-          onClick={() => setShowInput(!showInput)}
-          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-          title={showInput ? "Ocultar campo de texto" : "Mostrar campo de texto"}
-        >
-          <Keyboard className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setShowChat(!showChat)}
-          className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
-          title={showChat ? t("hideChat") : t("showChat")}
-        >
-          {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
+      {/* Conversations sidebar - only for logged users */}
+      {user && (
+        <ConversationsSidebar
+          conversations={conversations}
+          currentId={currentConversationId}
+          onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
+          onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
+          onDelete={deleteConversation}
+          onSignOut={signOut}
+          open={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          credits={credits}
+          googleAds={{
+            customerId,
+            onSave: saveCustomerId,
+            loading: !!adsData && !adsData.summary,
+            error: null,
+          }}
+        />
+      )}
+
+      {/* Toggle buttons - only for logged users */}
+      {user && (
+        <div className="fixed top-4 right-4 z-30 flex gap-2">
+          <button
+            onClick={() => setShowInput(!showInput)}
+            className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+            title={showInput ? "Ocultar campo de texto" : "Mostrar campo de texto"}
+          >
+            <Keyboard className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="p-2 rounded-lg bg-card/30 backdrop-blur-sm border border-border/20 text-muted-foreground hover:text-foreground transition-colors"
+            title={showChat ? t("hideChat") : t("showChat")}
+          >
+            {showChat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
 
       {/* Unified chat */}
       {showChat && (
