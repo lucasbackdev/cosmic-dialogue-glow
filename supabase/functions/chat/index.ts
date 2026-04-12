@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.101.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1437,10 +1438,38 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, googleAdsCustomerId, selectedCampaign, vehicleConsultTypes } = await req.json();
+    const { messages, googleAdsCustomerId, selectedCampaign, vehicleConsultTypes, userId } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    // Determine action type and credit cost
+    const lastUserText = ([...messages].reverse().find((m: {role:string}) => m.role === "user")?.content || "").toLowerCase();
+    let actionType = "chat";
+    let creditCost = 1;
+    if (isLeadProspectingQuestion(messages)) { actionType = "lead_search"; creditCost = 5; }
+    else if (extractPlate(messages)) { actionType = "vehicle_consult"; creditCost = 3; }
+    else if (isCampaignRelated(messages)) { actionType = "campaign_analysis"; creditCost = 3; }
+
+    // Consume credits if userId provided
+    if (userId) {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      const { data: creditResult } = await supabaseAdmin.rpc("consume_credits", {
+        p_user_id: userId,
+        p_action_type: actionType,
+        p_credits: creditCost,
+        p_description: lastUserText.slice(0, 100),
+      });
+      if (creditResult && !creditResult.success) {
+        return new Response(
+          JSON.stringify({ error: "credits_exhausted", remaining: creditResult.remaining || 0 }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     let systemContent = `Você é a Orion, uma assistente virtual inteligente e amigável. Você é como uma amiga de negócios que conversa naturalmente.

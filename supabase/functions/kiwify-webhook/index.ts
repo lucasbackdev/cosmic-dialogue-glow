@@ -89,6 +89,30 @@ Deno.serve(async (req) => {
           });
           if (error) console.error("Error inserting subscription:", error);
         }
+
+        // Create/renew credits for the user if found
+        if (user?.id) {
+          const periodEnd = new Date();
+          periodEnd.setDate(periodEnd.getDate() + 30);
+          // Check if there's already an active credit period
+          const { data: existing } = await supabase
+            .from("user_credits")
+            .select("id")
+            .eq("user_id", user.id)
+            .gte("period_end", new Date().toISOString())
+            .limit(1)
+            .maybeSingle();
+          if (!existing) {
+            await supabase.from("user_credits").insert({
+              user_id: user.id,
+              total_credits: 1500,
+              used_credits: 0,
+              period_start: new Date().toISOString(),
+              period_end: periodEnd.toISOString(),
+            });
+            console.log(`Created 1500 credits for user ${user.id}`);
+          }
+        }
         break;
       }
 

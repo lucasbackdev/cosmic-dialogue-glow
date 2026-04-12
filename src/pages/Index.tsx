@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useCredits } from "@/hooks/useCredits";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { Send, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
@@ -59,6 +60,7 @@ const Index = () => {
 
   const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
   const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
+  const { credits } = useCredits(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -182,12 +184,17 @@ const Index = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined, selectedCampaign: selectedCampaignName || undefined }),
+        body: JSON.stringify({ messages: allMessages, googleAdsCustomerId: customerId || undefined, selectedCampaign: selectedCampaignName || undefined, userId: user?.id }),
         signal: controller.signal,
       });
 
       if (!resp.ok || !resp.body) {
         const errorData = await resp.json().catch(() => ({}));
+        if (errorData.error === "credits_exhausted") {
+          await addMessage(convoId!, "assistant", `⚠️ Seus pontos acabaram! Você usou todos os 1.500 pontos deste mês. Seus pontos renovam automaticamente no próximo ciclo da assinatura.\n\nPontos restantes: **${errorData.remaining || 0}**`);
+          setState("idle");
+          return;
+        }
         throw new Error(errorData.error || "Erro ao conectar com a IA");
       }
 
@@ -382,6 +389,7 @@ const Index = () => {
         onSignOut={signOut}
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        credits={credits}
         googleAds={{
           customerId,
           onSave: saveCustomerId,
