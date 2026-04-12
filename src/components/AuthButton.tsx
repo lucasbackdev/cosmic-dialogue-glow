@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { LogIn, X } from "lucide-react";
 
-const AuthButton = () => {
+export interface AuthButtonHandle {
+  openSignUp: () => void;
+}
+
+const AuthButton = forwardRef<AuthButtonHandle>((_, ref) => {
   const { user, signIn, signUp } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    openSignUp: () => {
+      setIsLogin(false);
+      setOpen(true);
+    },
+  }));
 
   if (user) return null;
 
@@ -107,6 +118,8 @@ const AuthButton = () => {
       )}
     </>
   );
-};
+});
+
+AuthButton.displayName = "AuthButton";
 
 export default AuthButton;
