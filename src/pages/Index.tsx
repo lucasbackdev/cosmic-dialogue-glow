@@ -491,7 +491,11 @@ const Index = () => {
               <div key={msg.id || i}>
                 <ChatBubble role={msg.role} content={msg.content} />
                 
-                {isLastCRMTrigger && adsData?.campaigns && adsData.campaigns.length > 0 && (
+                {isLastCRMTrigger && !customerId && (
+                  <GoogleAdsOnboarding onOpenSettings={() => setSidebarOpen(true)} />
+                )}
+
+                {isLastCRMTrigger && customerId && adsData?.campaigns && adsData.campaigns.length > 0 && (
                   <div className="mt-3">
                     <CampaignSelector
                       campaigns={adsData.campaigns as Campaign[]}
