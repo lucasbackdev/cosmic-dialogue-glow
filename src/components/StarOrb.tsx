@@ -192,32 +192,48 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
     return () => cancelAnimationFrame(frameId);
   }, [stars]);
 
-  const handlePointerDown = useCallback((e: React.MouseEvent) => {
+  const getPointerPos = (e: React.MouseEvent | React.TouchEvent) => {
+    if ("touches" in e) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     isDragging.current = true;
     dragStarted.current = false;
-    lastPos.current = { x: e.clientX, y: e.clientY };
+    const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
+    lastPos.current = pos;
     lastTime.current = performance.now();
     velRef.current = { x: 0, y: 0 };
   }, []);
 
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging.current) return;
-      const dx = e.clientX - lastPos.current.x;
-      const dy = e.clientY - lastPos.current.y;
+      const pos = "touches" in e ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
+      const dx = pos.x - lastPos.current.x;
+      const dy = pos.y - lastPos.current.y;
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragStarted.current = true;
       const now = performance.now();
       const dt = Math.max(now - lastTime.current, 1);
       velRef.current = { x: (-dy / dt) * 300, y: (dx / dt) * 300 };
       rotRef.current.x += -dy * 0.3;
       rotRef.current.y += dx * 0.3;
-      lastPos.current = { x: e.clientX, y: e.clientY };
+      lastPos.current = pos;
       lastTime.current = now;
     };
     const handleUp = () => { isDragging.current = false; };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
-    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
+    window.addEventListener("touchmove", handleMove, { passive: true });
+    window.addEventListener("touchend", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
   }, []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -230,8 +246,9 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
       <canvas
         ref={canvasRef}
         onMouseDown={handlePointerDown}
+        onTouchStart={handlePointerDown}
         onClick={handleClick}
-        className="cursor-grab active:cursor-grabbing"
+        className="cursor-grab active:cursor-grabbing touch-none"
         style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
       />
       <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
