@@ -11,7 +11,7 @@ import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/L
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
-import { useAuth } from "@/hooks/useAuth";
+import AuthButton from "@/components/AuthButton";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
 import { useSubscription } from "@/hooks/useSubscription";
