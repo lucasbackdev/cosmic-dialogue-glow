@@ -22,7 +22,7 @@ const GoogleAdsOnboarding = ({ onOpenSettings, showResumeButton, onResume }: Goo
           : "To see your real metrics, register your Google Ads account ID in settings. See the image below to find your ID:"}
       </p>
 
-      <div className="rounded-lg overflow-hidden border border-border/20 mb-3">
+      <div className="rounded-sm overflow-hidden border border-border/20 mb-3">
         <img
           src="/images/google-ads-id-guide.png"
           alt={isPt ? "Onde encontrar o ID da conta Google Ads" : "Where to find Google Ads account ID"}
