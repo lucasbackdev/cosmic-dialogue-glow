@@ -409,7 +409,7 @@ const Index = () => {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-background overflow-hidden">
       {/* Auth button for non-logged users */}
-      {!user && <AuthButton />}
+      {!user && <AuthButton ref={authButtonRef} />}
 
       {/* Conversations sidebar - only for logged users */}
       {user && (
