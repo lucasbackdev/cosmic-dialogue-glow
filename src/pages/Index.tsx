@@ -437,80 +437,129 @@ const Index = () => {
           className="fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg md:max-w-none md:w-auto md:left-4 md:right-4 md:translate-x-0 overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10"
           style={{ scrollbarWidth: "thin", scrollbarColor: "hsl(var(--border)) transparent" }}
         >
-          {messages.map((msg, i) => (
-            <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
-          ))}
-          {freeUserInput && showSimulation && (
-            <>
-              <ChatBubble role="user" content={freeUserInput} />
-              <WorkSimulation
-                onComplete={() => {
-                  setShowSimulation(false);
-                  setShowPaywall(true);
-                }}
-              />
-            </>
-          )}
-          {showMetricsInChat && adsData?.campaigns && adsData.campaigns.length > 0 && (
-            <CampaignSelector
-              campaigns={adsData.campaigns as Campaign[]}
-              selectedIndex={selectedCampaignIndex}
-              onSelect={(i) => {
-                setSelectedCampaignIndex(i);
-                const campaign = (adsData!.campaigns as Campaign[])[i];
-                if (campaign) {
-                  sendMessage(`Analise a campanha "${campaign.name}" em detalhes`, campaign.name);
+          {messages.map((msg, i) => {
+            const isLastCRMTrigger = (() => {
+              if (!showMetricsInChat) return false;
+              // Find the last message that contains CRM keywords
+              for (let j = messages.length - 1; j >= 0; j--) {
+                const lower = messages[j].content.toLowerCase();
+                if (CRM_KEYWORDS.some(kw => lower.includes(kw))) return j === i;
+              }
+              return false;
+            })();
+
+            const isLastWithPlate = showVehicleMenu && detectedPlate && (() => {
+              for (let j = messages.length - 1; j >= 0; j--) {
+                if (messages[j].role === "assistant") {
+                  const lower = messages[j].content.toLowerCase();
+                  if (lower.includes("selecione as consultas") || lower.includes("painel ao lado") ||
+                    ((lower.includes("dados básicos") || lower.includes("dados basicos")) && 
+                     (lower.includes("fipe") || lower.includes("sinistro")))) {
+                    return j === i;
+                  }
                 }
-              }}
-              period={period}
-              onPeriodChange={changePeriod}
-            />
-          )}
-          {showMetricsInChat && selectedCampaignIndex !== null && adsData?.campaigns?.[selectedCampaignIndex] && (
-            <CampaignMetricsInline
-              summary={{
-                impressions: (adsData.campaigns[selectedCampaignIndex] as any).impressions,
-                clicks: (adsData.campaigns[selectedCampaignIndex] as any).clicks,
-                ctr: (adsData.campaigns[selectedCampaignIndex] as any).ctr * 100,
-                averageCpc: (adsData.campaigns[selectedCampaignIndex] as any).averageCpc,
-                conversions: (adsData.campaigns[selectedCampaignIndex] as any).conversions,
-                totalCost: (adsData.campaigns[selectedCampaignIndex] as any).cost,
-              }}
-              connected={!!customerId}
-            />
-          )}
-          {showMetricsInChat && (selectedCampaignIndex === null || !adsData?.campaigns?.length) && !adsData?.campaigns?.length && (
-            <CampaignMetricsInline
-              summary={adsData?.summary || {
-                impressions: 0,
-                clicks: 0,
-                ctr: 0,
-                averageCpc: 0,
-                conversions: 0,
-                totalCost: 0,
-              }}
-              connected={!!customerId && !!adsData?.summary}
-            />
-          )}
-          {showVehicleMenu && detectedPlate && (
-            <VehicleConsultMenu
-              plate={detectedPlate}
-              onConsult={handleVehicleConsult}
-              loading={vehicleLoading}
-            />
-          )}
-          {showNicheDashboard && (
-            <NicheSelectorDashboard
-              onSelect={(niche) => sendMessage(`Buscar leads de ${niche}`)}
-            />
-          )}
-          {parsedLeads && (
-            <LeadResultsPanel
-              leads={parsedLeads.leads}
-              niches={parsedLeads.niches}
-              strategies={parsedLeads.strategies}
-            />
-          )}
+              }
+              return false;
+            })();
+
+            const isLastWithNiche = showNicheDashboard && (() => {
+              for (let j = messages.length - 1; j >= 0; j--) {
+                if (messages[j].role === "assistant") {
+                  const lower = messages[j].content.toLowerCase();
+                  if ((lower.includes("nicho") && (lower.includes("escolha") || lower.includes("escolher") || lower.includes("prospectar") || lower.includes("painel"))) ||
+                    lower.includes("[niche_select]") || lower.includes("qual nicho") || lower.includes("qual setor")) {
+                    return j === i;
+                  }
+                }
+              }
+              return false;
+            })();
+
+            const isLastWithLeads = (() => {
+              if (!parsedLeads) return false;
+              for (let j = messages.length - 1; j >= 0; j--) {
+                if (messages[j].role === "assistant" && messages[j].content.includes("[LEADS_JSON]")) {
+                  return j === i;
+                }
+              }
+              return false;
+            })();
+
+            return (
+              <div key={msg.id || i}>
+                <ChatBubble role={msg.role} content={msg.content} />
+                
+                {isLastCRMTrigger && adsData?.campaigns && adsData.campaigns.length > 0 && (
+                  <div className="mt-3">
+                    <CampaignSelector
+                      campaigns={adsData.campaigns as Campaign[]}
+                      selectedIndex={selectedCampaignIndex}
+                      onSelect={(idx) => {
+                        setSelectedCampaignIndex(idx);
+                        const campaign = (adsData!.campaigns as Campaign[])[idx];
+                        if (campaign) {
+                          sendMessage(`Analise a campanha "${campaign.name}" em detalhes`, campaign.name);
+                        }
+                      }}
+                      period={period}
+                      onPeriodChange={changePeriod}
+                    />
+                    {selectedCampaignIndex !== null && adsData?.campaigns?.[selectedCampaignIndex] && (
+                      <div className="mt-2">
+                        <CampaignMetricsInline
+                          summary={{
+                            impressions: (adsData.campaigns[selectedCampaignIndex] as any).impressions,
+                            clicks: (adsData.campaigns[selectedCampaignIndex] as any).clicks,
+                            ctr: (adsData.campaigns[selectedCampaignIndex] as any).ctr * 100,
+                            averageCpc: (adsData.campaigns[selectedCampaignIndex] as any).averageCpc,
+                            conversions: (adsData.campaigns[selectedCampaignIndex] as any).conversions,
+                            totalCost: (adsData.campaigns[selectedCampaignIndex] as any).cost,
+                          }}
+                          connected={!!customerId}
+                        />
+                      </div>
+                    )}
+                    {(selectedCampaignIndex === null && !adsData?.campaigns?.length) && (
+                      <div className="mt-2">
+                        <CampaignMetricsInline
+                          summary={adsData?.summary || { impressions: 0, clicks: 0, ctr: 0, averageCpc: 0, conversions: 0, totalCost: 0 }}
+                          connected={!!customerId && !!adsData?.summary}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isLastWithPlate && detectedPlate && (
+                  <div className="mt-3">
+                    <VehicleConsultMenu
+                      plate={detectedPlate}
+                      onConsult={handleVehicleConsult}
+                      loading={vehicleLoading}
+                    />
+                  </div>
+                )}
+
+                {isLastWithNiche && (
+                  <div className="mt-3">
+                    <NicheSelectorDashboard
+                      onSelect={(niche) => sendMessage(`Buscar leads de ${niche}`)}
+                    />
+                  </div>
+                )}
+
+                {isLastWithLeads && parsedLeads && (
+                  <div className="mt-3">
+                    <LeadResultsPanel
+                      leads={parsedLeads.leads}
+                      niches={parsedLeads.niches}
+                      strategies={parsedLeads.strategies}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
