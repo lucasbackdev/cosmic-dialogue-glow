@@ -85,6 +85,7 @@ const Index = () => {
   const abortRef = useRef<AbortController | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const sentViaVoiceRef = useRef(false);
+  const authButtonRef = useRef<AuthButtonHandle>(null);
 
   // Preload voices
   useEffect(() => {
@@ -169,6 +170,11 @@ const Index = () => {
   }, [messages, parsedLeads]);
 
   const sendMessage = useCallback(async (text: string, selectedCampaignName?: string) => {
+    if (!user) {
+      toast("Crie uma conta para começar a usar o KahlChat", { description: "É rápido e gratuito!" });
+      authButtonRef.current?.openSignUp();
+      return;
+    }
     if (!hasSubscription) {
       setFreeUserInput(text);
       setShowChat(true);
