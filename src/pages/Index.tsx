@@ -591,7 +591,9 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <StarOrb state={showSimulation ? "speaking" : state} onClick={handleOrbClick} audioLevel={audioLevel} />
+      <div className="relative z-20 pointer-events-auto">
+        <StarOrb state={showSimulation ? "speaking" : state} onClick={handleOrbClick} audioLevel={audioLevel} />
+      </div>
 
       {/* Text input */}
       {showInput && (
