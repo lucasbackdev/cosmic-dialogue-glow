@@ -577,7 +577,7 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <StarOrb state={state} onClick={handleOrbClick} audioLevel={audioLevel} />
+      <StarOrb state={showSimulation ? "speaking" : state} onClick={handleOrbClick} audioLevel={audioLevel} />
 
       {/* Text input */}
       {showInput && (
