@@ -22,7 +22,7 @@ const ChatBubble = ({ role, content }: ChatBubbleProps) => {
         </div>
       ) : (
         <div className="max-w-[85%] md:max-w-[35%] text-sm text-foreground">
-          <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p]:leading-relaxed">
+          <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ol]:mb-3 [&_li]:mb-1.5 [&_h1]:mb-3 [&_h2]:mb-3 [&_h3]:mb-2 [&_br]:content-[''] [&_br]:block [&_br]:mb-2">
             <ReactMarkdown>{displayContent}</ReactMarkdown>
           </div>
         </div>
