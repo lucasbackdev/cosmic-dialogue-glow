@@ -12,7 +12,7 @@ const GoogleAdsOnboarding = ({ onOpenSettings, showResumeButton, onResume }: Goo
   const isPt = language === "pt-BR";
 
   return (
-    <div className="mt-3 p-4 rounded-2xl bg-card/40 backdrop-blur-sm border border-border/30 max-w-md">
+    <div className="mt-3 p-4 rounded-lg bg-card/40 backdrop-blur-sm border border-border/30 max-w-md">
       <h3 className="text-sm font-semibold text-foreground mb-2">
         {isPt ? "Conecte sua conta Google Ads" : "Connect your Google Ads account"}
       </h3>
