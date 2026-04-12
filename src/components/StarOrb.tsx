@@ -235,7 +235,6 @@ const StarOrb = ({ state, onClick, audioLevel = 0 }: StarOrbProps) => {
         style={{ width: `${ORB_SIZE}px`, height: `${ORB_SIZE}px` }}
       />
       <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-sm text-muted-foreground whitespace-nowrap">
-        {state === "idle" && "Toque para falar"}
         {state === "listening" && "Ouvindo..."}
         {state === "speaking" && "Respondendo..."}
       </span>
