@@ -430,6 +430,14 @@ const Index = () => {
           {messages.filter(m => m.role === "assistant").map((msg, i) => (
             <ChatBubble key={msg.id || i} role={msg.role} content={msg.content} />
           ))}
+          {showSimulation && (
+            <WorkSimulation
+              onComplete={() => {
+                setShowSimulation(false);
+                setShowPaywall(true);
+              }}
+            />
+          )}
           {showMetricsInChat && adsData?.campaigns && adsData.campaigns.length > 0 && (
             <CampaignSelector
               campaigns={adsData.campaigns as Campaign[]}
