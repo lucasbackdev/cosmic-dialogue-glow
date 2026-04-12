@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo, createRef } from "react";
 import StarOrb from "@/components/StarOrb";
 import ChatBubble from "@/components/ChatBubble";
 import AIThinkingIndicator from "@/components/AIThinkingIndicator";
@@ -11,7 +11,7 @@ import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/L
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
-import AuthButton from "@/components/AuthButton";
+import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
