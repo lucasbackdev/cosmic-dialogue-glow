@@ -21,7 +21,7 @@ import { useCredits } from "@/hooks/useCredits";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Send, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
+import { ArrowUpRight, Eye, EyeOff, Mic, Square, Keyboard } from "lucide-react";
 
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -640,7 +640,7 @@ const Index = () => {
               disabled={!textInput.trim() || state === "speaking" || state === "listening"}
               className="absolute right-12 top-1/2 -translate-y-1/2 p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
             >
-              <Send className="w-4 h-4" />
+              <ArrowUpRight className="w-[25px] h-[25px]" />
             </button>
             {state === "speaking" ? (
               <button
