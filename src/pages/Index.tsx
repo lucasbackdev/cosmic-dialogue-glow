@@ -698,7 +698,7 @@ const Index = () => {
       )}
 
       {/* Title */}
-      <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
+      <h1 className={`absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10 transition-transform duration-300 ease-in-out ${contentShiftClass}`}>
         {t("orionAI")}
       </h1>
       {/* Paywall */}
