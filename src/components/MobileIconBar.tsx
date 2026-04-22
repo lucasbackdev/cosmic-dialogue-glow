@@ -1,5 +1,5 @@
-import { SquarePen, Search, MessageCircle, LogOut, Settings, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { SquarePen, Search, MessageCircle, LogOut, Settings, Trash2, User, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import logoBlack from "@/assets/logo-black.png";
 import logoWhite from "@/assets/logo-white.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import GoogleAdsSettings from "./GoogleAdsSettings";
+import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { Globe, Moon, Sun } from "lucide-react";
 import type { Conversation } from "@/hooks/useConversations";
 
 interface MobileIconBarProps {
@@ -15,7 +17,9 @@ interface MobileIconBarProps {
   onOpenSearch?: () => void;
   onOpenSidebar?: () => void;
   onSignOut?: () => void;
+  onLogin?: () => void;
   expanded?: boolean;
+  isAuthed?: boolean;
   userInitials?: string;
   conversations?: Conversation[];
   currentConversationId?: string | null;
@@ -35,8 +39,10 @@ const MobileIconBar = ({
   onOpenSearch,
   onOpenSidebar,
   onSignOut,
+  onLogin,
   expanded = false,
-  userInitials = "LC",
+  isAuthed = false,
+  userInitials = "",
   conversations = [],
   currentConversationId = null,
   onSelectConversation,
@@ -44,9 +50,28 @@ const MobileIconBar = ({
   googleAds,
 }: MobileIconBarProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { t, language, setLanguage } = useLanguage();
+  const [darkMode, setDarkMode] = useState(() =>
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  );
+
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+  };
+
   const openSidebar = () => onOpenSidebar?.();
 
-  // Wrap an icon button with a tooltip (collapsed) or inline label (expanded)
   const IconButton = ({
     label,
     onClick,
@@ -75,9 +100,7 @@ const MobileIconBar = ({
         <span className="shrink-0 flex items-center justify-center w-5 h-5">
           {children}
         </span>
-        {expanded && (
-          <span className="text-sm whitespace-nowrap">{label}</span>
-        )}
+        {expanded && <span className="text-sm whitespace-nowrap">{label}</span>}
       </button>
     );
 
@@ -95,7 +118,19 @@ const MobileIconBar = ({
 
   return (
     <TooltipProvider>
-      {/* "KahlChat" wordmark outside the bar — only when collapsed */}
+      {/* Mobile-only hamburger when bar is hidden */}
+      {!expanded && (
+        <button
+          type="button"
+          onClick={openSidebar}
+          aria-label="Abrir barra lateral"
+          className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md hover:bg-card/80 transition-colors text-foreground"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* "KahlChat" wordmark outside the bar — desktop only when collapsed */}
       {!expanded && (
         <button
           type="button"
@@ -107,22 +142,36 @@ const MobileIconBar = ({
         </button>
       )}
 
+      {/* Mobile overlay backdrop when expanded */}
+      {expanded && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-background/40 backdrop-blur-sm"
+          onClick={openSidebar}
+        />
+      )}
+
       <aside
         className={cn(
-          "hidden md:flex fixed top-0 left-0 h-full z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col py-3 transition-[width] duration-200",
-          expanded ? "w-64 items-stretch px-2" : "w-14 items-center"
+          "fixed top-0 left-0 h-full z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col py-3 transition-[width,transform] duration-200",
+          // Desktop: always visible, width changes
+          "md:flex",
+          expanded ? "md:w-64 md:items-stretch md:px-2" : "md:w-14 md:items-center md:translate-x-0",
+          // Mobile: slides in/out
+          expanded
+            ? "flex w-64 items-stretch px-2 translate-x-0"
+            : "flex w-14 items-center -translate-x-full md:translate-x-0"
         )}
         aria-label="Barra de navegação"
       >
-        {/* Logo — clicking it toggles the sidebar */}
-        <div className={cn("mb-4", expanded ? "px-2.5 flex items-center gap-2" : "")}>
+        {/* Logo / close (mobile) */}
+        <div className={cn("mb-4", expanded ? "px-2.5 flex items-center gap-2 justify-between" : "")}>
           <Tooltip delayDuration={150}>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 onClick={openSidebar}
-                aria-label="Abrir barra lateral"
-                className="cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0 flex items-center"
+                aria-label="Alternar barra lateral"
+                className="cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-0 p-0 flex items-center gap-2"
               >
                 <img
                   src={logoBlack}
@@ -134,6 +183,11 @@ const MobileIconBar = ({
                   alt="KahlChat"
                   className="w-7 h-7 object-contain hidden dark:block"
                 />
+                {expanded && (
+                  <span className="text-foreground text-base font-semibold tracking-tight">
+                    KahlChat
+                  </span>
+                )}
               </button>
             </TooltipTrigger>
             {!expanded && (
@@ -143,9 +197,14 @@ const MobileIconBar = ({
             )}
           </Tooltip>
           {expanded && (
-            <span className="text-foreground text-base font-semibold tracking-tight">
-              KahlChat
-            </span>
+            <button
+              type="button"
+              onClick={openSidebar}
+              aria-label="Fechar barra"
+              className="md:hidden p-1 rounded-md hover:bg-muted/60 text-muted-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
           )}
         </div>
 
@@ -178,7 +237,7 @@ const MobileIconBar = ({
           )}
         </div>
 
-        {/* Recentes: list of conversations (only when expanded) */}
+        {/* Recentes list when expanded */}
         {expanded && (
           <div className="mt-4 flex-1 min-h-0 flex flex-col">
             <div className="px-2.5 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -188,7 +247,12 @@ const MobileIconBar = ({
               className="flex-1 overflow-y-auto space-y-0.5 pr-0.5"
               style={{ scrollbarWidth: "thin" }}
             >
-              {conversations.length === 0 && (
+              {!isAuthed && (
+                <p className="text-muted-foreground text-xs px-2.5 py-2">
+                  Entre para ver suas conversas.
+                </p>
+              )}
+              {isAuthed && conversations.length === 0 && (
                 <p className="text-muted-foreground text-xs px-2.5 py-2">
                   Nenhuma conversa ainda.
                 </p>
@@ -223,7 +287,7 @@ const MobileIconBar = ({
           </div>
         )}
 
-        {/* Settings button — above avatar */}
+        {/* Settings button */}
         <div className={cn(expanded ? "mt-2 px-0" : "mt-auto mb-2 flex justify-center")}>
           <IconButton
             label="Configurações"
@@ -234,37 +298,67 @@ const MobileIconBar = ({
           </IconButton>
         </div>
 
-        {/* Avatar at bottom — popover with sign out */}
+        {/* Account: avatar (authed) or person icon (unauth) */}
         <div className={cn(expanded ? "px-1 mt-1" : "flex justify-center")}>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label="Perfil"
-                className={cn(
-                  "flex items-center gap-3 rounded-full transition-opacity hover:opacity-90",
-                  expanded ? "w-full p-1.5 rounded-lg hover:bg-muted/60" : ""
-                )}
-              >
-                <span className="w-9 h-9 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs font-semibold uppercase shrink-0">
-                  {userInitials.slice(0, 2)}
-                </span>
-                {expanded && (
-                  <span className="text-sm text-foreground truncate">Conta</span>
-                )}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="right" align="end" sideOffset={8} className="w-56 p-1">
-              <button
-                type="button"
-                onClick={() => onSignOut?.()}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Sair da conta
-              </button>
-            </PopoverContent>
-          </Popover>
+          {isAuthed ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Perfil"
+                  className={cn(
+                    "flex items-center gap-3 rounded-full transition-opacity hover:opacity-90",
+                    expanded ? "w-full p-1.5 rounded-lg hover:bg-muted/60" : ""
+                  )}
+                >
+                  <span className="w-9 h-9 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs font-semibold uppercase shrink-0">
+                    {(userInitials || "U").slice(0, 2)}
+                  </span>
+                  {expanded && (
+                    <span className="text-sm text-foreground truncate">Conta</span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="right" align="end" sideOffset={8} className="w-56 p-1">
+                <button
+                  type="button"
+                  onClick={() => onSignOut?.()}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sair da conta
+                </button>
+              </PopoverContent>
+            </Popover>
+          ) : expanded ? (
+            <button
+              type="button"
+              onClick={() => onLogin?.()}
+              aria-label="Entrar"
+              className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-muted/60 transition-colors"
+            >
+              <span className="w-9 h-9 rounded-full bg-muted text-foreground flex items-center justify-center shrink-0">
+                <User className="w-5 h-5" />
+              </span>
+              <span className="text-sm text-foreground">Entrar</span>
+            </button>
+          ) : (
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => onLogin?.()}
+                  aria-label="Entrar"
+                  className="w-9 h-9 rounded-full bg-muted text-foreground flex items-center justify-center hover:bg-muted/80 transition-colors"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                Entrar
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </aside>
 
@@ -274,16 +368,74 @@ const MobileIconBar = ({
           <DialogHeader>
             <DialogTitle>Configurações</DialogTitle>
           </DialogHeader>
-          {googleAds ? (
-            <GoogleAdsSettings
-              customerId={googleAds.customerId}
-              onSave={googleAds.onSave}
-              loading={googleAds.loading}
-              error={googleAds.error}
-            />
+
+          {/* Language */}
+          <div className="pb-4 border-b border-border/30">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">{t("languageLabel")}</span>
+            </div>
+            <div className="flex gap-2">
+              {(["pt-BR", "en"] as Language[]).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={cn(
+                    "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
+                    language === lang
+                      ? "bg-primary/20 border-primary/40 text-foreground"
+                      : "bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary/50"
+                  )}
+                >
+                  {lang === "pt-BR" ? t("portuguese") : t("english")}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dark mode */}
+          <div className="pb-4 border-b border-border/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {darkMode ? (
+                  <Moon className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <Sun className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+                <span className="text-xs font-medium text-foreground">
+                  {language === "pt-BR" ? "Modo escuro" : "Dark mode"}
+                </span>
+              </div>
+              <button
+                onClick={toggleDarkMode}
+                className={cn(
+                  "relative w-10 h-5 rounded-full transition-colors",
+                  darkMode ? "bg-primary" : "bg-border"
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background transition-transform",
+                    darkMode && "translate-x-5"
+                  )}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Google Ads — only when authed */}
+          {isAuthed && googleAds ? (
+            <div>
+              <GoogleAdsSettings
+                customerId={googleAds.customerId}
+                onSave={googleAds.onSave}
+                loading={googleAds.loading}
+                error={googleAds.error}
+              />
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma configuração disponível.
+            <p className="text-xs text-muted-foreground">
+              Entre para configurar a integração com Google Ads.
             </p>
           )}
         </DialogContent>

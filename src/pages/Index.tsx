@@ -423,50 +423,31 @@ const Index = () => {
       {/* Brand logo top-left */}
       <BrandLogo />
 
-      {/* Auth button for non-logged users */}
+      {/* Auth button for non-logged users (kept for legacy CTA, hidden visually via AuthButton's own logic) */}
       {!user && <AuthButton ref={authButtonRef} />}
 
-      {/* Conversations sidebar - only for logged users */}
-      {user && (
-        <>
-          <MobileIconBar
-            onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-            onOpenHistory={() => setDesktopBarExpanded(true)}
-            onOpenSearch={() => setDesktopBarExpanded(true)}
-            onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
-            onSignOut={signOut}
-            expanded={desktopBarExpanded}
-            userInitials={(user.email ?? "LC").slice(0, 2)}
-            conversations={conversations}
-            currentConversationId={currentConversationId}
-            onSelectConversation={(id) => { setCurrentConversationId(id); setShowChat(true); }}
-            onDeleteConversation={deleteConversation}
-            googleAds={{
-              customerId,
-              onSave: saveCustomerId,
-              loading: !!adsData && !adsData.summary,
-              error: null,
-            }}
-          />
-          <ConversationsSidebar
-            conversations={conversations}
-            currentId={currentConversationId}
-            onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
-            onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-            onDelete={deleteConversation}
-            onSignOut={signOut}
-            open={sidebarOpen}
-            onToggle={() => setSidebarOpen(!sidebarOpen)}
-            credits={credits}
-            googleAds={{
-              customerId,
-              onSave: saveCustomerId,
-              loading: !!adsData && !adsData.summary,
-              error: null,
-            }}
-          />
-        </>
-      )}
+      {/* Sidebar - shown for both authed and non-authed users */}
+      <MobileIconBar
+        onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
+        onOpenHistory={() => setDesktopBarExpanded(true)}
+        onOpenSearch={() => setDesktopBarExpanded(true)}
+        onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
+        onSignOut={signOut}
+        onLogin={() => authButtonRef.current?.openSignUp()}
+        expanded={desktopBarExpanded}
+        isAuthed={!!user}
+        userInitials={user ? (user.email ?? "LC").slice(0, 2) : ""}
+        conversations={user ? conversations : []}
+        currentConversationId={currentConversationId}
+        onSelectConversation={(id) => { setCurrentConversationId(id); setShowChat(true); }}
+        onDeleteConversation={deleteConversation}
+        googleAds={user ? {
+          customerId,
+          onSave: saveCustomerId,
+          loading: !!adsData && !adsData.summary,
+          error: null,
+        } : undefined}
+      />
 
       {/* Toggle buttons - only for logged users */}
       {user && (
