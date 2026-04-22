@@ -429,10 +429,11 @@ const Index = () => {
         <>
           <MobileIconBar
             onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-            onOpenHistory={() => setSidebarOpen(true)}
-            onOpenSidebar={() => setSidebarOpen(true)}
+            onOpenHistory={() => setDesktopBarExpanded(true)}
+            onOpenSearch={() => setDesktopBarExpanded(true)}
+            onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
             onSignOut={signOut}
-            expanded={sidebarOpen}
+            expanded={desktopBarExpanded}
             userInitials={(user.email ?? "LC").slice(0, 2)}
           />
           <ConversationsSidebar
