@@ -71,6 +71,7 @@ const Index = () => {
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopBarExpanded, setDesktopBarExpanded] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [showInput, setShowInput] = useState(true);
   const [textInput, setTextInput] = useState("");
@@ -428,10 +429,11 @@ const Index = () => {
         <>
           <MobileIconBar
             onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-            onOpenHistory={() => setSidebarOpen(true)}
-            onOpenSidebar={() => setSidebarOpen(true)}
+            onOpenHistory={() => setDesktopBarExpanded(true)}
+            onOpenSearch={() => setDesktopBarExpanded(true)}
+            onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
             onSignOut={signOut}
-            expanded={sidebarOpen}
+            expanded={desktopBarExpanded}
             userInitials={(user.email ?? "LC").slice(0, 2)}
           />
           <ConversationsSidebar
