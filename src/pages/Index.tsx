@@ -14,6 +14,7 @@ import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import BrandLogo from "@/components/BrandLogo";
 import MobileIconBar from "@/components/MobileIconBar";
+import GoogleAdsDashboard from "@/components/GoogleAdsDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -72,6 +73,7 @@ const Index = () => {
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopBarExpanded, setDesktopBarExpanded] = useState(false);
+  const [showGoogleAdsDashboard, setShowGoogleAdsDashboard] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [showInput, setShowInput] = useState(true);
   const [textInput, setTextInput] = useState("");
@@ -430,7 +432,10 @@ const Index = () => {
       <MobileIconBar
         onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
         onOpenHistory={() => setDesktopBarExpanded(true)}
-        onOpenSearch={() => setDesktopBarExpanded(true)}
+        onOpenGoogleAds={() => {
+          if (!user) { authButtonRef.current?.openSignUp(); return; }
+          setShowGoogleAdsDashboard(true);
+        }}
         onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
         onSignOut={signOut}
         onLogin={() => authButtonRef.current?.openSignUp()}
@@ -685,6 +690,14 @@ const Index = () => {
       {/* Paywall */}
       {showPaywall && (
         <PaywallCard onClose={() => setShowPaywall(false)} />
+      )}
+
+      {/* Google Ads Dashboard view */}
+      {showGoogleAdsDashboard && user && (
+        <GoogleAdsDashboard
+          userId={user.id}
+          onBack={() => setShowGoogleAdsDashboard(false)}
+        />
       )}
     </div>
   );

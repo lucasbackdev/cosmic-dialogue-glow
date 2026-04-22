@@ -1,7 +1,8 @@
-import { SquarePen, Search, MessageCircle, LogOut, Settings, Trash2, User, Menu, X } from "lucide-react";
+import { SquarePen, MessageCircle, LogOut, Settings, Trash2, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoBlack from "@/assets/logo-black.png";
 import logoWhite from "@/assets/logo-white.png";
+import googleAdsLogo from "@/assets/google-ads-logo.png";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,7 +15,7 @@ import type { Conversation } from "@/hooks/useConversations";
 interface MobileIconBarProps {
   onNewConversation: () => void;
   onOpenHistory: () => void;
-  onOpenSearch?: () => void;
+  onOpenGoogleAds?: () => void;
   onOpenSidebar?: () => void;
   onSignOut?: () => void;
   onLogin?: () => void;
@@ -36,7 +37,7 @@ interface MobileIconBarProps {
 const MobileIconBar = ({
   onNewConversation,
   onOpenHistory,
-  onOpenSearch,
+  onOpenGoogleAds,
   onOpenSidebar,
   onSignOut,
   onLogin,
@@ -219,11 +220,15 @@ const MobileIconBar = ({
           </IconButton>
 
           <IconButton
-            label="Buscar"
-            ariaLabel="Buscar"
-            onClick={onOpenSearch ?? onOpenHistory}
+            label="Google Ads"
+            ariaLabel="Google Ads"
+            onClick={() => onOpenGoogleAds?.()}
           >
-            <Search className="w-5 h-5" strokeWidth={2} />
+            <img
+              src={googleAdsLogo}
+              alt="Google Ads"
+              className="w-5 h-5 object-contain"
+            />
           </IconButton>
 
           {!expanded && (
