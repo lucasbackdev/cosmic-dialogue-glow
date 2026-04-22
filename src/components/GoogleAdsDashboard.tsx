@@ -173,9 +173,9 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   }
 
   return (
-    <div className="fixed inset-0 z-20 bg-background overflow-y-auto">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-border/50 px-4 md:px-8 py-3 flex items-center gap-3">
+    <div className="fixed inset-0 z-20 bg-background overflow-y-auto pl-0 md:pl-14">
+      {/* Header — pt-16 garante que fique abaixo da logo/nome do app na barra lateral */}
+      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-md border-b border-border/50 px-4 md:px-8 pt-16 md:pt-16 pb-3 flex items-center gap-3">
         <button
           onClick={onBack}
           aria-label="Voltar"
