@@ -13,6 +13,7 @@ import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import BrandLogo from "@/components/BrandLogo";
+import MobileIconBar from "@/components/MobileIconBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
