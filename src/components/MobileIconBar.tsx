@@ -76,7 +76,8 @@ const MobileIconBar = ({
           {userInitials.slice(0, 2)}
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 
