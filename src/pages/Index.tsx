@@ -416,8 +416,10 @@ const Index = () => {
     setTextInput("");
   };
 
+  const contentShiftClass = desktopBarExpanded ? "md:translate-x-[100px]" : "md:translate-x-0";
+
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">    
       {/* Brand logo top-left */}
       <BrandLogo />
 
