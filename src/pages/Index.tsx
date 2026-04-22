@@ -691,6 +691,14 @@ const Index = () => {
       {showPaywall && (
         <PaywallCard onClose={() => setShowPaywall(false)} />
       )}
+
+      {/* Google Ads Dashboard view */}
+      {showGoogleAdsDashboard && user && (
+        <GoogleAdsDashboard
+          userId={user.id}
+          onBack={() => setShowGoogleAdsDashboard(false)}
+        />
+      )}
     </div>
   );
 };
