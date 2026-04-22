@@ -17,7 +17,7 @@ const MobileIconBar = ({
 }: MobileIconBarProps) => {
   return (
     <aside
-      className="md:hidden fixed top-0 left-0 h-full w-14 z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex flex-col items-center py-3"
+      className="hidden md:flex fixed top-0 left-0 h-full w-14 z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col items-center py-3"
       aria-label="Barra de navegação"
     >
       {/* Logo */}
