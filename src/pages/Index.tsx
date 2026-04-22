@@ -645,7 +645,7 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <div className="relative z-0 pointer-events-auto">
+      <div className={`relative z-0 pointer-events-auto transition-transform duration-300 ease-in-out ${contentShiftClass}`}>
         <StarOrb state={showSimulation ? "speaking" : state} onClick={handleOrbClick} audioLevel={audioLevel} />
       </div>
 
