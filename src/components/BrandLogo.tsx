@@ -3,7 +3,7 @@ import logoWhite from "@/assets/logo-white.png";
 
 const BrandLogo = () => {
   return (
-    <div className="hidden md:flex fixed top-3 left-16 md:top-4 md:left-16 z-30 items-center gap-2 pointer-events-none select-none">
+    <div className="flex md:hidden fixed top-3 left-16 z-30 items-center gap-2 pointer-events-none select-none">
       {/* Light mode: black logo */}
       <img
         src={logoBlack}

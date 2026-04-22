@@ -41,7 +41,7 @@ const ConversationsSidebar = ({
       <button
         onClick={onToggle}
         aria-label="Abrir histórico"
-        className="hidden md:block fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md hover:bg-card/80 transition-colors text-primary border-0 border-primary py-0 px-0"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md hover:bg-card/80 transition-colors text-primary border-0 border-primary py-0 px-0"
       >
         <AlignStartVertical className="w-5 h-5 text-foreground" strokeWidth={2.5} />
       </button>
