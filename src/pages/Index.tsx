@@ -12,6 +12,7 @@ import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
 import PaywallCard from "@/components/PaywallCard";
 import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
+import BrandLogo from "@/components/BrandLogo";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
@@ -415,6 +416,9 @@ const Index = () => {
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
+      {/* Brand logo top-left */}
+      <BrandLogo />
+
       {/* Auth button for non-logged users */}
       {!user && <AuthButton ref={authButtonRef} />}
 
