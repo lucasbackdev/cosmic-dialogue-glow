@@ -416,8 +416,10 @@ const Index = () => {
     setTextInput("");
   };
 
+  const contentShiftClass = desktopBarExpanded ? "md:translate-x-[100px]" : "md:translate-x-0";
+
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-hidden">    
       {/* Brand logo top-left */}
       <BrandLogo />
 
@@ -490,7 +492,7 @@ const Index = () => {
       {showChat && (
         <div
           ref={chatRef}
-          className="fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg md:max-w-none md:w-auto md:left-4 md:right-4 md:translate-x-0 overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10 pointer-events-none [&>*]:pointer-events-auto scrollbar-hide"
+          className={`fixed left-1/2 -translate-x-1/2 top-16 bottom-24 w-[92%] max-w-lg md:max-w-none md:w-auto md:right-4 md:translate-x-0 overflow-y-auto flex flex-col gap-3 px-2 pb-6 z-10 pointer-events-none [&>*]:pointer-events-auto scrollbar-hide transition-[left] duration-300 ease-in-out ${desktopBarExpanded ? "md:left-[17rem]" : "md:left-[4.5rem]"}`}
         >
           {messages.map((msg, i) => {
             const isLastCRMTrigger = (() => {
@@ -643,13 +645,13 @@ const Index = () => {
       )}
 
       {/* Centered orb - always visible */}
-      <div className="relative z-0 pointer-events-auto">
+      <div className={`relative z-0 pointer-events-auto transition-transform duration-300 ease-in-out ${contentShiftClass}`}>
         <StarOrb state={showSimulation ? "speaking" : state} onClick={handleOrbClick} audioLevel={audioLevel} />
       </div>
 
       {/* Text input */}
       {showInput && (
-        <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
+        <form onSubmit={handleTextSubmit} className={`absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10 transition-transform duration-300 ease-in-out ${desktopBarExpanded ? "md:-translate-x-1/2 md:ml-[100px]" : "md:-translate-x-1/2 md:ml-0"}`}>
           <div className="relative flex items-center gap-2">
             <Input
               value={textInput}
@@ -696,7 +698,7 @@ const Index = () => {
       )}
 
       {/* Title */}
-      <h1 className="absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10">
+      <h1 className={`absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10 transition-transform duration-300 ease-in-out ${contentShiftClass}`}>
         {t("orionAI")}
       </h1>
       {/* Paywall */}
