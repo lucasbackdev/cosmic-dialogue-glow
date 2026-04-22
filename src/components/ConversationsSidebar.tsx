@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare, LogOut, Zap, Menu } from "lucide-react";
+import { Plus, Trash2, MessageSquare, LogOut, Zap, AlignStartVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/hooks/useConversations";
 import GoogleAdsSettings from "./GoogleAdsSettings";
@@ -41,9 +41,9 @@ const ConversationsSidebar = ({
       <button
         onClick={onToggle}
         aria-label="Abrir histórico"
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md border border-border hover:bg-card/80 transition-colors"
+        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-md hover:bg-card/80 transition-colors text-primary border-0 border-primary py-0 px-0"
       >
-        <Menu className="w-5 h-5 text-foreground" strokeWidth={2.5} />
+        <AlignStartVertical className="w-5 h-5 text-slate-800" strokeWidth={2.5} />
       </button>
 
       <div
