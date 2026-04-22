@@ -435,6 +435,16 @@ const Index = () => {
             onSignOut={signOut}
             expanded={desktopBarExpanded}
             userInitials={(user.email ?? "LC").slice(0, 2)}
+            conversations={conversations}
+            currentConversationId={currentConversationId}
+            onSelectConversation={(id) => { setCurrentConversationId(id); setShowChat(true); }}
+            onDeleteConversation={deleteConversation}
+            googleAds={{
+              customerId,
+              onSave: saveCustomerId,
+              loading: !!adsData && !adsData.summary,
+              error: null,
+            }}
           />
           <ConversationsSidebar
             conversations={conversations}
