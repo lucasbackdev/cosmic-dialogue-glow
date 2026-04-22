@@ -16,23 +16,29 @@ const MobileIconBar = ({
   userInitials = "LC",
 }: MobileIconBarProps) => {
   return (
-    <aside
-      className="hidden md:flex fixed top-0 left-0 h-full w-14 z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col items-center py-3"
-      aria-label="Barra de navegação"
-    >
-      {/* Logo */}
-      <div className="mb-4">
-        <img
-          src={logoBlack}
-          alt="KahlChat"
-          className="w-7 h-7 object-contain block dark:hidden"
-        />
-        <img
-          src={logoWhite}
-          alt="KahlChat"
-          className="w-7 h-7 object-contain hidden dark:block"
-        />
-      </div>
+    <>
+      {/* "KahlChat" wordmark outside the bar, aligned with the logo */}
+      <span className="hidden md:block fixed top-4 left-[4.25rem] z-30 text-foreground text-lg font-semibold tracking-tight pointer-events-none select-none">
+        KahlChat
+      </span>
+
+      <aside
+        className="hidden md:flex fixed top-0 left-0 h-full w-14 z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col items-center py-3"
+        aria-label="Barra de navegação"
+      >
+        {/* Logo */}
+        <div className="mb-4">
+          <img
+            src={logoBlack}
+            alt="KahlChat"
+            className="w-7 h-7 object-contain block dark:hidden"
+          />
+          <img
+            src={logoWhite}
+            alt="KahlChat"
+            className="w-7 h-7 object-contain hidden dark:block"
+          />
+        </div>
 
       {/* New conversation */}
       <button
