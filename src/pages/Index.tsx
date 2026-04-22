@@ -425,23 +425,30 @@ const Index = () => {
 
       {/* Conversations sidebar - only for logged users */}
       {user && (
-        <ConversationsSidebar
-          conversations={conversations}
-          currentId={currentConversationId}
-          onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
-          onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
-          onDelete={deleteConversation}
-          onSignOut={signOut}
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-          credits={credits}
-          googleAds={{
-            customerId,
-            onSave: saveCustomerId,
-            loading: !!adsData && !adsData.summary,
-            error: null,
-          }}
-        />
+        <>
+          <MobileIconBar
+            onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
+            onOpenHistory={() => setSidebarOpen(true)}
+            userInitials={(user.email ?? "LC").slice(0, 2)}
+          />
+          <ConversationsSidebar
+            conversations={conversations}
+            currentId={currentConversationId}
+            onSelect={(id) => { setCurrentConversationId(id); setShowChat(true); }}
+            onNew={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
+            onDelete={deleteConversation}
+            onSignOut={signOut}
+            open={sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+            credits={credits}
+            googleAds={{
+              customerId,
+              onSave: saveCustomerId,
+              loading: !!adsData && !adsData.summary,
+              error: null,
+            }}
+          />
+        </>
       )}
 
       {/* Toggle buttons - only for logged users */}
