@@ -651,7 +651,7 @@ const Index = () => {
 
       {/* Text input */}
       {showInput && (
-        <form onSubmit={handleTextSubmit} className="absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10">
+        <form onSubmit={handleTextSubmit} className={`absolute bottom-14 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-10 transition-transform duration-300 ease-in-out ${desktopBarExpanded ? "md:-translate-x-1/2 md:ml-[100px]" : "md:-translate-x-1/2 md:ml-0"}`}>
           <div className="relative flex items-center gap-2">
             <Input
               value={textInput}
