@@ -64,8 +64,15 @@ const PERMISSIONS = [
   { id: "negative_kw", label: "Adicionar palavras negativas", default: true },
 ];
 
+const PERIODS: { value: DatePeriod; label: string }[] = [
+  { value: "7d", label: "Últimos 7 dias" },
+  { value: "30d", label: "Últimos 30 dias" },
+  { value: "90d", label: "Últimos 90 dias" },
+  { value: "all", label: "Todo o período" },
+];
+
 const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
-  const { customerId, data, loading, fetchMetrics } = useGoogleAds(userId);
+  const { customerId, data, loading, fetchMetrics, period, changePeriod } = useGoogleAds(userId);
   const [command, setCommand] = useState("");
   const [sending, setSending] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
@@ -76,6 +83,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   );
   const [watcherEnabled, setWatcherEnabled] = useState(false);
   const [watcherInterval, setWatcherInterval] = useState(6);
+  const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -83,6 +91,8 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
   const summary = data?.summary;
   const campaigns = data?.campaigns || [];
+  const selectedCampaign =
+    selectedCampaignIdx !== null ? campaigns[selectedCampaignIdx] : null;
 
   const executePlan = (plan: Plan, originalCmd: string) => {
     setLogs((prev) => [
