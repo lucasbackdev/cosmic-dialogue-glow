@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useGoogleAds } from "@/hooks/useGoogleAds";
+import { useGoogleAds, type DatePeriod } from "@/hooks/useGoogleAds";
 import { supabase } from "@/integrations/supabase/client";
 import googleAdsLogo from "@/assets/google-ads-logo.png";
 import { cn } from "@/lib/utils";
@@ -64,8 +64,15 @@ const PERMISSIONS = [
   { id: "negative_kw", label: "Adicionar palavras negativas", default: true },
 ];
 
+const PERIODS: { value: DatePeriod; label: string }[] = [
+  { value: "7d", label: "Últimos 7 dias" },
+  { value: "30d", label: "Últimos 30 dias" },
+  { value: "90d", label: "Últimos 90 dias" },
+  { value: "all", label: "Todo o período" },
+];
+
 const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
-  const { customerId, data, loading, fetchMetrics } = useGoogleAds(userId);
+  const { customerId, data, loading, fetchMetrics, period, changePeriod } = useGoogleAds(userId);
   const [command, setCommand] = useState("");
   const [sending, setSending] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
@@ -76,6 +83,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   );
   const [watcherEnabled, setWatcherEnabled] = useState(false);
   const [watcherInterval, setWatcherInterval] = useState(6);
+  const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -83,6 +91,8 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
   const summary = data?.summary;
   const campaigns = data?.campaigns || [];
+  const selectedCampaign =
+    selectedCampaignIdx !== null ? campaigns[selectedCampaignIdx] : null;
 
   const executePlan = (plan: Plan, originalCmd: string) => {
     setLogs((prev) => [
@@ -197,9 +207,27 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
         {/* Visão geral - azul */}
         <section className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Visão geral</h2>
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Visão geral</h2>
+            </div>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/40 border border-border/40">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => changePeriod(p.value)}
+                  className={cn(
+                    "text-[11px] px-2.5 py-1 rounded-md transition-colors",
+                    period === p.value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
@@ -224,6 +252,70 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           </div>
         </section>
 
+        {/* Métricas da campanha selecionada - ciano */}
+        <section className="mb-6">
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-cyan-500" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Métricas da campanha
+              </h2>
+            </div>
+            {campaigns.length > 0 && (
+              <select
+                value={selectedCampaignIdx ?? ""}
+                onChange={(e) =>
+                  setSelectedCampaignIdx(e.target.value === "" ? null : Number(e.target.value))
+                }
+                className="text-xs bg-muted/40 border border-border/40 rounded-lg px-3 py-1.5 text-foreground max-w-[260px] truncate"
+              >
+                <option value="">Selecione uma campanha…</option>
+                {campaigns.map((c, i) => (
+                  <option key={i} value={i}>
+                    {c.name} {c.status !== "ENABLED" ? `(${c.status})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {!selectedCampaign ? (
+            <p className="text-xs text-muted-foreground p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+              Selecione uma campanha acima ou clique em um card abaixo para ver suas métricas detalhadas no período escolhido.
+            </p>
+          ) : (
+            <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-foreground truncate">{selectedCampaign.name}</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 uppercase tracking-wide">
+                  {selectedCampaign.status} · {PERIODS.find((p) => p.value === period)?.label}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  { label: "Impressões", value: formatN(selectedCampaign.impressions), icon: Eye },
+                  { label: "Cliques", value: formatN(selectedCampaign.clicks), icon: MousePointerClick },
+                  { label: "CTR", value: (selectedCampaign.ctr * 100).toFixed(2) + "%", icon: Target },
+                  { label: "CPC médio", value: formatBRL(selectedCampaign.averageCpc), icon: DollarSign },
+                  { label: "Conversões", value: formatN(selectedCampaign.conversions), icon: TrendingUp },
+                  { label: "Custo", value: formatBRL(selectedCampaign.cost), icon: DollarSign },
+                ].map((m) => (
+                  <div
+                    key={m.label}
+                    className="p-3 rounded-lg bg-background/40 border border-border/30"
+                  >
+                    <div className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 mb-1">
+                      <m.icon className="w-3.5 h-3.5" />
+                      <span className="text-[10px] uppercase tracking-wide">{m.label}</span>
+                    </div>
+                    <p className="text-base font-bold text-foreground">{m.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* Campanhas - verde */}
         <section className="mb-6">
           <div className="flex items-center gap-2 mb-3">
@@ -236,40 +328,51 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
             </p>
           ) : (
             <div className="grid gap-2 md:grid-cols-2">
-              {campaigns.map((c, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                    <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
-                      <span>{formatN(c.impressions)} imp</span>
-                      <span>{formatN(c.clicks)} cli</span>
-                      <span>{(c.ctr * 100).toFixed(1)}% ctr</span>
-                      <span>{formatBRL(c.cost)}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() =>
-                      sendCommand(
-                        c.status === "ENABLED"
-                          ? `Pausar a campanha "${c.name}"`
-                          : `Ativar a campanha "${c.name}"`
-                      )
-                    }
+              {campaigns.map((c, i) => {
+                const isSelected = selectedCampaignIdx === i;
+                return (
+                  <div
+                    key={i}
                     className={cn(
-                      "shrink-0 p-2 rounded-lg transition-colors",
-                      c.status === "ENABLED"
-                        ? "bg-green-500/20 text-green-600 hover:bg-green-500/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      "p-3 rounded-xl border flex items-center justify-between gap-3 transition-all",
+                      isSelected
+                        ? "bg-cyan-500/15 border-cyan-500/50 ring-1 ring-cyan-500/40"
+                        : "bg-green-500/10 border-green-500/20"
                     )}
-                    title={c.status === "ENABLED" ? "Pausar" : "Ativar"}
                   >
-                    <Power className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => setSelectedCampaignIdx(i)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                      <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                        <span>{formatN(c.impressions)} imp</span>
+                        <span>{formatN(c.clicks)} cli</span>
+                        <span>{(c.ctr * 100).toFixed(1)}% ctr</span>
+                        <span>{formatBRL(c.cost)}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() =>
+                        sendCommand(
+                          c.status === "ENABLED"
+                            ? `Pausar a campanha "${c.name}"`
+                            : `Ativar a campanha "${c.name}"`
+                        )
+                      }
+                      className={cn(
+                        "shrink-0 p-2 rounded-lg transition-colors",
+                        c.status === "ENABLED"
+                          ? "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                      title={c.status === "ENABLED" ? "Pausar" : "Ativar"}
+                    >
+                      <Power className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
