@@ -377,7 +377,143 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           )}
         </section>
 
-        {/* Grupos & anúncios - roxo */}
+        {/* Tabela detalhada estilo Google Ads */}
+        {campaigns.length > 0 && (
+          <section className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Layers className="w-4 h-4 text-emerald-500" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Tabela de campanhas
+              </h2>
+              <span className="text-[10px] text-muted-foreground ml-auto">
+                {PERIODS.find((p) => p.value === period)?.label}
+              </span>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-card/40 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs min-w-[860px]">
+                  <thead className="bg-muted/40 border-b border-border/50">
+                    <tr className="text-left text-muted-foreground">
+                      <th className="px-3 py-2 font-medium w-10"></th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Campanha</th>
+                      <th className="px-3 py-2 font-medium text-right">Impressões</th>
+                      <th className="px-3 py-2 font-medium text-right">Cliques</th>
+                      <th className="px-3 py-2 font-medium text-right">CTR</th>
+                      <th className="px-3 py-2 font-medium text-right">CPC médio</th>
+                      <th className="px-3 py-2 font-medium text-right">Conversões</th>
+                      <th className="px-3 py-2 font-medium text-right">Custo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {campaigns.map((c, i) => {
+                      const isSelected = selectedCampaignIdx === i;
+                      const statusColor =
+                        c.status === "ENABLED"
+                          ? "bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30"
+                          : c.status === "PAUSED"
+                            ? "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/30"
+                            : "bg-muted text-muted-foreground border-border/40";
+                      return (
+                        <tr
+                          key={i}
+                          onClick={() => setSelectedCampaignIdx(i)}
+                          className={cn(
+                            "border-b border-border/30 last:border-0 cursor-pointer transition-colors",
+                            isSelected
+                              ? "bg-cyan-500/10 hover:bg-cyan-500/15"
+                              : "hover:bg-muted/40"
+                          )}
+                        >
+                          <td className="px-3 py-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                sendCommand(
+                                  c.status === "ENABLED"
+                                    ? `Pausar a campanha "${c.name}"`
+                                    : `Ativar a campanha "${c.name}"`
+                                );
+                              }}
+                              className={cn(
+                                "p-1 rounded-md transition-colors",
+                                c.status === "ENABLED"
+                                  ? "text-green-600 hover:bg-green-500/20"
+                                  : "text-muted-foreground hover:bg-muted"
+                              )}
+                              title={c.status === "ENABLED" ? "Pausar" : "Ativar"}
+                            >
+                              <Power className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                          <td className="px-3 py-2">
+                            <span
+                              className={cn(
+                                "inline-block px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-wide",
+                                statusColor
+                              )}
+                            >
+                              {c.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 max-w-[260px] truncate text-foreground font-medium">
+                            {c.name}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                            {c.impressions.toLocaleString("pt-BR")}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                            {c.clicks.toLocaleString("pt-BR")}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                            {(c.ctr * 100).toFixed(2)}%
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                            {formatBRL(c.averageCpc)}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums">
+                            {c.conversions.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-3 py-2 text-right text-foreground tabular-nums font-medium">
+                            {formatBRL(c.cost)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {summary && (
+                    <tfoot className="bg-muted/30 border-t border-border/50">
+                      <tr className="text-foreground font-semibold">
+                        <td className="px-3 py-2"></td>
+                        <td className="px-3 py-2 text-[10px] uppercase text-muted-foreground" colSpan={2}>
+                          Total da conta
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {summary.impressions.toLocaleString("pt-BR")}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {summary.clicks.toLocaleString("pt-BR")}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {summary.ctr.toFixed(2)}%
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {formatBRL(summary.averageCpc)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {summary.conversions.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {formatBRL(summary.totalCost)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
         <section className="mb-6 grid md:grid-cols-2 gap-4">
           <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-2">
