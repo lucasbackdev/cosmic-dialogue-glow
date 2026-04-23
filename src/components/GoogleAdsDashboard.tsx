@@ -207,9 +207,27 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
         {/* Visão geral - azul */}
         <section className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Visão geral</h2>
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Visão geral</h2>
+            </div>
+            <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/40 border border-border/40">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => changePeriod(p.value)}
+                  className={cn(
+                    "text-[11px] px-2.5 py-1 rounded-md transition-colors",
+                    period === p.value
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
@@ -232,6 +250,70 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Métricas da campanha selecionada - ciano */}
+        <section className="mb-6">
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-cyan-500" />
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Métricas da campanha
+              </h2>
+            </div>
+            {campaigns.length > 0 && (
+              <select
+                value={selectedCampaignIdx ?? ""}
+                onChange={(e) =>
+                  setSelectedCampaignIdx(e.target.value === "" ? null : Number(e.target.value))
+                }
+                className="text-xs bg-muted/40 border border-border/40 rounded-lg px-3 py-1.5 text-foreground max-w-[260px] truncate"
+              >
+                <option value="">Selecione uma campanha…</option>
+                {campaigns.map((c, i) => (
+                  <option key={i} value={i}>
+                    {c.name} {c.status !== "ENABLED" ? `(${c.status})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {!selectedCampaign ? (
+            <p className="text-xs text-muted-foreground p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+              Selecione uma campanha acima ou clique em um card abaixo para ver suas métricas detalhadas no período escolhido.
+            </p>
+          ) : (
+            <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-foreground truncate">{selectedCampaign.name}</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 uppercase tracking-wide">
+                  {selectedCampaign.status} · {PERIODS.find((p) => p.value === period)?.label}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  { label: "Impressões", value: formatN(selectedCampaign.impressions), icon: Eye },
+                  { label: "Cliques", value: formatN(selectedCampaign.clicks), icon: MousePointerClick },
+                  { label: "CTR", value: (selectedCampaign.ctr * 100).toFixed(2) + "%", icon: Target },
+                  { label: "CPC médio", value: formatBRL(selectedCampaign.averageCpc), icon: DollarSign },
+                  { label: "Conversões", value: formatN(selectedCampaign.conversions), icon: TrendingUp },
+                  { label: "Custo", value: formatBRL(selectedCampaign.cost), icon: DollarSign },
+                ].map((m) => (
+                  <div
+                    key={m.label}
+                    className="p-3 rounded-lg bg-background/40 border border-border/30"
+                  >
+                    <div className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400 mb-1">
+                      <m.icon className="w-3.5 h-3.5" />
+                      <span className="text-[10px] uppercase tracking-wide">{m.label}</span>
+                    </div>
+                    <p className="text-base font-bold text-foreground">{m.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Campanhas - verde */}
