@@ -328,40 +328,51 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
             </p>
           ) : (
             <div className="grid gap-2 md:grid-cols-2">
-              {campaigns.map((c, i) => (
-                <div
-                  key={i}
-                  className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
-                    <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
-                      <span>{formatN(c.impressions)} imp</span>
-                      <span>{formatN(c.clicks)} cli</span>
-                      <span>{(c.ctr * 100).toFixed(1)}% ctr</span>
-                      <span>{formatBRL(c.cost)}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() =>
-                      sendCommand(
-                        c.status === "ENABLED"
-                          ? `Pausar a campanha "${c.name}"`
-                          : `Ativar a campanha "${c.name}"`
-                      )
-                    }
+              {campaigns.map((c, i) => {
+                const isSelected = selectedCampaignIdx === i;
+                return (
+                  <div
+                    key={i}
                     className={cn(
-                      "shrink-0 p-2 rounded-lg transition-colors",
-                      c.status === "ENABLED"
-                        ? "bg-green-500/20 text-green-600 hover:bg-green-500/30"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      "p-3 rounded-xl border flex items-center justify-between gap-3 transition-all",
+                      isSelected
+                        ? "bg-cyan-500/15 border-cyan-500/50 ring-1 ring-cyan-500/40"
+                        : "bg-green-500/10 border-green-500/20"
                     )}
-                    title={c.status === "ENABLED" ? "Pausar" : "Ativar"}
                   >
-                    <Power className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => setSelectedCampaignIdx(i)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <p className="text-sm font-medium text-foreground truncate">{c.name}</p>
+                      <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                        <span>{formatN(c.impressions)} imp</span>
+                        <span>{formatN(c.clicks)} cli</span>
+                        <span>{(c.ctr * 100).toFixed(1)}% ctr</span>
+                        <span>{formatBRL(c.cost)}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() =>
+                        sendCommand(
+                          c.status === "ENABLED"
+                            ? `Pausar a campanha "${c.name}"`
+                            : `Ativar a campanha "${c.name}"`
+                        )
+                      }
+                      className={cn(
+                        "shrink-0 p-2 rounded-lg transition-colors",
+                        c.status === "ENABLED"
+                          ? "bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                      title={c.status === "ENABLED" ? "Pausar" : "Ativar"}
+                    >
+                      <Power className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
