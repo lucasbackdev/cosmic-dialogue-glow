@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useGoogleAds } from "@/hooks/useGoogleAds";
+import { useGoogleAds, type DatePeriod } from "@/hooks/useGoogleAds";
 import { supabase } from "@/integrations/supabase/client";
 import googleAdsLogo from "@/assets/google-ads-logo.png";
 import { cn } from "@/lib/utils";
