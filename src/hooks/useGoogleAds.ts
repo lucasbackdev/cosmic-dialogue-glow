@@ -154,6 +154,23 @@ export function useGoogleAds(userId: string | undefined) {
         };
       }
 
+      // Developer token sem Standard Access — não conseguimos enviar convite via API.
+      // Salvamos o ID e orientamos o vínculo manual no Google Ads.
+      const needsManualLink =
+        message.includes("Standard Access") ||
+        message.includes("acesso básico") ||
+        message.includes("DEVELOPER_TOKEN") ||
+        message.includes("PERMISSION_DENIED");
+
+      if (needsManualLink) {
+        await fetchMetrics(period, null, cleanId);
+        return {
+          success: true,
+          message:
+            "ID salvo. Para concluir, vincule manualmente esta conta ao MCC pelo Google Ads (Ferramentas → Acesso e segurança → Gerenciadores).",
+        };
+      }
+
       setError(message);
       return { success: false, message };
     } finally {
