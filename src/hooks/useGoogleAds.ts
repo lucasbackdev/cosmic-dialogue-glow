@@ -21,9 +21,20 @@ interface GoogleAdsCampaign {
   cost: number;
 }
 
+interface TimeseriesPoint {
+  date: string;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  cost: number;
+  ctr: number;
+  cpc: number;
+}
+
 interface GoogleAdsData {
   summary: GoogleAdsSummary;
   campaigns: GoogleAdsCampaign[];
+  timeseries?: TimeseriesPoint[];
 }
 
 export type DatePeriod = "7d" | "30d" | "90d" | "all";
