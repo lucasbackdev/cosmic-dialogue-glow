@@ -410,8 +410,16 @@ serve(async (req) => {
       totalCost,
     };
 
+    const timeseries = await fetchTimeseries(
+      accessToken,
+      developerToken,
+      customerId,
+      period,
+      campaignName || null
+    ).catch(() => []);
+
     return new Response(
-      JSON.stringify({ summary, campaigns }),
+      JSON.stringify({ summary, campaigns, timeseries }),
       { headers: { ..._corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
