@@ -178,22 +178,7 @@ const Index = () => {
       authButtonRef.current?.openSignUp();
       return;
     }
-    // Free users (non-admin, no subscription): simulate only for campaign/metrics keywords
-    if (!hasSubscription && !isAdmin) {
-      const lower = text.toLowerCase();
-      const isCampaignRequest = CRM_KEYWORDS.some(kw => lower.includes(kw)) || 
-        LEAD_KEYWORDS.some(kw => lower.includes(kw)) ||
-        lower.includes("métrica") || lower.includes("metrica") || lower.includes("criar campanha");
-      if (isCampaignRequest) {
-        setFreeUserInput(text);
-        setShowChat(true);
-        setShowSimulation(true);
-        return;
-      }
-      // For normal messages, show paywall after response
-      setShowPaywall(true);
-      return;
-    }
+    // Paywall removed — all logged-in users have full access
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
