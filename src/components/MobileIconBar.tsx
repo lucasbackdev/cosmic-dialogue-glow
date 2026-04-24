@@ -75,9 +75,9 @@ const MobileIconBar = ({
     localStorage.setItem("theme", next ? "dark" : "light");
   };
 
-  const handleLinkAccount = () => {
-    // Show paywall regardless — linking real account requires subscription
-    setShowPaywall(true);
+  const handleLinkAccount = async () => {
+    if (!adsIdInput.trim() || !googleAds?.onSave) return;
+    await googleAds.onSave(adsIdInput.trim());
   };
 
   const openSidebar = () => onOpenSidebar?.();
