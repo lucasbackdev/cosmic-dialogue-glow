@@ -81,7 +81,7 @@ const Index = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [vehicleLoading, setVehicleLoading] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
+  
   const [showSimulation, setShowSimulation] = useState(false);
   const [freeUserInput, setFreeUserInput] = useState<string | null>(null);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
