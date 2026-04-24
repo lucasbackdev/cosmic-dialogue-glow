@@ -603,12 +603,7 @@ const Index = () => {
                 userMessage={freeUserInput}
                 onComplete={() => {
                   setShowSimulation(false);
-                  // If user is logged in, just open settings to link ID — no paywall
-                  if (user) {
-                    setSidebarOpen(true);
-                  } else {
-                    setShowPaywall(true);
-                  }
+                  setSidebarOpen(true);
                 }}
                 onOpenSettings={() => setSidebarOpen(true)}
               />
