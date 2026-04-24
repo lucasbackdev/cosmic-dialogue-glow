@@ -432,10 +432,7 @@ const Index = () => {
       <MobileIconBar
         onNewConversation={() => { setCurrentConversationId(null); setShowMetricsInChat(false); }}
         onOpenHistory={() => setDesktopBarExpanded(true)}
-        onOpenGoogleAds={() => {
-          if (!user) { authButtonRef.current?.openSignUp(); return; }
-          setShowGoogleAdsDashboard(true);
-        }}
+        onOpenGoogleAds={() => setShowGoogleAdsDashboard(true)}
         onOpenSidebar={() => setDesktopBarExpanded((v) => !v)}
         onSignOut={signOut}
         onLogin={() => authButtonRef.current?.openSignUp()}
