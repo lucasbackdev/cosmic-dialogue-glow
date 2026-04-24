@@ -489,9 +489,23 @@ const MobileIconBar = ({
                   {language === "pt-BR" ? "Vincular conta" : "Link account"}
                 </button>
                 {googleAds?.customerId && (
-                  <p className="text-[11px] text-muted-foreground mt-2">
-                    {t("currentAccount")}: <span className="text-foreground font-mono">{googleAds.customerId}</span>
-                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-2 p-2 rounded-lg bg-secondary/30 border border-border/30">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                        {t("currentAccount")}
+                      </p>
+                      <p className="text-xs text-foreground font-mono truncate">
+                        {googleAds.customerId}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAdsIdInput("")}
+                      className="text-[11px] px-2 py-1 rounded-md bg-primary/15 text-primary hover:bg-primary/25 transition-colors shrink-0"
+                    >
+                      {language === "pt-BR" ? "Substituir" : "Replace"}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
