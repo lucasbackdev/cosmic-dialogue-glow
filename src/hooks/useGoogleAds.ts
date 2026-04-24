@@ -74,7 +74,7 @@ export function useGoogleAds(userId: string | undefined) {
     return { success: true, message: "Conta salva com sucesso! Buscando métricas..." };
   }, [userId]);
 
-  const fetchMetrics = useCallback(async (p?: DatePeriod) => {
+  const fetchMetrics = useCallback(async (p?: DatePeriod, campaignName?: string | null) => {
     if (!customerId) return;
     setLoading(true);
     setError(null);
@@ -91,7 +91,7 @@ export function useGoogleAds(userId: string | undefined) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ customerId, period: p || period }),
+          body: JSON.stringify({ customerId, period: p || period, campaignName: campaignName ?? undefined }),
         }
       );
 
