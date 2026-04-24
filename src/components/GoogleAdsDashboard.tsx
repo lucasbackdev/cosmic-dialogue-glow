@@ -274,6 +274,94 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           </div>
         </section>
 
+        {/* Painel KPI + Gráfico estilo Google Ads */}
+        <section className="mb-6">
+          <div className="rounded-xl border border-border/50 bg-card/40 overflow-hidden">
+            {/* KPI selector cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/50">
+              {[
+                { id: "clicks", label: "Cliques", color: "#3b82f6", value: summary ? formatN(summary.clicks) : "—" },
+                { id: "conversions", label: "Conversões", color: "#ef4444", value: summary ? formatN(summary.conversions) : "—" },
+                { id: "cost", label: "Custo total", color: "#eab308", value: summary ? formatBRL(summary.totalCost) : "—" },
+                { id: "cpc", label: "CPC médio", color: "#22c55e", value: summary ? formatBRL(summary.averageCpc) : "—" },
+              ].map((k) => {
+                const active = activeKpis.includes(k.id);
+                return (
+                  <button
+                    key={k.id}
+                    onClick={() => toggleKpi(k.id)}
+                    className={cn(
+                      "p-4 text-left transition-all relative bg-card hover:bg-muted/40",
+                      active && "bg-muted/30"
+                    )}
+                    style={
+                      active
+                        ? { boxShadow: `inset 0 -3px 0 0 ${k.color}` }
+                        : undefined
+                    }
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: k.color, opacity: active ? 1 : 0.3 }}
+                      />
+                      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {k.label}
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">{k.value}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chart */}
+            <div className="p-4 h-72 bg-card">
+              {timeseries.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+                  Sem dados no período {selectedCampaign ? `para "${selectedCampaign.name}"` : "selecionado"}.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeseries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={(d: string) => {
+                        const [, m, day] = d.split("-");
+                        return `${day}/${m}`;
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={40} />
+                    <RTooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                    />
+                    {activeKpis.includes("clicks") && (
+                      <Line type="monotone" dataKey="clicks" stroke="#3b82f6" strokeWidth={2} dot={false} name="Cliques" />
+                    )}
+                    {activeKpis.includes("conversions") && (
+                      <Line type="monotone" dataKey="conversions" stroke="#ef4444" strokeWidth={2} dot={false} name="Conversões" />
+                    )}
+                    {activeKpis.includes("cost") && (
+                      <Line type="monotone" dataKey="cost" stroke="#eab308" strokeWidth={2} dot={false} name="Custo" />
+                    )}
+                    {activeKpis.includes("cpc") && (
+                      <Line type="monotone" dataKey="cpc" stroke="#22c55e" strokeWidth={2} dot={false} name="CPC" />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* Métricas da campanha selecionada - ciano */}
         <section className="mb-6">
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
