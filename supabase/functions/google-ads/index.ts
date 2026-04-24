@@ -178,10 +178,7 @@ async function fetchCampaignMetrics(
     "Content-Type": "application/json",
   };
 
-  // Don't set login-customer-id when service account has direct access
-  // headers["login-customer-id"] = cleanMccId;
-
-  console.log("Fetching metrics for customer:", cleanId, "login-customer-id:", headers["login-customer-id"] || "not set");
+  console.log("Fetching metrics for customer:", cleanId);
 
   const resp = await fetch(
     `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
@@ -206,10 +203,89 @@ async function fetchCampaignMetrics(
     throw new Error(data.error?.message || `Google Ads API error: ${resp.status}`);
   }
 
-  console.log("Google Ads API response status:", resp.status, "data length:", JSON.stringify(data).length);
-  console.log("Raw response preview:", JSON.stringify(data).slice(0, 500));
-
   return data;
+}
+
+async function fetchTimeseries(
+  accessToken: string,
+  developerToken: string,
+  customerId: string,
+  period?: string,
+  campaignName?: string | null
+) {
+  const cleanId = customerId.replace(/-/g, "");
+  const periodClause = getPeriodClause(period);
+  const where = campaignName
+    ? `${periodClause}${periodClause ? " AND" : "WHERE"} campaign.name = '${campaignName.replace(/'/g, "\\'")}'`
+    : periodClause;
+
+  const query = `
+    SELECT
+      segments.date,
+      metrics.impressions,
+      metrics.clicks,
+      metrics.ctr,
+      metrics.average_cpc,
+      metrics.conversions,
+      metrics.cost_micros
+    FROM campaign
+    ${where}
+    ORDER BY segments.date ASC
+  `;
+
+  const resp = await fetch(
+    `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "developer-token": developerToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query }),
+    }
+  );
+
+  const text = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    console.error("Non-JSON timeseries response:", text.slice(0, 300));
+    return [];
+  }
+  if (!resp.ok) {
+    console.warn("Timeseries error:", JSON.stringify(data).slice(0, 300));
+    return [];
+  }
+
+  // Aggregate by date (sum across campaigns when no campaignName filter)
+  const byDate = new Map<string, { date: string; impressions: number; clicks: number; conversions: number; cost: number }>();
+  if (Array.isArray(data)) {
+    for (const batch of data) {
+      if (batch.results) {
+        for (const row of batch.results) {
+          const date = row.segments?.date;
+          if (!date) continue;
+          const m = row.metrics || {};
+          const cur = byDate.get(date) || { date, impressions: 0, clicks: 0, conversions: 0, cost: 0 };
+          cur.impressions += Number(m.impressions || 0);
+          cur.clicks += Number(m.clicks || 0);
+          cur.conversions += Number(m.conversions || 0);
+          cur.cost += Number(m.costMicros || 0) / 1_000_000;
+          byDate.set(date, cur);
+        }
+      }
+    }
+  }
+
+  return Array.from(byDate.values())
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((d) => ({
+      ...d,
+      ctr: d.impressions > 0 ? (d.clicks / d.impressions) * 100 : 0,
+      cpc: d.clicks > 0 ? d.cost / d.clicks : 0,
+    }));
 }
 
 serve(async (req) => {
