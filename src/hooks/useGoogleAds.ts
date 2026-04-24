@@ -46,6 +46,33 @@ export function useGoogleAds(userId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<DatePeriod>("30d");
 
+  const invokeGoogleAds = useCallback(async (body: Record<string, unknown>) => {
+    const callGoogleAds = async () => {
+      const { data: result, error: invokeError } = await supabase.functions.invoke("google-ads", {
+        body,
+      });
+
+      if (invokeError) throw invokeError;
+      return result;
+    };
+
+    try {
+      return await callGoogleAds();
+    } catch (err: any) {
+      const unauthorized = err?.message?.includes("401") || err?.message?.includes("Unauthorized");
+
+      if (!unauthorized) throw err;
+
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshData.session) {
+        await supabase.auth.signOut();
+        throw new Error("Sua sessão expirou. Entre novamente para continuar.");
+      }
+
+      return callGoogleAds();
+    }
+  }, []);
+
   useEffect(() => {
     if (!userId) return;
     supabase
@@ -60,54 +87,19 @@ export function useGoogleAds(userId: string | undefined) {
       });
   }, [userId]);
 
-  const saveCustomerId = useCallback(async (id: string) => {
-    if (!userId) return;
-    const cleanId = id.replace(/\s/g, "");
-    setCustomerId(cleanId);
-    setError(null);
+  const fetchMetrics = useCallback(async (p?: DatePeriod, campaignName?: string | null, targetCustomerId?: string) => {
+    const activeCustomerId = targetCustomerId || customerId;
+    if (!activeCustomerId) return;
 
-    await supabase.from("google_ads_accounts").upsert(
-      { user_id: userId, customer_id: cleanId },
-      { onConflict: "user_id,customer_id" }
-    );
-
-    return { success: true, message: "Conta salva com sucesso! Buscando métricas..." };
-  }, [userId]);
-
-  const fetchMetrics = useCallback(async (p?: DatePeriod, campaignName?: string | null) => {
-    if (!customerId) return;
     setLoading(true);
     setError(null);
 
     try {
-      const requestBody = { customerId, period: p || period, campaignName: campaignName ?? undefined };
-
-      const callGoogleAds = async () => {
-        const { data: result, error: invokeError } = await supabase.functions.invoke("google-ads", {
-          body: requestBody,
-        });
-
-        if (invokeError) throw invokeError;
-        return result;
-      };
-
-      let result: any;
-
-      try {
-        result = await callGoogleAds();
-      } catch (err: any) {
-        const unauthorized = err?.message?.includes("401") || err?.message?.includes("Unauthorized");
-
-        if (!unauthorized) throw err;
-
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError || !refreshData.session) {
-          await supabase.auth.signOut();
-          throw new Error("Sua sessão expirou. Entre novamente para carregar as métricas.");
-        }
-
-        result = await callGoogleAds();
-      }
+      const result = await invokeGoogleAds({
+        customerId: activeCustomerId,
+        period: p || period,
+        campaignName: campaignName ?? undefined,
+      });
 
       setData(result);
     } catch (err: any) {
@@ -115,7 +107,60 @@ export function useGoogleAds(userId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [customerId, period]);
+  }, [customerId, invokeGoogleAds, period]);
+
+  const saveCustomerId = useCallback(async (id: string) => {
+    if (!userId) return;
+
+    const cleanId = id.replace(/\s/g, "");
+    setError(null);
+    setLoading(true);
+
+    await supabase.from("google_ads_accounts").upsert(
+      { user_id: userId, customer_id: cleanId },
+      { onConflict: "user_id,customer_id" }
+    );
+
+    setCustomerId(cleanId);
+
+    try {
+      const linkResult = await invokeGoogleAds({
+        customerId: cleanId,
+        action: "link",
+      });
+
+      await fetchMetrics(period, null, cleanId);
+
+      return {
+        success: true,
+        message: linkResult?.message || "Solicitação de vinculação enviada com sucesso!",
+      };
+    } catch (err: any) {
+      const message = err?.message || "Não foi possível enviar a solicitação de vínculo.";
+
+      const alreadyLinked =
+        message.includes("already") ||
+        message.includes("ALREADY") ||
+        message.includes("já está vinculada") ||
+        message.includes("já existe") ||
+        message.includes("ACTIVE") ||
+        message.includes("PENDING");
+
+      if (alreadyLinked) {
+        await fetchMetrics(period, null, cleanId);
+        return {
+          success: true,
+          message: "A conta já possui um vínculo ou convite pendente. Atualizando as métricas.",
+        };
+      }
+
+      setError(message);
+      return { success: false, message };
+    } finally {
+      setLoading(false);
+    }
+
+  }, [fetchMetrics, invokeGoogleAds, period, userId]);
 
   useEffect(() => {
     if (customerId) fetchMetrics();
