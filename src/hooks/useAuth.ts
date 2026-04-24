@@ -16,9 +16,25 @@ export function useAuth() {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data: userData, error } = await supabase.auth.getUser();
+      if (error || !userData.user) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(userData.user);
       setLoading(false);
     });
 

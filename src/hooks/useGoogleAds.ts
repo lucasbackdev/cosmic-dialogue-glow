@@ -80,23 +80,35 @@ export function useGoogleAds(userId: string | undefined) {
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Não autenticado");
+      const requestBody = { customerId, period: p || period, campaignName: campaignName ?? undefined };
 
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-ads`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ customerId, period: p || period, campaignName: campaignName ?? undefined }),
+      const callGoogleAds = async () => {
+        const { data: result, error: invokeError } = await supabase.functions.invoke("google-ads", {
+          body: requestBody,
+        });
+
+        if (invokeError) throw invokeError;
+        return result;
+      };
+
+      let result: any;
+
+      try {
+        result = await callGoogleAds();
+      } catch (err: any) {
+        const unauthorized = err?.message?.includes("401") || err?.message?.includes("Unauthorized");
+
+        if (!unauthorized) throw err;
+
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
+          await supabase.auth.signOut();
+          throw new Error("Sua sessão expirou. Entre novamente para carregar as métricas.");
         }
-      );
 
-      const result = await resp.json();
-      if (!resp.ok) throw new Error(result.error || "Erro ao buscar dados");
+        result = await callGoogleAds();
+      }
+
       setData(result);
     } catch (err: any) {
       setError(err.message);
