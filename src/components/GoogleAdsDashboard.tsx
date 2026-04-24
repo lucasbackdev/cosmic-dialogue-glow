@@ -17,7 +17,10 @@ import {
   Check,
   Loader2,
   Power,
+  Sparkles,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ReactMarkdown from "react-markdown";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useGoogleAds, type DatePeriod } from "@/hooks/useGoogleAds";
@@ -158,6 +161,57 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
   const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
   const [activeTab, setActiveTab] = useState<"overview" | "permissions">("overview");
+  const [explainMode, setExplainMode] = useState(false);
+  const [openExplainId, setOpenExplainId] = useState<string | null>(null);
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
+  const [explainLoading, setExplainLoading] = useState<string | null>(null);
+
+  const requestExplanation = async (
+    metricId: "clicks" | "conversions" | "cost" | "cpc",
+    value: number | string,
+  ) => {
+    if (explanations[metricId] || explainLoading === metricId) return;
+    setExplainLoading(metricId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-metric`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({
+            metric: metricId,
+            value,
+            language: "pt-BR",
+            context: {
+              impressions: summary?.impressions,
+              clicks: summary?.clicks,
+              conversions: summary?.conversions,
+              cost: summary?.totalCost,
+              cpc: summary?.averageCpc,
+              ctr: summary?.ctr,
+              period,
+              campaignName: selectedCampaign?.name ?? null,
+            },
+          }),
+        },
+      );
+      const json = await resp.json();
+      if (!resp.ok) {
+        toast.error(json.error || "Erro ao explicar métrica");
+        setExplanations((p) => ({ ...p, [metricId]: "Não foi possível gerar a explicação agora." }));
+      } else {
+        setExplanations((p) => ({ ...p, [metricId]: json.explanation }));
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro inesperado");
+    } finally {
+      setExplainLoading(null);
+    }
+  };
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -381,23 +435,52 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
         {/* Painel KPI + Gráfico estilo Google Ads */}
         <section className="mb-6">
+          <div className="flex items-center justify-end mb-2">
+            <button
+              onClick={() => {
+                setExplainMode((v) => !v);
+                setOpenExplainId(null);
+              }}
+              className={cn(
+                "flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors",
+                explainMode
+                  ? "bg-primary/15 border-primary/40 text-primary"
+                  : "bg-muted/40 border-border/40 text-muted-foreground hover:text-foreground"
+              )}
+              title={
+                explainMode
+                  ? "Clique numa métrica (Cliques, Conversões, Custo ou CPC) para ver a explicação"
+                  : "Ativar modo de explicação por IA"
+              }
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {explainMode ? "Clique numa métrica" : "Explicar métricas"}
+            </button>
+          </div>
           <div className="rounded-xl border border-border/50 bg-card/40 overflow-hidden">
             {/* KPI selector cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/50">
               {[
-                { id: "clicks", label: "Cliques", color: "#3b82f6", value: summary ? formatN(summary.clicks) : "—" },
-                { id: "conversions", label: "Conversões", color: "#ef4444", value: summary ? formatN(summary.conversions) : "—" },
-                { id: "cost", label: "Custo total", color: "#eab308", value: summary ? formatBRL(summary.totalCost) : "—" },
-                { id: "cpc", label: "CPC médio", color: "#22c55e", value: summary ? formatBRL(summary.averageCpc) : "—" },
+                { id: "clicks", label: "Cliques", color: "#3b82f6", value: summary ? formatN(summary.clicks) : "—", raw: summary?.clicks ?? 0 },
+                { id: "conversions", label: "Conversões", color: "#ef4444", value: summary ? formatN(summary.conversions) : "—", raw: summary?.conversions ?? 0 },
+                { id: "cost", label: "Custo total", color: "#eab308", value: summary ? formatBRL(summary.totalCost) : "—", raw: summary?.totalCost ?? 0 },
+                { id: "cpc", label: "CPC médio", color: "#22c55e", value: summary ? formatBRL(summary.averageCpc) : "—", raw: summary?.averageCpc ?? 0 },
               ].map((k) => {
                 const active = activeKpis.includes(k.id);
-                return (
+                const cardButton = (
                   <button
-                    key={k.id}
-                    onClick={() => toggleKpi(k.id)}
+                    onClick={() => {
+                      if (explainMode) {
+                        setOpenExplainId((cur) => (cur === k.id ? null : k.id));
+                        requestExplanation(k.id as any, k.value);
+                      } else {
+                        toggleKpi(k.id);
+                      }
+                    }}
                     className={cn(
-                      "p-4 text-left transition-all relative bg-card hover:bg-muted/40",
-                      active && "bg-muted/30"
+                      "w-full p-4 text-left transition-all relative bg-card hover:bg-muted/40",
+                      active && "bg-muted/30",
+                      explainMode && "ring-1 ring-primary/30 hover:ring-primary/60 cursor-help"
                     )}
                     style={
                       active
@@ -413,9 +496,52 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
                       <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                         {k.label}
                       </span>
+                      {explainMode && (
+                        <Sparkles className="w-3 h-3 text-primary ml-auto" />
+                      )}
                     </div>
                     <p className="text-xl font-bold text-foreground">{k.value}</p>
                   </button>
+                );
+
+                if (!explainMode) return <div key={k.id}>{cardButton}</div>;
+
+                return (
+                  <Popover
+                    key={k.id}
+                    open={openExplainId === k.id}
+                    onOpenChange={(o) => setOpenExplainId(o ? k.id : null)}
+                  >
+                    <PopoverTrigger asChild>{cardButton}</PopoverTrigger>
+                    <PopoverContent
+                      side="bottom"
+                      align="center"
+                      className="w-72 p-3 text-xs"
+                    >
+                      <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-border/40">
+                        <span
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: k.color }}
+                        />
+                        <span className="font-semibold text-foreground text-[11px] uppercase tracking-wide">
+                          {k.label}
+                        </span>
+                        <span className="ml-auto text-foreground font-bold">{k.value}</span>
+                      </div>
+                      {explainLoading === k.id ? (
+                        <div className="flex items-center gap-2 text-muted-foreground py-2">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Analisando com IA...</span>
+                        </div>
+                      ) : explanations[k.id] ? (
+                        <div className="prose prose-sm prose-invert max-w-none text-foreground [&_p]:mb-1.5 [&_p]:leading-relaxed [&_strong]:text-primary text-[12px]">
+                          <ReactMarkdown>{explanations[k.id]}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">Sem explicação disponível.</p>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                 );
               })}
             </div>
