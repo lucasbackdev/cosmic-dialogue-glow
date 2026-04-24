@@ -26,7 +26,17 @@ export function useAuth() {
 
       const { data: userData, error } = await supabase.auth.getUser();
       if (error || !userData.user) {
-        await supabase.auth.signOut();
+        // Session exists locally but server rejected it (session_not_found / invalid token).
+        // signOut() may also fail in this case, so we manually purge supabase auth keys.
+        try {
+          await supabase.auth.signOut({ scope: "local" });
+        } catch {
+          // ignore
+        }
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith("sb-") || k.includes("supabase.auth"))
+          .forEach((k) => localStorage.removeItem(k));
+
         setSession(null);
         setUser(null);
         setLoading(false);
