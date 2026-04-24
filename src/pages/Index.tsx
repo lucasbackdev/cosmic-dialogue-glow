@@ -9,7 +9,7 @@ import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
-import PaywallCard from "@/components/PaywallCard";
+
 import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import BrandLogo from "@/components/BrandLogo";
