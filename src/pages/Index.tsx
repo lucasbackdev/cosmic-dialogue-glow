@@ -690,9 +690,9 @@ const Index = () => {
       )}
 
       {/* Google Ads Dashboard view */}
-      {showGoogleAdsDashboard && user && (
+      {showGoogleAdsDashboard && (
         <GoogleAdsDashboard
-          userId={user.id}
+          userId={user?.id}
           onBack={() => setShowGoogleAdsDashboard(false)}
         />
       )}
