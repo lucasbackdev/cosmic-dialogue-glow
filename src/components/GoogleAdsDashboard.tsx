@@ -25,6 +25,15 @@ import { supabase } from "@/integrations/supabase/client";
 import googleAdsLogo from "@/assets/google-ads-logo.png";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface GoogleAdsDashboardProps {
   userId: string | undefined;
