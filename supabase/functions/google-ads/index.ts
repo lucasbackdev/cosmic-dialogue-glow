@@ -140,8 +140,16 @@ function getPeriodClause(period?: string): string {
   switch (period) {
     case "7d": return "WHERE segments.date DURING LAST_7_DAYS";
     case "30d": return "WHERE segments.date DURING LAST_30_DAYS";
-    case "90d": return "WHERE segments.date DURING LAST_90_DAYS" ;
-    case "all": return "";
+    case "90d": return "WHERE segments.date DURING LAST_90_DAYS";
+    case "all": {
+      // Google Ads exige filtro de data quando segments.date está no SELECT.
+      // Usamos um range amplo (últimos ~5 anos) para simular "todo o período".
+      const end = new Date();
+      const start = new Date();
+      start.setFullYear(end.getFullYear() - 5);
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      return `WHERE segments.date BETWEEN '${fmt(start)}' AND '${fmt(end)}'`;
+    }
     default: return "WHERE segments.date DURING LAST_30_DAYS";
   }
 }
