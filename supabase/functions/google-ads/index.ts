@@ -180,13 +180,15 @@ async function fetchCampaignMetrics(
     LIMIT 20
   `;
 
+  const cleanMccId = mccId.replace(/-/g, "");
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
     "developer-token": developerToken,
+    "login-customer-id": cleanMccId,
     "Content-Type": "application/json",
   };
 
-  console.log("Fetching metrics for customer:", cleanId);
+  console.log("Fetching metrics for customer:", cleanId, "via MCC:", cleanMccId);
 
   const resp = await fetch(
     `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
