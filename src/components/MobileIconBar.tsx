@@ -378,86 +378,188 @@ const MobileIconBar = ({
             </Tooltip>
           )}
         </div>
-      </aside>
+        </>)}
 
-      {/* Settings dialog */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Configurações</DialogTitle>
-          </DialogHeader>
-
-          {/* Language */}
-          <div className="pb-4 border-b border-border/30">
-            <div className="flex items-center gap-2 mb-2">
-              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">{t("languageLabel")}</span>
+        {/* Settings panel — replaces sidebar content */}
+        {settingsOpen && (
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center gap-2 px-2.5 mb-4">
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                aria-label={language === "pt-BR" ? "Voltar" : "Back"}
+                className="p-1.5 rounded-md hover:bg-muted/60 text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-semibold text-foreground">
+                {t("settings")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                aria-label={language === "pt-BR" ? "Fechar" : "Close"}
+                className="ml-auto p-1.5 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div className="flex gap-2">
-              {(["pt-BR", "en"] as Language[]).map((lang) => (
+
+            <div className="flex-1 overflow-y-auto px-2.5 space-y-5" style={{ scrollbarWidth: "thin" }}>
+              {/* Language */}
+              <div className="pb-4 border-b border-border/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">{t("languageLabel")}</span>
+                </div>
+                <div className="flex gap-2">
+                  {(["pt-BR", "en"] as Language[]).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => setLanguage(lang)}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
+                        language === lang
+                          ? "bg-primary/20 border-primary/40 text-foreground"
+                          : "bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      {lang === "pt-BR" ? t("portuguese") : t("english")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dark mode */}
+              <div className="pb-4 border-b border-border/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {darkMode ? (
+                      <Moon className="w-3.5 h-3.5 text-muted-foreground" />
+                    ) : (
+                      <Sun className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
+                    <span className="text-xs font-medium text-foreground">
+                      {language === "pt-BR" ? "Modo escuro" : "Dark mode"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={toggleDarkMode}
+                    className={cn(
+                      "relative w-10 h-5 rounded-full transition-colors",
+                      darkMode ? "bg-primary" : "bg-border"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background transition-transform",
+                        darkMode && "translate-x-5"
+                      )}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Google Ads */}
+              <div className="pb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={googleAdsLogo} alt="Google Ads" className="w-3.5 h-3.5 object-contain" />
+                  <span className="text-xs font-medium text-foreground">{t("googleAds")}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed mb-2">
+                  {t("googleAdsDesc")}
+                </p>
+                <Input
+                  value={adsIdInput}
+                  onChange={(e) => setAdsIdInput(e.target.value)}
+                  placeholder="123-456-7890"
+                  className="mb-2 bg-secondary/50 border-border/50 text-foreground placeholder:text-muted-foreground text-sm h-9"
+                />
                 <button
-                  key={lang}
-                  onClick={() => setLanguage(lang)}
+                  type="button"
+                  onClick={handleLinkAccount}
+                  disabled={!adsIdInput.trim()}
                   className={cn(
-                    "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border",
-                    language === lang
-                      ? "bg-primary/20 border-primary/40 text-foreground"
-                      : "bg-secondary/30 border-border/30 text-muted-foreground hover:bg-secondary/50"
+                    "w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "bg-primary text-primary-foreground hover:bg-primary/90",
+                    "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
-                  {lang === "pt-BR" ? t("portuguese") : t("english")}
+                  <Link2 className="w-3.5 h-3.5" />
+                  {language === "pt-BR" ? "Vincular conta" : "Link account"}
                 </button>
-              ))}
+                {googleAds?.customerId && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    {t("currentAccount")}: <span className="text-foreground font-mono">{googleAds.customerId}</span>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
+        )}
+      </aside>
 
-          {/* Dark mode */}
-          <div className="pb-4 border-b border-border/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {darkMode ? (
-                  <Moon className="w-3.5 h-3.5 text-muted-foreground" />
-                ) : (
-                  <Sun className="w-3.5 h-3.5 text-muted-foreground" />
-                )}
-                <span className="text-xs font-medium text-foreground">
-                  {language === "pt-BR" ? "Modo escuro" : "Dark mode"}
-                </span>
+      {/* Paywall modal — shown when linking Google Ads account */}
+      {showPaywall && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={() => setShowPaywall(false)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-card/90 backdrop-blur-xl border border-border/30 rounded-2xl p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowPaywall(false)}
+              aria-label="Fechar"
+              className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative flex flex-col items-center gap-4 text-center">
+              <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Crown className="w-7 h-7 text-primary" />
               </div>
-              <button
-                onClick={toggleDarkMode}
-                className={cn(
-                  "relative w-10 h-5 rounded-full transition-colors",
-                  darkMode ? "bg-primary" : "bg-border"
-                )}
+              <h2 className="text-xl font-bold text-foreground">
+                {language === "pt-BR" ? "Vincular conta Google Ads" : "Link Google Ads account"}
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {language === "pt-BR"
+                  ? "Para vincular sua conta Google Ads e acessar todas as funcionalidades, assine o plano essencial."
+                  : "To link your Google Ads account and unlock all features, subscribe to the essential plan."}
+              </p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-bold text-foreground">R$ 99</span>
+                <span className="text-sm text-muted-foreground">/{language === "pt-BR" ? "mês" : "month"}</span>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1.5 text-left w-full">
+                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Integração com Google Ads" : "Google Ads integration"}</li>
+                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Métricas reais em tempo real" : "Real-time metrics"}</li>
+                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "IA para gerenciar campanhas" : "AI to manage campaigns"}</li>
+                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Suporte prioritário" : "Priority support"}</li>
+              </ul>
+              <a
+                href={KIWIFY_CHECKOUT}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/20"
               >
-                <span
-                  className={cn(
-                    "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background transition-transform",
-                    darkMode && "translate-x-5"
-                  )}
-                />
+                {language === "pt-BR" ? "Assinar agora" : "Subscribe now"}
+                <ExternalLink className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowPaywall(false)}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {language === "pt-BR" ? "Voltar" : "Back"}
               </button>
             </div>
           </div>
-
-          {/* Google Ads — only when authed */}
-          {isAuthed && googleAds ? (
-            <div>
-              <GoogleAdsSettings
-                customerId={googleAds.customerId}
-                onSave={googleAds.onSave}
-                loading={googleAds.loading}
-                error={googleAds.error}
-              />
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Entre para configurar a integração com Google Ads.
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </TooltipProvider>
   );
 };
