@@ -52,10 +52,16 @@ const MobileIconBar = ({
   googleAds,
 }: MobileIconBarProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [adsIdInput, setAdsIdInput] = useState(googleAds?.customerId || "");
+  const [showPaywall, setShowPaywall] = useState(false);
   const { t, language, setLanguage } = useLanguage();
   const [darkMode, setDarkMode] = useState(() =>
     typeof document !== "undefined" && document.documentElement.classList.contains("dark")
   );
+
+  useEffect(() => {
+    setAdsIdInput(googleAds?.customerId || "");
+  }, [googleAds?.customerId]);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -70,6 +76,11 @@ const MobileIconBar = ({
     setDarkMode(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
+  };
+
+  const handleLinkAccount = () => {
+    // Show paywall regardless — linking real account requires subscription
+    setShowPaywall(true);
   };
 
   const openSidebar = () => onOpenSidebar?.();
