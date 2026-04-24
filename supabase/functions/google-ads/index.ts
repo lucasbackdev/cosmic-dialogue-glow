@@ -180,13 +180,15 @@ async function fetchCampaignMetrics(
     LIMIT 20
   `;
 
+  const cleanMccId = mccId.replace(/-/g, "");
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
     "developer-token": developerToken,
+    "login-customer-id": cleanMccId,
     "Content-Type": "application/json",
   };
 
-  console.log("Fetching metrics for customer:", cleanId);
+  console.log("Fetching metrics for customer:", cleanId, "via MCC:", cleanMccId);
 
   const resp = await fetch(
     `${GOOGLE_ADS_BASE}/customers/${cleanId}/googleAds:searchStream`,
@@ -217,11 +219,13 @@ async function fetchCampaignMetrics(
 async function fetchTimeseries(
   accessToken: string,
   developerToken: string,
+  mccId: string,
   customerId: string,
   period?: string,
   campaignName?: string | null
 ) {
   const cleanId = customerId.replace(/-/g, "");
+  const cleanMccId = mccId.replace(/-/g, "");
   const periodClause = getPeriodClause(period);
   const where = campaignName
     ? `${periodClause}${periodClause ? " AND" : "WHERE"} campaign.name = '${campaignName.replace(/'/g, "\\'")}'`
@@ -248,6 +252,7 @@ async function fetchTimeseries(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "developer-token": developerToken,
+        "login-customer-id": cleanMccId,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ query }),
@@ -422,6 +427,7 @@ serve(async (req) => {
     const timeseries = await fetchTimeseries(
       accessToken,
       developerToken,
+      mccId,
       customerId,
       period,
       campaignName || null
