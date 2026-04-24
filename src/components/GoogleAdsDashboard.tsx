@@ -157,6 +157,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [watcherInterval, setWatcherInterval] = useState(6);
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
   const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
+  const [activeTab, setActiveTab] = useState<"overview" | "permissions">("overview");
 
   useEffect(() => {
     if (customerId) fetchMetrics();
