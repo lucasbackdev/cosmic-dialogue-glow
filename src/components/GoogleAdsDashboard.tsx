@@ -302,6 +302,36 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           </div>
         )}
 
+        {/* Tabs: Visão geral / Permissões da IA */}
+        <div className="mb-5 flex items-center gap-1 p-1 rounded-xl bg-muted/40 border border-border/40 w-fit">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={cn(
+              "flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors",
+              activeTab === "overview"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Visão geral
+          </button>
+          <button
+            onClick={() => setActiveTab("permissions")}
+            className={cn(
+              "flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors",
+              activeTab === "permissions"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            Permissões da IA
+          </button>
+        </div>
+
+        {activeTab === "overview" && <>
+
         {/* Visão geral - azul */}
         <section className="mb-6">
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
