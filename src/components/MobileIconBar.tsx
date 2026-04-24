@@ -168,9 +168,9 @@ const MobileIconBar = ({
           "fixed top-0 left-0 h-full z-40 bg-card/80 backdrop-blur-xl border-r border-border/50 flex-col py-3 transition-[width,transform] duration-200",
           // Desktop: always visible, width changes
           "md:flex",
-          expanded ? "md:w-64 md:items-stretch md:px-2" : "md:w-14 md:items-center md:translate-x-0",
+          (expanded || settingsOpen) ? "md:w-64 md:items-stretch md:px-2" : "md:w-14 md:items-center md:translate-x-0",
           // Mobile: slides in/out
-          expanded
+          (expanded || settingsOpen)
             ? "flex w-64 items-stretch px-2 translate-x-0"
             : "flex w-14 items-center -translate-x-full md:translate-x-0"
         )}
