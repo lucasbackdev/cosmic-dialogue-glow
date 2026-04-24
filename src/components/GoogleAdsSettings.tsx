@@ -28,10 +28,7 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
-    }
+    setDarkMode(saved === "dark");
   }, []);
 
   const handleSave = async () => {
