@@ -99,11 +99,22 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
     if (customerId) fetchMetrics();
   }, [customerId, fetchMetrics]);
 
-  const summary = data?.summary;
   const campaigns = data?.campaigns || [];
   const timeseries = data?.timeseries || [];
   const selectedCampaign =
     selectedCampaignIdx !== null ? campaigns[selectedCampaignIdx] : null;
+  // Quando uma campanha específica está selecionada, os KPIs no topo refletem
+  // apenas ela. Caso contrário, mostramos o total da conta (summary).
+  const summary = selectedCampaign
+    ? {
+        impressions: selectedCampaign.impressions,
+        clicks: selectedCampaign.clicks,
+        ctr: selectedCampaign.ctr * 100, // campanha vem em fração (0–1)
+        averageCpc: selectedCampaign.averageCpc,
+        conversions: selectedCampaign.conversions,
+        totalCost: selectedCampaign.cost,
+      }
+    : data?.summary;
 
   // Refetch timeseries when selected campaign changes
   useEffect(() => {
