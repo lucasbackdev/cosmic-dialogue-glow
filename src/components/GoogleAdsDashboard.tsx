@@ -17,7 +17,10 @@ import {
   Check,
   Loader2,
   Power,
+  Sparkles,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import ReactMarkdown from "react-markdown";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useGoogleAds, type DatePeriod } from "@/hooks/useGoogleAds";
@@ -158,6 +161,57 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
   const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
   const [activeTab, setActiveTab] = useState<"overview" | "permissions">("overview");
+  const [explainMode, setExplainMode] = useState(false);
+  const [openExplainId, setOpenExplainId] = useState<string | null>(null);
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
+  const [explainLoading, setExplainLoading] = useState<string | null>(null);
+
+  const requestExplanation = async (
+    metricId: "clicks" | "conversions" | "cost" | "cpc",
+    value: number | string,
+  ) => {
+    if (explanations[metricId] || explainLoading === metricId) return;
+    setExplainLoading(metricId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explain-metric`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({
+            metric: metricId,
+            value,
+            language: "pt-BR",
+            context: {
+              impressions: summary?.impressions,
+              clicks: summary?.clicks,
+              conversions: summary?.conversions,
+              cost: summary?.totalCost,
+              cpc: summary?.averageCpc,
+              ctr: summary?.ctr,
+              period,
+              campaignName: selectedCampaign?.name ?? null,
+            },
+          }),
+        },
+      );
+      const json = await resp.json();
+      if (!resp.ok) {
+        toast.error(json.error || "Erro ao explicar métrica");
+        setExplanations((p) => ({ ...p, [metricId]: "Não foi possível gerar a explicação agora." }));
+      } else {
+        setExplanations((p) => ({ ...p, [metricId]: json.explanation }));
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro inesperado");
+    } finally {
+      setExplainLoading(null);
+    }
+  };
 
   useEffect(() => {
     if (customerId) fetchMetrics();
