@@ -62,15 +62,78 @@ const formatN = (n: number) => {
 };
 const formatBRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 
-const PERMISSIONS = [
-  { id: "view", label: "Visualizar campanhas, grupos e anúncios", default: true },
-  { id: "pause", label: "Pausar / ativar campanhas e grupos", default: true },
-  { id: "budget", label: "Alterar orçamento diário", default: false },
-  { id: "bid", label: "Ajustar lances de palavras-chave", default: false },
-  { id: "create_ad", label: "Criar novos anúncios", default: false },
-  { id: "create_campaign", label: "Criar novas campanhas", default: false },
-  { id: "delete", label: "Deletar campanhas / grupos / anúncios", default: false },
-  { id: "negative_kw", label: "Adicionar palavras negativas", default: true },
+const PERMISSIONS: Array<{
+  id: string;
+  label: string;
+  description: string;
+  icon: typeof Eye;
+  risk: "safe" | "warn" | "danger";
+  default: boolean;
+}> = [
+  {
+    id: "view",
+    label: "Visualizar campanhas, grupos e anúncios",
+    description: "Permite que a IA leia métricas, status e estrutura da conta. Apenas leitura, sem alterações.",
+    icon: Eye,
+    risk: "safe",
+    default: true,
+  },
+  {
+    id: "pause",
+    label: "Pausar / ativar campanhas e grupos",
+    description: "A IA pode pausar gastos imediatamente ou reativar itens parados. Reversível.",
+    icon: Power,
+    risk: "safe",
+    default: true,
+  },
+  {
+    id: "budget",
+    label: "Alterar orçamento diário",
+    description: "Permite aumentar ou diminuir o orçamento diário das campanhas. Impacta gastos.",
+    icon: DollarSign,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "bid",
+    label: "Ajustar lances de palavras-chave",
+    description: "A IA pode subir ou baixar lances individuais. Afeta posição e CPC médio.",
+    icon: Target,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "create_ad",
+    label: "Criar novos anúncios",
+    description: "Permite gerar e publicar novos criativos dentro de grupos existentes.",
+    icon: FileText,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "create_campaign",
+    label: "Criar novas campanhas",
+    description: "Permite criar campanhas inteiras do zero, incluindo orçamento e segmentação.",
+    icon: Megaphone,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "delete",
+    label: "Deletar campanhas / grupos / anúncios",
+    description: "Remove permanentemente itens da conta. Ação irreversível — use com cuidado.",
+    icon: AlertTriangle,
+    risk: "danger",
+    default: false,
+  },
+  {
+    id: "negative_kw",
+    label: "Adicionar palavras negativas",
+    description: "A IA bloqueia termos irrelevantes para reduzir cliques sem qualidade.",
+    icon: KeyRound,
+    risk: "safe",
+    default: true,
+  },
 ];
 
 const PERIODS: { value: DatePeriod; label: string }[] = [
