@@ -510,67 +510,6 @@ const MobileIconBar = ({
         )}
       </aside>
 
-      {/* Paywall modal — shown when linking Google Ads account */}
-      {showPaywall && (
-        <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
-          onClick={() => setShowPaywall(false)}
-        >
-          <div
-            className="relative w-full max-w-sm bg-card/90 backdrop-blur-xl border border-border/30 rounded-2xl p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowPaywall(false)}
-              aria-label="Fechar"
-              className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-muted/60 text-muted-foreground transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-32 h-32 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="relative flex flex-col items-center gap-4 text-center">
-              <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Crown className="w-7 h-7 text-primary" />
-              </div>
-              <h2 className="text-xl font-bold text-foreground">
-                {language === "pt-BR" ? "Vincular conta Google Ads" : "Link Google Ads account"}
-              </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {language === "pt-BR"
-                  ? "Para vincular sua conta Google Ads e acessar todas as funcionalidades, assine o plano essencial."
-                  : "To link your Google Ads account and unlock all features, subscribe to the essential plan."}
-              </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">R$ 99</span>
-                <span className="text-sm text-muted-foreground">/{language === "pt-BR" ? "mês" : "month"}</span>
-              </div>
-              <ul className="text-sm text-muted-foreground space-y-1.5 text-left w-full">
-                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Integração com Google Ads" : "Google Ads integration"}</li>
-                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Métricas reais em tempo real" : "Real-time metrics"}</li>
-                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "IA para gerenciar campanhas" : "AI to manage campaigns"}</li>
-                <li className="flex items-center gap-2"><span className="text-primary">✓</span> {language === "pt-BR" ? "Suporte prioritário" : "Priority support"}</li>
-              </ul>
-              <a
-                href={KIWIFY_CHECKOUT}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full mt-2 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:brightness-110 transition-all shadow-lg shadow-primary/20"
-              >
-                {language === "pt-BR" ? "Assinar agora" : "Subscribe now"}
-                <ExternalLink className="w-4 h-4" />
-              </a>
-              <button
-                type="button"
-                onClick={() => setShowPaywall(false)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {language === "pt-BR" ? "Voltar" : "Back"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </TooltipProvider>
   );
 };
