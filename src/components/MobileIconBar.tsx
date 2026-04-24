@@ -1,4 +1,4 @@
-import { SquarePen, MessageCircle, LogOut, Settings, Trash2, User, Menu, X, ArrowLeft, Link2, ExternalLink, Crown } from "lucide-react";
+import { SquarePen, MessageCircle, LogOut, Settings, Trash2, User, Menu, X, ArrowLeft, Link2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import logoBlack from "@/assets/logo-black.png";
 import logoWhite from "@/assets/logo-white.png";
@@ -10,8 +10,6 @@ import { cn } from "@/lib/utils";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { Globe, Moon, Sun } from "lucide-react";
 import type { Conversation } from "@/hooks/useConversations";
-
-const KIWIFY_CHECKOUT = "https://pay.kiwify.com.br/GJOxhro";
 
 interface MobileIconBarProps {
   onNewConversation: () => void;
@@ -53,7 +51,6 @@ const MobileIconBar = ({
 }: MobileIconBarProps) => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [adsIdInput, setAdsIdInput] = useState(googleAds?.customerId || "");
-  const [showPaywall, setShowPaywall] = useState(false);
   const { t, language, setLanguage } = useLanguage();
   const [darkMode, setDarkMode] = useState(() =>
     typeof document !== "undefined" && document.documentElement.classList.contains("dark")
