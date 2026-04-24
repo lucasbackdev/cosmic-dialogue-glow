@@ -62,15 +62,78 @@ const formatN = (n: number) => {
 };
 const formatBRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 
-const PERMISSIONS = [
-  { id: "view", label: "Visualizar campanhas, grupos e anúncios", default: true },
-  { id: "pause", label: "Pausar / ativar campanhas e grupos", default: true },
-  { id: "budget", label: "Alterar orçamento diário", default: false },
-  { id: "bid", label: "Ajustar lances de palavras-chave", default: false },
-  { id: "create_ad", label: "Criar novos anúncios", default: false },
-  { id: "create_campaign", label: "Criar novas campanhas", default: false },
-  { id: "delete", label: "Deletar campanhas / grupos / anúncios", default: false },
-  { id: "negative_kw", label: "Adicionar palavras negativas", default: true },
+const PERMISSIONS: Array<{
+  id: string;
+  label: string;
+  description: string;
+  icon: typeof Eye;
+  risk: "safe" | "warn" | "danger";
+  default: boolean;
+}> = [
+  {
+    id: "view",
+    label: "Visualizar campanhas, grupos e anúncios",
+    description: "Permite que a IA leia métricas, status e estrutura da conta. Apenas leitura, sem alterações.",
+    icon: Eye,
+    risk: "safe",
+    default: true,
+  },
+  {
+    id: "pause",
+    label: "Pausar / ativar campanhas e grupos",
+    description: "A IA pode pausar gastos imediatamente ou reativar itens parados. Reversível.",
+    icon: Power,
+    risk: "safe",
+    default: true,
+  },
+  {
+    id: "budget",
+    label: "Alterar orçamento diário",
+    description: "Permite aumentar ou diminuir o orçamento diário das campanhas. Impacta gastos.",
+    icon: DollarSign,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "bid",
+    label: "Ajustar lances de palavras-chave",
+    description: "A IA pode subir ou baixar lances individuais. Afeta posição e CPC médio.",
+    icon: Target,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "create_ad",
+    label: "Criar novos anúncios",
+    description: "Permite gerar e publicar novos criativos dentro de grupos existentes.",
+    icon: FileText,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "create_campaign",
+    label: "Criar novas campanhas",
+    description: "Permite criar campanhas inteiras do zero, incluindo orçamento e segmentação.",
+    icon: Megaphone,
+    risk: "warn",
+    default: false,
+  },
+  {
+    id: "delete",
+    label: "Deletar campanhas / grupos / anúncios",
+    description: "Remove permanentemente itens da conta. Ação irreversível — use com cuidado.",
+    icon: AlertTriangle,
+    risk: "danger",
+    default: false,
+  },
+  {
+    id: "negative_kw",
+    label: "Adicionar palavras negativas",
+    description: "A IA bloqueia termos irrelevantes para reduzir cliques sem qualidade.",
+    icon: KeyRound,
+    risk: "safe",
+    default: true,
+  },
 ];
 
 const PERIODS: { value: DatePeriod; label: string }[] = [
@@ -94,6 +157,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [watcherInterval, setWatcherInterval] = useState(6);
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
   const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
+  const [activeTab, setActiveTab] = useState<"overview" | "permissions">("overview");
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -237,6 +301,36 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
+
+        {/* Tabs: Visão geral / Permissões da IA */}
+        <div className="mb-5 flex items-center gap-1 p-1 rounded-xl bg-muted/40 border border-border/40 w-fit">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={cn(
+              "flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors",
+              activeTab === "overview"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Visão geral
+          </button>
+          <button
+            onClick={() => setActiveTab("permissions")}
+            className={cn(
+              "flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg transition-colors",
+              activeTab === "permissions"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            Permissões da IA
+          </button>
+        </div>
+
+        {activeTab === "overview" && <>
 
         {/* Visão geral - azul */}
         <section className="mb-6">
@@ -669,31 +763,91 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           </div>
         </section>
 
-        {/* Permissões IA - vermelho */}
-        <section className="mb-6">
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-            <div className="flex items-center gap-2 mb-3">
+        </>}
+
+        {activeTab === "permissions" && (
+          <section className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
               <Shield className="w-4 h-4 text-red-500" />
-              <h3 className="text-sm font-semibold text-foreground">Permissões da IA</h3>
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Permissões da IA
+              </h2>
             </div>
-            <div className="grid md:grid-cols-2 gap-2">
-              {PERMISSIONS.map((p) => (
-                <label
-                  key={p.id}
-                  className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background/40 border border-border/30"
-                >
-                  <span className="text-xs text-foreground">{p.label}</span>
-                  <Switch
-                    checked={permissions[p.id]}
-                    onCheckedChange={(v) =>
-                      setPermissions((prev) => ({ ...prev, [p.id]: v }))
-                    }
-                  />
-                </label>
-              ))}
+            <p className="text-xs text-muted-foreground mb-4">
+              Controle exatamente o que a IA pode fazer na sua conta. Cada permissão é independente — ative apenas as que você confia.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {PERMISSIONS.map((p) => {
+                const enabled = permissions[p.id];
+                const riskStyles = {
+                  safe: {
+                    badge: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+                    label: "Seguro",
+                    iconWrap: "bg-green-500/15 text-green-600 dark:text-green-400",
+                    border: enabled ? "border-green-500/40 bg-green-500/5" : "border-border/40 bg-card/40",
+                  },
+                  warn: {
+                    badge: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+                    label: "Cuidado",
+                    iconWrap: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
+                    border: enabled ? "border-yellow-500/40 bg-yellow-500/5" : "border-border/40 bg-card/40",
+                  },
+                  danger: {
+                    badge: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+                    label: "Alto risco",
+                    iconWrap: "bg-red-500/15 text-red-600 dark:text-red-400",
+                    border: enabled ? "border-red-500/40 bg-red-500/5" : "border-border/40 bg-card/40",
+                  },
+                }[p.risk];
+                const Icon = p.icon;
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "p-4 rounded-xl border transition-colors flex flex-col gap-3",
+                      riskStyles.border
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn("p-2 rounded-lg shrink-0", riskStyles.iconWrap)}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="text-sm font-semibold text-foreground leading-tight">
+                            {p.label}
+                          </h3>
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full border",
+                              riskStyles.badge
+                            )}
+                          >
+                            {riskStyles.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {p.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                      <span className="text-[11px] text-muted-foreground">
+                        {enabled ? "Ativada" : "Desativada"}
+                      </span>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(v) =>
+                          setPermissions((prev) => ({ ...prev, [p.id]: v }))
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Vigilância 24h - laranja */}
         <section className="mb-6">
