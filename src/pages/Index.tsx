@@ -9,7 +9,7 @@ import ConversationsSidebar from "@/components/ConversationsSidebar";
 import VehicleConsultMenu from "@/components/VehicleConsultMenu";
 import LeadResultsPanel, { type LeadData, type NicheGroup } from "@/components/LeadResultsPanel";
 import NicheSelectorDashboard from "@/components/NicheSelectorDashboard";
-import PaywallCard from "@/components/PaywallCard";
+
 import WorkSimulation from "@/components/WorkSimulation";
 import AuthButton, { type AuthButtonHandle } from "@/components/AuthButton";
 import BrandLogo from "@/components/BrandLogo";
@@ -18,7 +18,7 @@ import GoogleAdsDashboard from "@/components/GoogleAdsDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations } from "@/hooks/useConversations";
 import { useGoogleAds } from "@/hooks/useGoogleAds";
-import { useSubscription } from "@/hooks/useSubscription";
+
 import { useCredits } from "@/hooks/useCredits";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Input } from "@/components/ui/input";
@@ -67,7 +67,6 @@ const Index = () => {
   } = useConversations(user?.id);
 
   const { customerId, data: adsData, saveCustomerId, period, changePeriod } = useGoogleAds(user?.id);
-  const { isActive: hasSubscription, loading: subLoading } = useSubscription(user?.id);
   const { credits } = useCredits(user?.id);
 
   const [state, setState] = useState<"idle" | "listening" | "speaking">("idle");
@@ -82,7 +81,7 @@ const Index = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [pendingPlate, setPendingPlate] = useState<string | null>(null);
   const [vehicleLoading, setVehicleLoading] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
+  
   const [showSimulation, setShowSimulation] = useState(false);
   const [freeUserInput, setFreeUserInput] = useState<string | null>(null);
   const audioLevelInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -178,22 +177,7 @@ const Index = () => {
       authButtonRef.current?.openSignUp();
       return;
     }
-    // Free users (non-admin, no subscription): simulate only for campaign/metrics keywords
-    if (!hasSubscription && !isAdmin) {
-      const lower = text.toLowerCase();
-      const isCampaignRequest = CRM_KEYWORDS.some(kw => lower.includes(kw)) || 
-        LEAD_KEYWORDS.some(kw => lower.includes(kw)) ||
-        lower.includes("métrica") || lower.includes("metrica") || lower.includes("criar campanha");
-      if (isCampaignRequest) {
-        setFreeUserInput(text);
-        setShowChat(true);
-        setShowSimulation(true);
-        return;
-      }
-      // For normal messages, show paywall after response
-      setShowPaywall(true);
-      return;
-    }
+    // Paywall removed — all logged-in users have full access
     setShowChat(true); // Always show chat when sending
     let convoId = currentConversationId;
     if (!convoId) {
@@ -618,12 +602,7 @@ const Index = () => {
                 userMessage={freeUserInput}
                 onComplete={() => {
                   setShowSimulation(false);
-                  // If user is logged in, just open settings to link ID — no paywall
-                  if (user) {
-                    setSidebarOpen(true);
-                  } else {
-                    setShowPaywall(true);
-                  }
+                  setSidebarOpen(true);
                 }}
                 onOpenSettings={() => setSidebarOpen(true)}
               />
@@ -689,10 +668,6 @@ const Index = () => {
       <h1 className={`absolute bottom-3 text-muted-foreground text-xs tracking-widest uppercase z-10 transition-transform duration-300 ease-in-out ${contentShiftClass}`}>
         {t("orionAI")}
       </h1>
-      {/* Paywall */}
-      {showPaywall && (
-        <PaywallCard onClose={() => setShowPaywall(false)} />
-      )}
 
       {/* Google Ads Dashboard view */}
       {showGoogleAdsDashboard && (
