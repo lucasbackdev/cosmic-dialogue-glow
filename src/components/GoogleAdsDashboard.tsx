@@ -25,6 +25,15 @@ import { supabase } from "@/integrations/supabase/client";
 import googleAdsLogo from "@/assets/google-ads-logo.png";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface GoogleAdsDashboardProps {
   userId: string | undefined;
@@ -84,6 +93,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [watcherEnabled, setWatcherEnabled] = useState(false);
   const [watcherInterval, setWatcherInterval] = useState(6);
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
+  const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -91,8 +101,20 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
   const summary = data?.summary;
   const campaigns = data?.campaigns || [];
+  const timeseries = data?.timeseries || [];
   const selectedCampaign =
     selectedCampaignIdx !== null ? campaigns[selectedCampaignIdx] : null;
+
+  // Refetch timeseries when selected campaign changes
+  useEffect(() => {
+    if (customerId) fetchMetrics(undefined, selectedCampaign?.name ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCampaign?.name]);
+
+  const toggleKpi = (id: string) =>
+    setActiveKpis((prev) =>
+      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
+    );
 
   const executePlan = (plan: Plan, originalCmd: string) => {
     setLogs((prev) => [
@@ -249,6 +271,94 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
                 <p className="text-base font-bold text-foreground">{m.value}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Painel KPI + Gráfico estilo Google Ads */}
+        <section className="mb-6">
+          <div className="rounded-xl border border-border/50 bg-card/40 overflow-hidden">
+            {/* KPI selector cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/50">
+              {[
+                { id: "clicks", label: "Cliques", color: "#3b82f6", value: summary ? formatN(summary.clicks) : "—" },
+                { id: "conversions", label: "Conversões", color: "#ef4444", value: summary ? formatN(summary.conversions) : "—" },
+                { id: "cost", label: "Custo total", color: "#eab308", value: summary ? formatBRL(summary.totalCost) : "—" },
+                { id: "cpc", label: "CPC médio", color: "#22c55e", value: summary ? formatBRL(summary.averageCpc) : "—" },
+              ].map((k) => {
+                const active = activeKpis.includes(k.id);
+                return (
+                  <button
+                    key={k.id}
+                    onClick={() => toggleKpi(k.id)}
+                    className={cn(
+                      "p-4 text-left transition-all relative bg-card hover:bg-muted/40",
+                      active && "bg-muted/30"
+                    )}
+                    style={
+                      active
+                        ? { boxShadow: `inset 0 -3px 0 0 ${k.color}` }
+                        : undefined
+                    }
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: k.color, opacity: active ? 1 : 0.3 }}
+                      />
+                      <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {k.label}
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-foreground">{k.value}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Chart */}
+            <div className="p-4 h-72 bg-card">
+              {timeseries.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+                  Sem dados no período {selectedCampaign ? `para "${selectedCampaign.name}"` : "selecionado"}.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeseries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={(d: string) => {
+                        const [, m, day] = d.split("-");
+                        return `${day}/${m}`;
+                      }}
+                    />
+                    <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={40} />
+                    <RTooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                    />
+                    {activeKpis.includes("clicks") && (
+                      <Line type="monotone" dataKey="clicks" stroke="#3b82f6" strokeWidth={2} dot={false} name="Cliques" />
+                    )}
+                    {activeKpis.includes("conversions") && (
+                      <Line type="monotone" dataKey="conversions" stroke="#ef4444" strokeWidth={2} dot={false} name="Conversões" />
+                    )}
+                    {activeKpis.includes("cost") && (
+                      <Line type="monotone" dataKey="cost" stroke="#eab308" strokeWidth={2} dot={false} name="Custo" />
+                    )}
+                    {activeKpis.includes("cpc") && (
+                      <Line type="monotone" dataKey="cpc" stroke="#22c55e" strokeWidth={2} dot={false} name="CPC" />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </section>
 
