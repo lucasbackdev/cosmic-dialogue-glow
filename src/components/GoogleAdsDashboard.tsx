@@ -763,31 +763,91 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
           </div>
         </section>
 
-        {/* Permissões IA - vermelho */}
-        <section className="mb-6">
-          <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-            <div className="flex items-center gap-2 mb-3">
+        </>}
+
+        {activeTab === "permissions" && (
+          <section className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
               <Shield className="w-4 h-4 text-red-500" />
-              <h3 className="text-sm font-semibold text-foreground">Permissões da IA</h3>
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                Permissões da IA
+              </h2>
             </div>
-            <div className="grid md:grid-cols-2 gap-2">
-              {PERMISSIONS.map((p) => (
-                <label
-                  key={p.id}
-                  className="flex items-center justify-between gap-3 p-2 rounded-lg bg-background/40 border border-border/30"
-                >
-                  <span className="text-xs text-foreground">{p.label}</span>
-                  <Switch
-                    checked={permissions[p.id]}
-                    onCheckedChange={(v) =>
-                      setPermissions((prev) => ({ ...prev, [p.id]: v }))
-                    }
-                  />
-                </label>
-              ))}
+            <p className="text-xs text-muted-foreground mb-4">
+              Controle exatamente o que a IA pode fazer na sua conta. Cada permissão é independente — ative apenas as que você confia.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {PERMISSIONS.map((p) => {
+                const enabled = permissions[p.id];
+                const riskStyles = {
+                  safe: {
+                    badge: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",
+                    label: "Seguro",
+                    iconWrap: "bg-green-500/15 text-green-600 dark:text-green-400",
+                    border: enabled ? "border-green-500/40 bg-green-500/5" : "border-border/40 bg-card/40",
+                  },
+                  warn: {
+                    badge: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+                    label: "Cuidado",
+                    iconWrap: "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400",
+                    border: enabled ? "border-yellow-500/40 bg-yellow-500/5" : "border-border/40 bg-card/40",
+                  },
+                  danger: {
+                    badge: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+                    label: "Alto risco",
+                    iconWrap: "bg-red-500/15 text-red-600 dark:text-red-400",
+                    border: enabled ? "border-red-500/40 bg-red-500/5" : "border-border/40 bg-card/40",
+                  },
+                }[p.risk];
+                const Icon = p.icon;
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "p-4 rounded-xl border transition-colors flex flex-col gap-3",
+                      riskStyles.border
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={cn("p-2 rounded-lg shrink-0", riskStyles.iconWrap)}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="text-sm font-semibold text-foreground leading-tight">
+                            {p.label}
+                          </h3>
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full border",
+                              riskStyles.badge
+                            )}
+                          >
+                            {riskStyles.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {p.description}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                      <span className="text-[11px] text-muted-foreground">
+                        {enabled ? "Ativada" : "Desativada"}
+                      </span>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(v) =>
+                          setPermissions((prev) => ({ ...prev, [p.id]: v }))
+                        }
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Vigilância 24h - laranja */}
         <section className="mb-6">
