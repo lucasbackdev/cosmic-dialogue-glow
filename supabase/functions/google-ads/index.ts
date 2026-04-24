@@ -427,6 +427,7 @@ serve(async (req) => {
     const timeseries = await fetchTimeseries(
       accessToken,
       developerToken,
+      mccId,
       customerId,
       period,
       campaignName || null
