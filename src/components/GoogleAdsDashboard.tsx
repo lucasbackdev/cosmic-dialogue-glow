@@ -93,6 +93,7 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
   const [watcherEnabled, setWatcherEnabled] = useState(false);
   const [watcherInterval, setWatcherInterval] = useState(6);
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState<number | null>(null);
+  const [activeKpis, setActiveKpis] = useState<string[]>(["clicks", "conversions"]);
 
   useEffect(() => {
     if (customerId) fetchMetrics();
@@ -100,8 +101,20 @@ const GoogleAdsDashboard = ({ userId, onBack }: GoogleAdsDashboardProps) => {
 
   const summary = data?.summary;
   const campaigns = data?.campaigns || [];
+  const timeseries = data?.timeseries || [];
   const selectedCampaign =
     selectedCampaignIdx !== null ? campaigns[selectedCampaignIdx] : null;
+
+  // Refetch timeseries when selected campaign changes
+  useEffect(() => {
+    if (customerId) fetchMetrics(undefined, selectedCampaign?.name ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCampaign?.name]);
+
+  const toggleKpi = (id: string) =>
+    setActiveKpis((prev) =>
+      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
+    );
 
   const executePlan = (plan: Plan, originalCmd: string) => {
     setLogs((prev) => [
