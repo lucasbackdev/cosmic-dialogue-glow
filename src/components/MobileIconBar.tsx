@@ -221,6 +221,7 @@ const MobileIconBar = ({
           )}
         </div>
 
+        {!settingsOpen && (<>
         <div className={cn("flex flex-col", expanded ? "gap-1" : "items-center gap-2")}>
           <IconButton
             label="Nova conversa"
