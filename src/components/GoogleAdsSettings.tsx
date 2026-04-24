@@ -120,9 +120,18 @@ const GoogleAdsSettings = ({ customerId, onSave, loading, error }: GoogleAdsSett
             />
 
             {customerId && !result && (
-              <p className="text-xs text-muted-foreground mb-3">
-                {t("currentAccount")}: <span className="text-foreground font-mono">{customerId}</span>
-              </p>
+              <div className="mb-3 p-2 rounded-lg bg-secondary/30 border border-border/30 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{t("currentAccount")}</p>
+                  <p className="text-xs text-foreground font-mono truncate">{customerId}</p>
+                </div>
+                <button
+                  onClick={() => setInputValue("")}
+                  className="text-[11px] px-2 py-1 rounded-md bg-primary/15 text-primary hover:bg-primary/25 transition-colors shrink-0"
+                >
+                  {language === "pt-BR" ? "Substituir" : "Replace"}
+                </button>
+              </div>
             )}
 
             {result && (
