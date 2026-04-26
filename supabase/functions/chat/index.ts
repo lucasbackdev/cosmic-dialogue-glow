@@ -1469,13 +1469,33 @@ serve(async (req) => {
       actionType = "campaign_list"; creditCost = 2; // ~2k tokens
     }
 
+    // Always create admin client for global rate-limit check
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // GLOBAL daily AI cap shared across the whole app, so the monthly
+    // free $1 AI balance is spread evenly through the month instead
+    // of being burned on day 1. Default: 15 ops/day across all users.
+    const GLOBAL_DAILY_AI_LIMIT = 15;
+    const { data: globalResult } = await supabaseAdmin.rpc("check_global_ai_limit", {
+      p_daily_limit: GLOBAL_DAILY_AI_LIMIT,
+    });
+    if (globalResult && !globalResult.success) {
+      return new Response(
+        JSON.stringify({
+          error: "global_daily_limit_reached",
+          message: "O limite diário de uso da IA do app foi atingido. Tente novamente amanhã.",
+          used_today: globalResult.used,
+          limit: globalResult.limit,
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Consume credits if userId provided
     if (userId) {
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
-
       // Check daily limit (40 ops/day) before consuming monthly credits
       const { data: dailyResult } = await supabaseAdmin.rpc("check_daily_limit", {
         p_user_id: userId,

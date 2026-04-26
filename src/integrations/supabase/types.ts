@@ -246,6 +246,7 @@ export type Database = {
         Args: { p_cost?: number; p_user_id: string }
         Returns: Json
       }
+      check_global_ai_limit: { Args: { p_daily_limit?: number }; Returns: Json }
       consume_credits: {
         Args: {
           p_action_type: string
