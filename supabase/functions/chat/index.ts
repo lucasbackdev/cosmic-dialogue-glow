@@ -1475,9 +1475,33 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Allow-list: only these emails may consume the AI.
+    // Goal: keep the monthly $1 free AI balance reserved for one client.
+    const ALLOWED_AI_EMAILS = new Set([
+      "evelynmgbraga@gmail.com",
+      "lucascombatplr@gmail.com", // admin
+    ]);
+
+    // Require auth + check email against allow-list
+    let callerEmail: string | null = null;
+    if (userId) {
+      const { data: userRecord } = await supabaseAdmin.auth.admin.getUserById(userId);
+      callerEmail = userRecord?.user?.email?.toLowerCase() ?? null;
+    }
+    if (!callerEmail || !ALLOWED_AI_EMAILS.has(callerEmail)) {
+      return new Response(
+        JSON.stringify({
+          error: "ai_access_restricted",
+          message:
+            "A IA está temporariamente liberada apenas para usuários autorizados. Entre em contato com o suporte.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // GLOBAL daily AI cap shared across the whole app, so the monthly
     // free $1 AI balance is spread evenly through the month instead
-    // of being burned on day 1. Default: 15 ops/day across all users.
+    // of being burned on day 1. Default: 15 ops/day across all (allowed) users.
     const GLOBAL_DAILY_AI_LIMIT = 15;
     const { data: globalResult } = await supabaseAdmin.rpc("check_global_ai_limit", {
       p_daily_limit: GLOBAL_DAILY_AI_LIMIT,
